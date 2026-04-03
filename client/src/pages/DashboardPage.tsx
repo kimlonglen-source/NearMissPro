@@ -34,7 +34,8 @@ function statusLabel(s: string) {
 
 function smartSort(a: Incident, b: Incident) {
   if (a.flagged_by_staff !== b.flagged_by_staff) return a.flagged_by_staff ? -1 : 1;
-  const ap = a.status === 'pending', bp = b.status === 'pending';
+  const ap = a.status === 'active' && !a.recommendations?.[0]?.manager_outcome;
+  const bp = b.status === 'active' && !b.recommendations?.[0]?.manager_outcome;
   if (ap !== bp) return ap ? -1 : 1;
   return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
 }
@@ -67,14 +68,16 @@ export function DashboardPage() {
 
   useEffect(() => { load(); }, [period]);
 
-  const pending = incidents.filter(i => i.status === 'pending');
-  const reviewed = incidents.filter(i => i.status !== 'pending');
+  // Pending = no recommendation outcome yet; Reviewed = has outcome or voided
+  const isPending = (i: Incident) => i.status === 'active' && (!i.recommendations?.[0]?.manager_outcome);
+  const pending = incidents.filter(isPending);
+  const reviewed = incidents.filter(i => !isPending(i));
   const filtered = filter === 'pending' ? pending : filter === 'reviewed' ? reviewed : incidents;
   const reviewedCount = reviewed.length;
   const prevPeriodPct = total > 0 ? Math.round(((incidents.length - total) / total) * 100) : 0;
   const peakTime = incidents.length ? (() => {
     const counts: Record<string, number> = {};
-    incidents.forEach(i => { counts[i.time_of_day] = (counts[i.time_of_day] || 0) + 1; });
+    incidents.forEach(i => { if (i.time_of_day) counts[i.time_of_day] = (counts[i.time_of_day] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
   })() : '-';
   const allReviewed = pending.length === 0 && incidents.length > 0;
@@ -203,7 +206,9 @@ export function DashboardPage() {
                   <span className="bg-[#E6F1FB] text-[#0C447C] text-xs px-2 py-0.5 rounded-full font-medium">{inc.drug_name}</span>
                   <span className="text-xs text-gray-500 ml-auto">{new Date(inc.submitted_at).toLocaleDateString()} {inc.time_of_day}</span>
                   <span className="text-xs text-gray-500">Caught: {inc.where_caught}</span>
-                  <span className={`badge ${BADGE[inc.status] || 'badge-pending'}`}>{statusLabel(inc.status)}</span>
+                  <span className={`badge ${BADGE[inc.status === 'voided' ? 'voided' : (inc.recommendations?.[0]?.manager_outcome || 'pending')] || 'badge-pending'}`}>
+                    {statusLabel(inc.status === 'voided' ? 'voided' : (inc.recommendations?.[0]?.manager_outcome || 'Pending'))}
+                  </span>
                 </div>
 
                 {expanded === inc.id && (

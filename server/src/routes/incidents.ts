@@ -92,6 +92,29 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Failed' }); }
 });
 
+// ── Pattern alert (must be before /:id) ─────────────────────
+router.get('/pattern-alert', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const { detectPatterns } = await import('../services/ai.js');
+    const alert = await detectPatterns(req.auth!.pharmacyId);
+    res.json({ alert });
+  } catch { res.json({ alert: null }); }
+});
+
+// ── Monthly incident count (must be before /:id) ────────────
+router.get('/stats/monthly-count', async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const { count } = await supabase.from('incidents')
+      .select('id', { count: 'exact', head: true })
+      .eq('pharmacy_id', req.auth!.pharmacyId)
+      .gte('submitted_at', start)
+      .eq('status', 'active');
+    res.json({ count: count || 0 });
+  } catch { res.status(500).json({ error: 'Failed' }); }
+});
+
 // ── Get single incident ─────────────────────────────────────
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -160,29 +183,6 @@ router.post('/:id/void', requireRole('manager', 'founder'), async (req: Request,
       performed_by: 'manager', details: { incident_id: req.params.id, reason },
     });
     res.json(data);
-  } catch { res.status(500).json({ error: 'Failed' }); }
-});
-
-// ── Pattern alert ───────────────────────────────────────────
-router.get('/pattern-alert', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
-  try {
-    const { detectPatterns } = await import('../services/ai.js');
-    const alert = await detectPatterns(req.auth!.pharmacyId);
-    res.json({ alert });
-  } catch { res.json({ alert: null }); }
-});
-
-// ── Monthly incident count ──────────────────────────────────
-router.get('/stats/monthly-count', async (req: Request, res: Response) => {
-  try {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const { count } = await supabase.from('incidents')
-      .select('id', { count: 'exact', head: true })
-      .eq('pharmacy_id', req.auth!.pharmacyId)
-      .gte('submitted_at', start)
-      .eq('status', 'active');
-    res.json({ count: count || 0 });
   } catch { res.status(500).json({ error: 'Failed' }); }
 });
 
