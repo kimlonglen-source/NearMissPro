@@ -18,15 +18,44 @@ interface IncidentData {
   other_entries?: { category: string; text: string }[];
 }
 
+const NZ_SYSTEM_PROMPT = `You are a pharmacy safety advisor for a New Zealand community pharmacy operating under the Medicines Act 1981 and Pharmacy Council of NZ standards.
+
+Generate a specific, actionable prevention recommendation for this near miss incident. Follow these rules:
+- 2-3 sentences maximum
+- Reference NZ pharmacy practice where relevant (e.g. Pharmacy Council NZ guidelines, NZULM, Medsafe alerts)
+- Be specific to the drug/situation — no generic advice like "be more careful"
+- Suggest practical workflow changes: shelf separation, alert stickers, double-check protocols, tallman lettering
+- If this involves look-alike/sound-alike drugs, suggest specific differentiation strategies
+- If this is a repeat pattern, flag it clearly and suggest systemic change
+- Consider NZ-specific context: Pharmac brand changes, subsidised vs non-subsidised, common NZ generics
+- For dose errors: suggest checking the NZ Formulary or contacting the prescriber
+- For CAL errors: reference the NZ CAL requirements
+- Keep language plain and suitable for a team meeting discussion`;
+
 export async function generateRecommendation(incident: IncidentData): Promise<string> {
   if (!env.anthropicApiKey) {
-    const fallback = `[AI stub] Review incident with error types: ${incident.error_types.join(', ')}. Consider reviewing procedures for ${incident.drug_name || 'the medication involved'}.`;
-    await saveRecommendation(incident.id, incident.pharmacy_id, fallback);
-    return fallback;
+    // Generate a useful stub recommendation based on the error type
+    const stubs: Record<string, string> = {
+      'Wrong drug': `Review shelf placement for ${incident.drug_name || 'this medication'} and similar-looking products. Consider tallman lettering or alert stickers to differentiate look-alike medications. Add a second check at the dispensing stage.`,
+      'Wrong dose': `Verify ${incident.drug_name || 'this medication'} strength against the prescription and NZ Formulary. Consider highlighting unusual doses with a flag label. Ensure the correct strength is at eye level on the shelf.`,
+      'Wrong formulation': `Check ${incident.drug_name || 'this medication'} formulation matches the prescription. Separate different formulations on the shelf. Add formulation to the verbal confirmation at patient counselling.`,
+      'Wrong patient': 'Confirm patient identity at every stage: data entry, dispensing, labelling, and handover. Use date of birth as a second identifier. Consider a two-person check for high-risk medications.',
+      'Repeat dispensed early': 'Check the dispensing history before processing repeats. Set up alerts for minimum repeat intervals. Confirm with the patient when they last collected this medication.',
+      'Wrong quantity': `Count ${incident.drug_name || 'medication'} twice before labelling. Use the original pack where possible. Cross-check quantity against the prescription at final check.`,
+      'Expired medication': 'Implement a monthly expiry check rotation. Move short-dated stock to the front of the shelf. Mark items within 3 months of expiry with a coloured sticker.',
+      'Wrong directions on label': 'Compare label directions word-for-word against the prescription at final check. Read directions aloud during patient counselling to catch discrepancies.',
+      'CAL missing or incorrect': 'Review the NZ CAL requirements for this medication class. Add a CAL checklist step to the dispensing workflow. Ensure the dispensing software CAL prompts are not being dismissed.',
+      'Label on wrong item': 'Match each label to its physical item immediately after printing. Never batch-label multiple prescriptions. Use a one-label-one-item workflow.',
+    };
+
+    const primaryError = incident.error_types[0] || '';
+    const recommendation = stubs[primaryError] || `Review the dispensing workflow for ${incident.drug_name || 'this medication'}. Discuss at the next team meeting and agree on a specific prevention action. Document the agreed change.`;
+
+    await saveRecommendation(incident.id, incident.pharmacy_id, recommendation);
+    return recommendation;
   }
 
   try {
-    // Count prior incidents with same drug this period
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
@@ -55,7 +84,7 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
       body: JSON.stringify({
         model: 'claude-sonnet-4-6-20250514',
         max_tokens: 300,
-        system: 'You are a pharmacy safety advisor for a New Zealand community pharmacy. Generate a specific actionable prevention recommendation. 2-3 sentences maximum. Practical changes only. No generic advice. Note if this is a repeat pattern.',
+        system: NZ_SYSTEM_PROMPT,
         messages: [{
           role: 'user',
           content: JSON.stringify({
@@ -80,7 +109,6 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
 
     const result = await response.json();
     const aiText = result.content?.[0]?.text || 'Unable to generate recommendation.';
-
     await saveRecommendation(incident.id, incident.pharmacy_id, aiText);
     return aiText;
   } catch (err) {
@@ -107,7 +135,6 @@ export async function detectPatterns(pharmacyId: string): Promise<string | null>
 
   if (!incidents || incidents.length < 3) return null;
 
-  // Count drug frequencies
   const drugCounts: Record<string, number> = {};
   const factorCounts: Record<string, number> = {};
   const timeCounts: Record<string, number> = {};
@@ -126,29 +153,22 @@ export async function detectPatterns(pharmacyId: string): Promise<string | null>
   if (alerts.length === 0) return null;
 
   if (!env.anthropicApiKey) {
-    return `[Pattern detected] ${alerts.join('. ')}.`;
+    return alerts.join('. ') + '.';
   }
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': env.anthropicApiKey,
-        'anthropic-version': '2023-06-01',
-      },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514',
-        max_tokens: 150,
-        system: 'Analyse these pharmacy near miss incidents and identify the most significant pattern in plain language. One sentence maximum.',
+        model: 'claude-sonnet-4-6-20250514', max_tokens: 150,
+        system: 'You are a NZ pharmacy safety advisor. Analyse these near miss patterns and identify the most significant finding in one plain-language sentence. Be specific and actionable.',
         messages: [{ role: 'user', content: JSON.stringify({ patterns: alerts, incident_count: incidents.length }) }],
       }),
     });
     const result = await response.json();
     return result.content?.[0]?.text || alerts.join('. ');
-  } catch {
-    return alerts.join('. ');
-  }
+  } catch { return alerts.join('. '); }
 }
 
 export async function generatePeriodSummary(pharmacyId: string, periodStart: string, periodEnd: string): Promise<{ summary: string; agenda: string[]; previousSummary?: string }> {
@@ -161,15 +181,21 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     .lt('period_end', periodStart).order('period_end', { ascending: false }).limit(1).single();
 
   const incidentCount = incidents?.length || 0;
+  const errorSummary = incidents?.flatMap(i => i.error_types).reduce<Record<string, number>>((acc, e) => { acc[e] = (acc[e] || 0) + 1; return acc; }, {}) || {};
+  const topErrors = Object.entries(errorSummary).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
   const stub = {
-    summary: `This period recorded ${incidentCount} near miss incidents. Review the incident log for details and discuss prevention strategies at the team meeting.`,
+    summary: incidentCount === 0
+      ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
+      : `This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : ''} Review the incident log below and discuss prevention actions at the team meeting.`,
     agenda: [
-      'Celebrate: the team continues to report near misses — this culture of openness keeps patients safe.',
-      `Review the ${incidentCount} incidents recorded this period.`,
-      'Discuss any recurring patterns and agree on prevention actions.',
-      'Confirm all staff understand the updated procedures.',
+      'Acknowledge the team for continuing to report near misses — this culture of openness keeps patients safe.',
+      ...(topErrors.length > 0 ? [`Discuss the ${topErrors[0][1]} ${topErrors[0][0]} incident${topErrors[0][1] > 1 ? 's' : ''} and agree on a specific prevention action.`] : []),
+      'Review any accepted recommendations and confirm they have been implemented.',
+      'Identify any training needs or workflow changes required.',
+      'Confirm the date of the next review meeting.',
     ],
-    previousSummary: lastReport ? 'Review of actions from last period and their effectiveness.' : undefined,
+    previousSummary: lastReport ? 'Review the actions agreed at the last meeting and assess whether they have reduced incidents.' : undefined,
   };
 
   if (!env.anthropicApiKey || incidentCount === 0) return stub;
@@ -180,7 +206,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6-20250514', max_tokens: 500,
-        system: 'You are a pharmacy safety advisor writing a brief improvement summary for a NZ pharmacy report. Write 3-5 sentences in plain language suitable for reading at a team meeting. Be specific about what improved and what needs more time.',
+        system: 'You are a NZ pharmacy safety advisor writing a brief improvement summary for a pharmacy team meeting report. Write 3-5 sentences in plain language. Be specific about what happened and what needs to change. Reference NZ pharmacy practice standards where relevant.',
         messages: [{ role: 'user', content: JSON.stringify({ incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })), previous_period_summary: lastReport?.period_summary }) }],
       }),
     });

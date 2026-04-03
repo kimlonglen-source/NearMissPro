@@ -175,9 +175,6 @@ export function RecordPage() {
         </div>
         <div className="flex gap-3 flex-wrap justify-center">
           {editTimer > 0 && <button onClick={() => { setSubmitted(false); setAutoResetTimer(999); }} className="btn-outline text-sm">Edit this report</button>}
-          <button onClick={handleFlag} disabled={flagSent} className={`btn text-sm ${flagSent ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100'}`}>
-            <Flag size={14} /> {flagSent ? 'Flagged' : 'Flag for manager'}
-          </button>
           <button onClick={resetForm} className="btn-teal text-sm">Done</button>
         </div>
         <p className="text-xs text-gray-300 mt-6">Auto-reset in {autoResetTimer}s</p>
