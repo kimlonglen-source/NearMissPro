@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# build output
+/client/dist/
+/server/dist/
+
+# env files
+.env
+.env*.local
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+
+# PWA generated
+/client/dev-dist/
