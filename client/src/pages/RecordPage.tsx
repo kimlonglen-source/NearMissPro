@@ -1,399 +1,445 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import {
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
-  ArrowLeft,
-  Loader2,
-} from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ArrowLeftRight, Flag, Loader2, X } from 'lucide-react';
 
-interface Option {
-  id: string;
-  label: string;
-  group_name: string | null;
-  category: string;
+interface Opt { id: string; label: string; group_name: string; category: string; }
+
+const DRUG_SUGGESTIONS = ['Metformin', 'Warfarin', 'Amoxicillin', 'Flucloxacillin'];
+const SWAP_CHIPS = ['Wrong drug', 'Wrong dose', 'Wrong formulation'];
+
+function getTimeOfDay(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Morning 8\u201312pm';
+  if (h < 14) return 'Lunch 12\u20132pm';
+  if (h < 18) return 'Afternoon 2\u20136pm';
+  return 'Evening 6pm+';
 }
 
-type DispensaryStage = 'data_entry' | 'dispensing' | 'labelling';
-
-const STAGES: { value: DispensaryStage; label: string }[] = [
-  { value: 'data_entry', label: 'Data Entry' },
-  { value: 'dispensing', label: 'Dispensing' },
-  { value: 'labelling', label: 'Labelling' },
-];
-
-const DETECTION_POINTS = [
-  { value: 'data_entry_check', label: 'During data entry' },
-  { value: 'dispensing_check', label: 'During dispensing' },
-  { value: 'labelling_check', label: 'During labelling' },
-  { value: 'final_check', label: 'At final check' },
-  { value: 'patient_counselling', label: 'At patient counselling' },
-  { value: 'after_collection', label: 'After collection' },
-];
-
-const TIMES = [
-  { value: 'morning', label: 'Morning (open\u201312pm)' },
-  { value: 'midday', label: 'Midday (12\u20132pm)' },
-  { value: 'afternoon', label: 'Afternoon (2\u20135pm)' },
-  { value: 'evening', label: 'Evening (5pm\u2013close)' },
-];
-
-const SWAP_TRIGGERS = {
-  wrong_drug: { color: 'coral', prescribed: 'prescribedDrug', dispensed: 'dispensedDrug' },
-  wrong_dose: { color: 'amber', prescribed: 'prescribedStrength', dispensed: 'dispensedStrength' },
-  wrong_formulation: { color: 'purple', prescribed: 'prescribedFormulation', dispensed: 'dispensedFormulation' },
-} as const;
-
-function labelToErrorType(label: string): string {
-  const lower = label.toLowerCase();
-  if (lower.includes('wrong drug') || lower.includes('wrong drug picked')) return 'wrong_drug';
-  if (lower.includes('wrong strength') || lower.includes('wrong dose')) return 'wrong_dose';
-  if (lower.includes('wrong formulation')) return 'wrong_formulation';
-  if (lower.includes('wrong patient')) return 'wrong_patient';
-  if (lower.includes('wrong quantity')) return 'wrong_quantity';
-  if (lower.includes('wrong label') || lower.includes('label')) return 'wrong_label';
-  if (lower.includes('wrong direction') || lower.includes('directions')) return 'wrong_directions';
-  if (lower.includes('omission') || lower.includes('missed')) return 'omission';
-  return 'other';
+function chipColor(label: string, selected: boolean): string {
+  if (!selected) return 'chip-off';
+  if (label === 'Wrong drug') return 'chip-coral';
+  if (label === 'Wrong dose') return 'chip-amber';
+  if (label === 'Wrong formulation') return 'chip-purple';
+  return 'chip-green';
 }
 
 export function RecordPage() {
-  const [step, setStep] = useState(1);
-  const [options, setOptions] = useState<Record<string, Record<string, Option[]>>>({});
+  const nav = useNavigate();
+  const [options, setOptions] = useState<Record<string, Record<string, Opt[]>>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  const [dispensaryStage, setDispensaryStage] = useState<DispensaryStage | ''>('');
+  // Section 1
   const [selectedErrors, setSelectedErrors] = useState<string[]>([]);
-  const [swapData, setSwapData] = useState<Record<string, string>>({});
-  const [detectionPoint, setDetectionPoint] = useState('');
-  const [timeOfDay, setTimeOfDay] = useState('');
+  const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
+  const [showOther, setShowOther] = useState<Record<string, boolean>>({});
+  // Swap data
+  const [drugName, setDrugName] = useState('');
+  const [dispensedDrug, setDispensedDrug] = useState('');
+  const [prescribedStrength, setPrescribedStrength] = useState('');
+  const [dispensedStrength, setDispensedStrength] = useState('');
+  const [correctFormulation, setCorrectFormulation] = useState('');
+  const [dispensedFormulation, setDispensedFormulation] = useState('');
+
+  // Section 2
+  const [whereCaught, setWhereCaught] = useState('');
+  const [otherCaught, setOtherCaught] = useState('');
+  const [showOtherCaught, setShowOtherCaught] = useState(false);
+  const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
+
+  // Section 3
   const [selectedFactors, setSelectedFactors] = useState<string[]>([]);
+  const [factorOtherTexts, setFactorOtherTexts] = useState<Record<string, string>>({});
+  const [showFactorOther, setShowFactorOther] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');
 
+  // Confirmation state
+  const [submitted, setSubmitted] = useState(false);
+  const [incidentId, setIncidentId] = useState('');
+  const [submittedAt, setSubmittedAt] = useState('');
+  const [autoResetTimer, setAutoResetTimer] = useState(30);
+  const [editTimer, setEditTimer] = useState(900); // 15 min in seconds
+  const [flagSent, setFlagSent] = useState(false);
+
   useEffect(() => {
-    api.getOptions()
-      .then((data) => setOptions(data as Record<string, Record<string, Option[]>>))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    api.getOptions().then(d => setOptions(d)).catch(console.error).finally(() => setLoading(false));
   }, []);
 
-  const activeErrorTypes = selectedErrors.map((id) => {
-    const allOpts = Object.values(options.error_type || {}).flat();
-    const opt = allOpts.find((o) => o.id === id);
-    return opt ? labelToErrorType(opt.label) : '';
-  });
+  // Auto-reset countdown
+  useEffect(() => {
+    if (!submitted) return;
+    const interval = setInterval(() => {
+      setAutoResetTimer(prev => {
+        if (prev <= 1) { resetForm(); return 30; }
+        return prev - 1;
+      });
+      setEditTimer(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [submitted]);
 
-  const activeSwaps = Object.keys(SWAP_TRIGGERS).filter((t) => activeErrorTypes.includes(t));
+  const hasSwap = (label: string) => selectedErrors.includes(label);
+  const hasAnySwap = SWAP_CHIPS.some(c => hasSwap(c));
 
-  const section1Valid = dispensaryStage !== '' && selectedErrors.length > 0;
-  const section2Valid = detectionPoint !== '' && timeOfDay !== '';
-  const section3Valid = selectedFactors.length > 0;
-  const canSubmit = section1Valid && section2Valid && section3Valid;
+  // Validation
+  const hasErrorType = selectedErrors.length > 0;
+  const hasDrugDetails = (() => {
+    if (hasSwap('Wrong drug') && (!drugName.trim() || !dispensedDrug.trim())) return false;
+    if (hasSwap('Wrong dose') && (!prescribedStrength.trim() || !dispensedStrength.trim())) return false;
+    if (hasSwap('Wrong formulation') && (!correctFormulation.trim() || !dispensedFormulation.trim())) return false;
+    if (!hasAnySwap && hasErrorType) return true; // green box drug name optional when no swap
+    if (hasAnySwap) return true;
+    return true;
+  })();
+  const hasWhereCaught = !!whereCaught || (showOtherCaught && !!otherCaught.trim());
+  const hasFactor = selectedFactors.length > 0;
+  const canSubmit = hasErrorType && hasDrugDetails && hasWhereCaught && hasFactor;
 
-  const toggleChip = (id: string, list: string[], setList: (v: string[]) => void) => {
-    setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+  const stillNeeded: string[] = [];
+  if (!hasErrorType) stillNeeded.push('error type');
+  if (!hasDrugDetails) stillNeeded.push('drug details');
+  if (!hasWhereCaught) stillNeeded.push('where caught');
+  if (!hasFactor) stillNeeded.push('a factor');
+
+  const toggleError = (label: string) => {
+    setSelectedErrors(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);
   };
 
+  const toggleFactor = (label: string) => {
+    setSelectedFactors(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);
+  };
+
+  const resetForm = useCallback(() => {
+    setSelectedErrors([]); setOtherTexts({}); setShowOther({});
+    setDrugName(''); setDispensedDrug(''); setPrescribedStrength('');
+    setDispensedStrength(''); setCorrectFormulation(''); setDispensedFormulation('');
+    setWhereCaught(''); setOtherCaught(''); setShowOtherCaught(false);
+    setTimeOfDay(getTimeOfDay()); setSelectedFactors([]);
+    setFactorOtherTexts({}); setShowFactorOther({}); setNotes('');
+    setSubmitted(false); setIncidentId(''); setAutoResetTimer(30); setEditTimer(900);
+    setFlagSent(false); setError('');
+  }, []);
+
   const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    setError('');
-
+    if (!canSubmit || submitting) return;
+    setSubmitting(true); setError('');
     try {
-      const errorTypeValues = [...new Set(activeErrorTypes.filter(Boolean))];
+      // Collect other entries
+      const otherEntries: { category: string; text: string }[] = [];
+      for (const [group, text] of Object.entries(otherTexts)) {
+        if (text.trim()) otherEntries.push({ category: `error_type:${group}`, text: text.trim() });
+      }
+      if (showOtherCaught && otherCaught.trim()) otherEntries.push({ category: 'where_caught', text: otherCaught.trim() });
+      for (const [group, text] of Object.entries(factorOtherTexts)) {
+        if (text.trim()) otherEntries.push({ category: `factor:${group}`, text: text.trim() });
+      }
 
-      await api.createIncident({
-        dispensaryStage,
-        errorTypes: errorTypeValues.length > 0 ? errorTypeValues : ['other'],
-        detectionPoint,
+      const incident = await api.createIncident({
+        errorTypes: selectedErrors,
+        drugName: drugName || undefined,
+        dispensedDrug: hasSwap('Wrong drug') ? dispensedDrug : undefined,
+        prescribedStrength: hasSwap('Wrong dose') ? prescribedStrength : undefined,
+        dispensedStrength: hasSwap('Wrong dose') ? dispensedStrength : undefined,
+        correctFormulation: hasSwap('Wrong formulation') ? correctFormulation : undefined,
+        dispensedFormulation: hasSwap('Wrong formulation') ? dispensedFormulation : undefined,
+        whereCaught: whereCaught || (showOtherCaught ? otherCaught : undefined),
         timeOfDay,
-        contributingFactors: selectedFactors,
+        factors: selectedFactors,
+        otherEntries,
         notes: notes || undefined,
-        prescribedDrug: swapData.prescribedDrug || undefined,
-        dispensedDrug: swapData.dispensedDrug || undefined,
-        prescribedStrength: swapData.prescribedStrength || undefined,
-        dispensedStrength: swapData.dispensedStrength || undefined,
-        prescribedFormulation: swapData.prescribedFormulation || undefined,
-        dispensedFormulation: swapData.dispensedFormulation || undefined,
       });
 
+      setIncidentId(incident.id as string);
+      setSubmittedAt(new Date().toLocaleString('en-NZ', { hour: '2-digit', minute: '2-digit', weekday: 'long', day: 'numeric', month: 'short' }));
       setSubmitted(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Submission failed');
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="animate-spin text-brand-teal" size={32} />
-      </div>
-    );
-  }
+  const handleFlag = async () => {
+    if (!incidentId || flagSent) return;
+    try {
+      await api.flagIncident(incidentId);
+      setFlagSent(true);
+    } catch { /* ignore */ }
+  };
 
+  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin text-[#0F6E56]" size={32} /></div>;
+
+  // ── Confirmation screen ──
   if (submitted) {
+    const editPercent = (editTimer / 900) * 100;
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-4">
-          <CheckCircle2 size={40} className="text-green-600" />
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+        <div className="w-20 h-20 rounded-full bg-[#E1F5EE] flex items-center justify-center mb-4">
+          <CheckCircle2 size={40} className="text-[#0F6E56]" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Near miss recorded</h2>
-        <p className="text-gray-500 mb-6">Thank you \u2014 this helps keep patients safe.</p>
-        <button onClick={() => {
-          setSubmitted(false);
-          setStep(1);
-          setDispensaryStage('');
-          setSelectedErrors([]);
-          setSwapData({});
-          setDetectionPoint('');
-          setTimeOfDay('');
-          setSelectedFactors([]);
-          setNotes('');
-        }} className="btn-primary">
-          Record another
-        </button>
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Report submitted</h2>
+        <p className="text-sm text-gray-500 mb-1">Logged at {submittedAt}</p>
+        <p className="text-sm text-gray-500 mb-6">Thank you — your report helps keep patients safe.</p>
+
+        {/* Edit window bar */}
+        <div className="w-full max-w-xs mb-4">
+          <div className="text-xs text-gray-400 mb-1">Edit window: {Math.floor(editTimer / 60)}:{String(editTimer % 60).padStart(2, '0')}</div>
+          <div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-[#0F6E56] h-2 rounded-full transition-all" style={{ width: `${editPercent}%` }} /></div>
+        </div>
+
+        <div className="flex gap-3 flex-wrap justify-center">
+          {editTimer > 0 && (
+            <button onClick={() => { setSubmitted(false); setAutoResetTimer(999); }} className="btn-outline text-sm">Edit this report</button>
+          )}
+          <button onClick={handleFlag} disabled={flagSent} className={`btn text-sm ${flagSent ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100'}`}>
+            <Flag size={14} /> {flagSent ? 'Flagged for manager' : 'Flag for manager'}
+          </button>
+          <button onClick={resetForm} className="btn-teal text-sm">Done</button>
+        </div>
+
+        <p className="text-xs text-gray-300 mt-6">Auto-reset in {autoResetTimer}s</p>
       </div>
     );
   }
 
-  const errorOptions = options.error_type || {};
-  const factorOptions = options.contributing_factor || {};
+  // ── Form ──
+  const errorOpts = options.error_type || {};
+  const caughtOpts = (options.where_caught || {}).default || [];
+  const factorOpts = options.factor || {};
+
+  const SectionLabel = ({ text }: { text: string }) => (
+    <div className="flex items-center gap-3 mb-3 mt-6 first:mt-0">
+      <span className="text-[13px] font-semibold text-[#1A1A1A] uppercase tracking-wide whitespace-nowrap">{text}</span>
+      <div className="flex-1 border-t border-gray-200" style={{ borderWidth: '0.5px' }} />
+    </div>
+  );
+
+  // ── Build live summary tags ──
+  const summaryTags: { label: string; color: string }[] = [];
+  selectedErrors.forEach(e => {
+    const c = e === 'Wrong drug' ? 'chip-coral' : e === 'Wrong dose' ? 'chip-amber' : e === 'Wrong formulation' ? 'chip-purple' : 'chip-green';
+    summaryTags.push({ label: e, color: c });
+  });
+  if (hasSwap('Wrong drug') && drugName && dispensedDrug) summaryTags.push({ label: `${drugName} → ${dispensedDrug}`, color: 'chip-coral' });
+  if (hasSwap('Wrong dose') && prescribedStrength && dispensedStrength) summaryTags.push({ label: `${prescribedStrength} → ${dispensedStrength}`, color: 'chip-amber' });
+  if (hasSwap('Wrong formulation') && correctFormulation && dispensedFormulation) summaryTags.push({ label: `${correctFormulation} → ${dispensedFormulation}`, color: 'chip-purple' });
+  if (whereCaught) summaryTags.push({ label: whereCaught, color: 'chip-blue' });
+  if (timeOfDay) summaryTags.push({ label: timeOfDay, color: 'chip-blue' });
+  selectedFactors.forEach(f => summaryTags.push({ label: f, color: 'chip-amber' }));
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 pb-24">
-      <div className="flex items-center gap-2 mb-6">
-        {[1, 2, 3].map((s) => (
-          <div key={s} className="flex items-center gap-2 flex-1">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors
-                ${step === s ? 'bg-brand-teal text-white' : step > s ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}
-            >
-              {step > s ? '\u2713' : s}
-            </div>
-            {s < 3 && <div className={`flex-1 h-0.5 ${step > s ? 'bg-green-300' : 'bg-gray-200'}`} />}
-          </div>
-        ))}
-      </div>
+    <div className="max-w-6xl mx-auto px-4 py-6 pb-32 lg:pb-6">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* ── Left: Form ── */}
+        <div className="flex-1 min-w-0">
+          {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-sm flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-sm flex items-center gap-2">
-          <AlertTriangle size={16} /> {error}
-        </div>
-      )}
+          {/* Section 1: What went wrong */}
+          <h2 className="text-xl font-bold text-gray-900 mb-1">What went wrong?</h2>
+          <p className="text-sm text-gray-500 mb-4">Select all that apply</p>
 
-      {step === 1 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">What went wrong?</h2>
-            <p className="text-sm text-gray-500">Select the stage and error type(s)</p>
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-gray-700 mb-2 block">Dispensary stage</label>
-            <div className="flex gap-2">
-              {STAGES.map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => { setDispensaryStage(value); setSelectedErrors([]); }}
-                  className={`chip flex-1 text-center ${dispensaryStage === value ? 'chip-selected' : 'chip-unselected'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {dispensaryStage && (
-            <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">What happened?</label>
-              {Object.entries(errorOptions)
-                .filter(([group]) => {
-                  const stageMap: Record<string, string> = {
-                    data_entry: 'Data entry',
-                    dispensing: 'Dispensing',
-                    labelling: 'Labelling',
-                  };
-                  return group === stageMap[dispensaryStage];
-                })
-                .map(([group, opts]) => (
-                  <div key={group} className="space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      {opts.map((opt) => (
-                        <button
-                          key={opt.id}
-                          onClick={() => toggleChip(opt.id, selectedErrors, setSelectedErrors)}
-                          className={`chip ${selectedErrors.includes(opt.id) ? 'chip-selected' : 'chip-unselected'}`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {activeSwaps.map((swapType) => {
-            const config = SWAP_TRIGGERS[swapType as keyof typeof SWAP_TRIGGERS];
-            const colorMap = {
-              coral: { bg: 'bg-swap-coral-bg', border: 'border-swap-coral', text: 'text-swap-coral' },
-              amber: { bg: 'bg-swap-amber-bg', border: 'border-swap-amber', text: 'text-swap-amber' },
-              purple: { bg: 'bg-swap-purple-bg', border: 'border-swap-purple', text: 'text-swap-purple' },
-            };
-            const colors = colorMap[config.color];
-            const labels = {
-              wrong_drug: { prescribed: 'Prescribed drug', dispensed: 'Dispensed in error' },
-              wrong_dose: { prescribed: 'Prescribed strength', dispensed: 'Strength picked' },
-              wrong_formulation: { prescribed: 'Prescribed formulation', dispensed: 'Formulation picked' },
-            };
-            const lab = labels[swapType as keyof typeof labels];
-
-            return (
-              <div key={swapType} className={`${colors.bg} border-2 ${colors.border} rounded-2xl p-4 space-y-3`}>
-                <h3 className={`font-semibold ${colors.text} text-sm`}>
-                  {swapType === 'wrong_drug' ? 'Drug swap' : swapType === 'wrong_dose' ? 'Strength swap' : 'Formulation swap'}
-                </h3>
-                <input
-                  type="text"
-                  placeholder={lab.prescribed}
-                  value={swapData[config.prescribed] || ''}
-                  onChange={(e) => setSwapData({ ...swapData, [config.prescribed]: e.target.value })}
-                  className="input-field"
-                />
-                <div className="text-center text-gray-400 text-xs">\u2195</div>
-                <input
-                  type="text"
-                  placeholder={lab.dispensed}
-                  value={swapData[config.dispensed] || ''}
-                  onChange={(e) => setSwapData({ ...swapData, [config.dispensed]: e.target.value })}
-                  className="input-field"
-                />
-              </div>
-            );
-          })}
-
-          <button
-            onClick={() => setStep(2)}
-            disabled={!section1Valid}
-            className="btn-primary w-full flex items-center justify-center gap-2"
-          >
-            Next <ArrowRight size={18} />
-          </button>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Where was it caught?</h2>
-            <p className="text-sm text-gray-500">Select when the near miss was detected</p>
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-gray-700 mb-2 block">Detection point</label>
-            <div className="space-y-2">
-              {DETECTION_POINTS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setDetectionPoint(value)}
-                  className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all
-                    ${detectionPoint === value
-                      ? 'border-brand-teal bg-brand-teal/5 text-brand-teal font-medium'
-                      : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-gray-700 mb-2 block">Time of day</label>
-            <div className="grid grid-cols-2 gap-2">
-              {TIMES.map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setTimeOfDay(value)}
-                  className={`chip text-center ${timeOfDay === value ? 'chip-selected' : 'chip-unselected'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => setStep(1)} className="btn-secondary flex-1 flex items-center justify-center gap-2">
-              <ArrowLeft size={18} /> Back
-            </button>
-            <button
-              onClick={() => setStep(3)}
-              disabled={!section2Valid}
-              className="btn-primary flex-1 flex items-center justify-center gap-2"
-            >
-              Next <ArrowRight size={18} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 3 && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">What contributed?</h2>
-            <p className="text-sm text-gray-500">Select all contributing factors</p>
-          </div>
-
-          {Object.entries(factorOptions).map(([group, opts]) => (
+          {Object.entries(errorOpts).map(([group, opts]) => (
             <div key={group}>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">{group}</label>
-              <div className="flex flex-wrap gap-2">
-                {opts.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => toggleChip(opt.id, selectedFactors, setSelectedFactors)}
-                    className={`chip ${selectedFactors.includes(opt.id) ? 'chip-selected' : 'chip-unselected'}`}
-                  >
+              <SectionLabel text={group} />
+              <div className="flex flex-wrap gap-2 mb-2">
+                {opts.map(opt => (
+                  <button key={opt.id} onClick={() => toggleError(opt.label)}
+                    className={`chip ${chipColor(opt.label, selectedErrors.includes(opt.label))}`}
+                    aria-pressed={selectedErrors.includes(opt.label)}>
                     {opt.label}
                   </button>
                 ))}
+                <button onClick={() => setShowOther(p => ({ ...p, [group]: !p[group] }))}
+                  className={`chip ${showOther[group] ? 'chip-green' : 'chip-other'}`}>+ Other</button>
               </div>
+              {showOther[group] && (
+                <input type="text" maxLength={120} value={otherTexts[group] || ''}
+                  onChange={e => setOtherTexts(p => ({ ...p, [group]: e.target.value }))}
+                  className="input-field mb-2" placeholder="Describe — do not enter patient names or identifiers" />
+              )}
             </div>
           ))}
 
-          <div>
-            <label className="text-sm font-semibold text-gray-700 mb-2 block">Additional notes (optional)</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any extra details..."
-              rows={3}
-              className="input-field resize-none"
-            />
+          {/* Swap boxes */}
+          <div className="space-y-2 mt-4">
+            {hasSwap('Wrong drug') && (
+              <div className="rounded-2xl p-4 border-[1.5px] border-[#D85A30]" style={{ background: '#FFF5F0' }}>
+                <p className="text-sm font-semibold text-[#712B13] mb-3">Which drug was dispensed instead?</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">Prescribed</label>
+                    <input type="text" value={drugName} onChange={e => setDrugName(e.target.value)} className="input-field"
+                      placeholder="Drug name" list="drug-suggestions" />
+                  </div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#D85A30] flex items-center justify-center flex-shrink-0 mt-5">
+                    <ArrowLeftRight size={16} className="text-[#D85A30]" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">Dispensed in error</label>
+                    <input type="text" value={dispensedDrug} onChange={e => setDispensedDrug(e.target.value)} className="input-field"
+                      placeholder="Drug name" list="drug-suggestions" />
+                  </div>
+                </div>
+              </div>
+            )}
+            {hasSwap('Wrong dose') && (
+              <div className="rounded-2xl p-4 border-[1.5px] border-[#BA7517]" style={{ background: '#FFFBF0' }}>
+                <p className="text-sm font-semibold text-[#633806] mb-3">Which strength was dispensed instead?</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">Prescribed strength</label>
+                    <input type="text" value={prescribedStrength} onChange={e => setPrescribedStrength(e.target.value)} className="input-field" placeholder="e.g. 500mg" />
+                  </div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#BA7517] flex items-center justify-center flex-shrink-0 mt-5">
+                    <ArrowLeftRight size={16} className="text-[#BA7517]" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">Dispensed in error</label>
+                    <input type="text" value={dispensedStrength} onChange={e => setDispensedStrength(e.target.value)} className="input-field" placeholder="e.g. 1000mg" />
+                  </div>
+                </div>
+              </div>
+            )}
+            {hasSwap('Wrong formulation') && (
+              <div className="rounded-2xl p-4 border-[1.5px] border-[#7F77DD]" style={{ background: '#F5F3FF' }}>
+                <p className="text-sm font-semibold text-[#3C3489] mb-3">Which formulation was dispensed instead?</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">Correct formulation</label>
+                    <input type="text" value={correctFormulation} onChange={e => setCorrectFormulation(e.target.value)} className="input-field" placeholder="e.g. Liquid" />
+                  </div>
+                  <div className="w-10 h-10 rounded-full border-2 border-[#7F77DD] flex items-center justify-center flex-shrink-0 mt-5">
+                    <ArrowLeftRight size={16} className="text-[#7F77DD]" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-500 mb-1 block">Dispensed in error</label>
+                    <input type="text" value={dispensedFormulation} onChange={e => setDispensedFormulation(e.target.value)} className="input-field" placeholder="e.g. Tablet" />
+                  </div>
+                </div>
+              </div>
+            )}
+            {!hasAnySwap && hasErrorType && (
+              <div className="rounded-2xl p-4 border-[1.5px] border-[#1D9E75]" style={{ background: '#F0FAF5' }}>
+                <label className="text-sm font-semibold text-[#085041] mb-2 block">Drug involved</label>
+                <input type="text" value={drugName} onChange={e => setDrugName(e.target.value)} className="input-field"
+                  placeholder="Drug name (optional)" list="drug-suggestions" />
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-3">
-            <button onClick={() => setStep(2)} className="btn-secondary flex-1 flex items-center justify-center gap-2">
-              <ArrowLeft size={18} /> Back
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!canSubmit || submitting}
-              className="btn-primary flex-1 flex items-center justify-center gap-2"
-            >
-              {submitting ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-              {submitting ? 'Submitting...' : 'Submit'}
+          <datalist id="drug-suggestions">
+            {DRUG_SUGGESTIONS.map(d => <option key={d} value={d} />)}
+          </datalist>
+
+          {/* Section 2: Where was it caught */}
+          <h2 className="text-xl font-bold text-gray-900 mt-8 mb-1">Where was it caught?</h2>
+          <p className="text-sm text-gray-500 mb-4">Select one</p>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {caughtOpts.map(opt => (
+              <button key={opt.id} onClick={() => { setWhereCaught(opt.label); setShowOtherCaught(false); setOtherCaught(''); }}
+                className={`chip ${whereCaught === opt.label ? 'chip-blue' : 'chip-off'}`}
+                aria-pressed={whereCaught === opt.label}>{opt.label}</button>
+            ))}
+            <button onClick={() => { setShowOtherCaught(!showOtherCaught); setWhereCaught(''); }}
+              className={`chip ${showOtherCaught ? 'chip-blue' : 'chip-other'}`}>+ Other</button>
+          </div>
+          {showOtherCaught && (
+            <input type="text" maxLength={120} value={otherCaught} onChange={e => setOtherCaught(e.target.value)}
+              className="input-field mb-4" placeholder="Describe — do not enter patient names or identifiers" />
+          )}
+
+          <SectionLabel text="Time of day" />
+          <div className="flex flex-wrap gap-2 mb-4">
+            {['Morning 8\u201312pm', 'Lunch 12\u20132pm', 'Afternoon 2\u20136pm', 'Evening 6pm+'].map(t => (
+              <button key={t} onClick={() => setTimeOfDay(t)}
+                className={`chip ${timeOfDay === t ? 'chip-blue' : 'chip-off'}`}
+                aria-pressed={timeOfDay === t}>{t}</button>
+            ))}
+          </div>
+
+          {/* Section 3: Contributing factors */}
+          <h2 className="text-xl font-bold text-gray-900 mt-8 mb-1">What contributed to it?</h2>
+          <p className="text-sm text-gray-500 mb-4">Select all that apply</p>
+
+          {Object.entries(factorOpts).map(([group, opts]) => (
+            <div key={group}>
+              <SectionLabel text={group} />
+              <div className="flex flex-wrap gap-2 mb-2">
+                {opts.map(opt => (
+                  <button key={opt.id} onClick={() => toggleFactor(opt.label)}
+                    className={`chip ${selectedFactors.includes(opt.label) ? 'chip-amber' : 'chip-off'}`}
+                    aria-pressed={selectedFactors.includes(opt.label)}>{opt.label}</button>
+                ))}
+                <button onClick={() => setShowFactorOther(p => ({ ...p, [group]: !p[group] }))}
+                  className={`chip ${showFactorOther[group] ? 'chip-amber' : 'chip-other'}`}>+ Other</button>
+              </div>
+              {showFactorOther[group] && (
+                <input type="text" maxLength={120} value={factorOtherTexts[group] || ''}
+                  onChange={e => setFactorOtherTexts(p => ({ ...p, [group]: e.target.value }))}
+                  className="input-field mb-2" placeholder="Describe — do not enter patient names or identifiers" />
+              )}
+            </div>
+          ))}
+
+          <div className="mt-4">
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Notes (optional)</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="input-field resize-none"
+              placeholder="Any extra context for the manager — do not enter patient names or identifiers" />
+          </div>
+
+          {/* Mobile submit (hidden on desktop) */}
+          <div className="lg:hidden mt-6">
+            <p className="text-xs text-gray-400 text-center mb-2">Your report is anonymous — your manager sees what happened, not who submitted it.</p>
+            <button onClick={handleSubmit} disabled={!canSubmit || submitting}
+              className={`w-full text-base py-4 rounded-xl font-semibold transition-colors ${canSubmit ? 'bg-[#0F6E56] text-white hover:bg-[#0B5A46]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+              {submitting ? 'Submitting...' : canSubmit ? 'Submit report' : `Still needed: ${stillNeeded.join(', ')}`}
             </button>
           </div>
         </div>
-      )}
+
+        {/* ── Right sidebar: Live summary ── */}
+        <div className="hidden lg:block w-80 flex-shrink-0">
+          <div className="sticky top-20 space-y-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <h3 className="text-sm font-bold text-gray-900 mb-3">Live summary</h3>
+              {summaryTags.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">Select an error type to begin.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {summaryTags.map((t, i) => (
+                    <span key={i} className={`chip text-xs py-1 px-2.5 ${t.color}`}>{t.label}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+              <h3 className="text-sm font-bold text-gray-900">Requirements</h3>
+              {[
+                { met: hasErrorType, label: 'Error type selected' },
+                { met: hasDrugDetails, label: hasSwap('Wrong drug') ? 'Both drug names entered' : hasSwap('Wrong formulation') ? 'Formulation details entered' : 'Drug / swap details entered' },
+                { met: hasWhereCaught, label: 'Where caught selected' },
+                { met: hasFactor, label: 'Contributing factor selected' },
+              ].map(({ met, label }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${met ? 'bg-[#1D9E75]' : 'bg-gray-200'}`}>
+                    {met && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                  <span className={`text-sm ${met ? 'text-gray-700' : 'text-gray-400'}`}>{label}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-gray-400 text-center">Your report is anonymous — your manager sees what happened, not who submitted it.</p>
+
+            <button onClick={handleSubmit} disabled={!canSubmit || submitting}
+              className={`w-full text-base py-4 rounded-xl font-semibold transition-colors ${canSubmit ? 'bg-[#0F6E56] text-white hover:bg-[#0B5A46]' : 'bg-[#CCCCCC] text-gray-500 cursor-not-allowed'}`}>
+              {submitting ? 'Submitting...' : canSubmit ? 'Submit report' : `Still needed: ${stillNeeded.join(', ')}`}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

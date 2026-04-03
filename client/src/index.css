@@ -3,35 +3,44 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-gray-50 font-sans;
-  }
+  body { @apply bg-gray-50 font-sans text-gray-900; }
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-brand-teal text-white font-semibold px-6 py-3 rounded-xl
-           hover:bg-brand-teal-light active:bg-brand-teal-dark
-           transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-  .btn-secondary {
-    @apply bg-white text-brand-teal font-semibold px-6 py-3 rounded-xl
-           border-2 border-brand-teal hover:bg-gray-50
-           transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-  .input-field {
-    @apply w-full px-4 py-3 rounded-xl border border-gray-300
-           focus:ring-2 focus:ring-brand-teal focus:border-brand-teal
-           outline-none transition-all placeholder:text-gray-400;
-  }
-  .chip {
-    @apply px-4 py-2 rounded-full text-sm font-medium border-2
-           cursor-pointer transition-all select-none;
-  }
-  .chip-selected {
-    @apply bg-brand-teal text-white border-brand-teal;
-  }
-  .chip-unselected {
-    @apply bg-white text-gray-700 border-gray-300 hover:border-brand-teal;
-  }
+  .btn { @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl px-5 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm; }
+  .btn-teal { @apply btn bg-[#0F6E56] text-white hover:bg-[#0B5A46] active:bg-[#094A3A]; }
+  .btn-outline { @apply btn bg-white text-[#0F6E56] border-2 border-[#0F6E56] hover:bg-gray-50; }
+  .btn-red { @apply btn bg-red-600 text-white hover:bg-red-700; }
+  .btn-grey { @apply btn bg-gray-200 text-gray-600 hover:bg-gray-300; }
+  .btn-amber { @apply btn bg-[#BA7517] text-white hover:bg-[#9A6113]; }
+  .btn-purple { @apply btn bg-[#7F77DD] text-white hover:bg-[#6B63C7]; }
+  .input-field { @apply w-full px-4 py-3 rounded-xl border border-gray-300 outline-none transition-all focus:ring-2 focus:ring-[#0F6E56] focus:border-[#0F6E56] placeholder:text-gray-400 text-sm; }
+
+  /* Chips */
+  .chip { @apply inline-flex items-center px-4 py-2.5 rounded-full text-sm font-medium border-2 cursor-pointer transition-all select-none min-h-[44px]; }
+  .chip-off { @apply bg-white text-gray-700 border-gray-300 hover:border-gray-400; }
+  .chip-green { @apply bg-[#E1F5EE] text-[#085041] border-[#1D9E75]; }
+  .chip-coral { @apply bg-[#FAECE7] text-[#712B13] border-[#D85A30]; }
+  .chip-amber { @apply bg-[#FAEEDA] text-[#633806] border-[#BA7517]; }
+  .chip-purple { @apply bg-[#EEEDFE] text-[#3C3489] border-[#7F77DD]; }
+  .chip-blue { @apply bg-[#E6F1FB] text-[#0C447C] border-[#378ADD]; }
+  .chip-other { @apply bg-white text-gray-500 border-dashed border-gray-400 hover:border-gray-500; }
+
+  /* Status badges */
+  .badge { @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold; }
+  .badge-pending { @apply bg-[#FAEEDA] text-[#633806]; }
+  .badge-accepted { @apply bg-[#E1F5EE] text-[#085041]; }
+  .badge-modified { @apply bg-[#EEEDFE] text-[#3C3489]; }
+  .badge-noaction { @apply bg-gray-100 text-gray-600; }
+  .badge-voided { @apply bg-[#FCEBEB] text-[#791F1F]; }
+  .badge-active { @apply bg-green-100 text-green-700; }
+  .badge-trial { @apply bg-blue-100 text-blue-700; }
+  .badge-inactive { @apply bg-red-100 text-red-700; }
+}
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  @page { margin: 20mm 15mm; }
 }

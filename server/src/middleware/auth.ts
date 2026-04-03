@@ -20,28 +20,22 @@ declare global {
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing authorization token' });
+    res.status(401).json({ error: 'Authentication required' });
     return;
   }
-
   try {
     const token = header.slice(7);
-    const payload = jwt.verify(token, env.jwtSecret) as AuthPayload;
-    req.auth = payload;
+    req.auth = jwt.verify(token, env.jwtSecret) as AuthPayload;
     next();
   } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: 'Invalid or expired session' });
   }
 }
 
 export function requireRole(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.auth) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
-    if (!roles.includes(req.auth.role)) {
-      res.status(403).json({ error: 'Insufficient permissions' });
+    if (!req.auth || !roles.includes(req.auth.role)) {
+      res.status(403).json({ error: 'Access denied' });
       return;
     }
     next();

@@ -7,30 +7,34 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'logo-192.png', 'logo-512.png'],
+      includeAssets: ['favicon.svg'],
       manifest: {
         name: 'NearMiss Pro',
-        short_name: 'NearMiss Pro',
+        short_name: 'NearMiss',
         description: 'Near miss recording and reporting for NZ pharmacies',
         theme_color: '#0F6E56',
-        background_color: '#ffffff',
+        background_color: '#0F6E56',
         display: 'standalone',
         scope: '/',
         start_url: '/',
         icons: [
-          { src: '/logo-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/logo-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/favicon.svg', sizes: '192x192', type: 'image/svg+xml' },
+          { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' },
+        ],
+      },
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^https?:\/\/.*\/api\/.*/,
+            handler: 'NetworkFirst',
+            options: { cacheName: 'api-cache', expiration: { maxAgeSeconds: 86400 } },
+          },
         ],
       },
     }),
   ],
   server: {
     port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-    },
+    proxy: { '/api': { target: 'http://localhost:4000', changeOrigin: true } },
   },
 });
