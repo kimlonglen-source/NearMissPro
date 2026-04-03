@@ -162,8 +162,7 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('error_type', 'Dispensing', 'Wrong quantity', 12),
   ('error_type', 'Dispensing', 'Wrong formulation', 13),
   ('error_type', 'Dispensing', 'Expired medication', 14),
-  ('error_type', 'Labelling', 'Right med, wrong patient on label', 20),
-  ('error_type', 'Labelling', 'Wrong directions on label', 21),
+  ('error_type', 'Labelling', 'Wrong directions on label', 20),
   ('error_type', 'Labelling', 'CAL missing or incorrect', 22),
   ('error_type', 'Labelling', 'Label on wrong item', 23);
 
