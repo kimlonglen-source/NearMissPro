@@ -90,7 +90,16 @@ export function RecordPage() {
   if (!hasWhereCaught) stillNeeded.push('where caught');
   if (!hasFactor) stillNeeded.push('a factor');
 
-  const toggleError = (label: string) => setSelectedErrors(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);
+  const toggleError = (label: string) => {
+    setSelectedErrors(prev => {
+      const next = prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label];
+      // If selecting a patient-level error, clear dispensing errors
+      if ((label === 'Wrong patient' || label === 'Repeat dispensed early') && next.includes(label)) {
+        return next.filter(l => !SWAP_CHIPS.includes(l) && !['Wrong quantity', 'Expired medication'].includes(l));
+      }
+      return next;
+    });
+  };
   const toggleFactor = (label: string) => setSelectedFactors(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);
 
   const resetForm = useCallback(() => {
@@ -179,6 +188,10 @@ export function RecordPage() {
   const caughtOpts = (options.where_caught || {}).default || [];
   const factorOpts = options.factor || {};
 
+  // If "Wrong patient" or "Repeat dispensed early" selected, Dispensing errors don't apply
+  const patientLevelError = selectedErrors.includes('Wrong patient') || selectedErrors.includes('Repeat dispensed early');
+  const shouldHideGroup = (group: string) => patientLevelError && group === 'Dispensing';
+
   // Summary tags for sidebar
   const tags: { label: string; color: string }[] = [];
   selectedErrors.forEach(e => {
@@ -219,7 +232,9 @@ export function RecordPage() {
 
           {openSection === 1 && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1">
-              {Object.entries(errorOpts).map(([group, opts]) => (
+              {Object.entries(errorOpts).map(([group, opts]) => {
+                if (shouldHideGroup(group)) return null;
+                return (
                 <div key={group}>
                   <GroupLabel text={group} />
                   <div className="flex flex-wrap gap-1.5">
@@ -238,7 +253,12 @@ export function RecordPage() {
                       className="input-field text-sm mt-1.5" placeholder="Describe \u2014 do not enter patient names or identifiers" />
                   )}
                 </div>
-              ))}
+                );
+              })}
+
+              {patientLevelError && (
+                <p className="text-xs text-gray-400 italic mt-2">Dispensing errors not applicable for patient-level incidents.</p>
+              )}
 
               {/* Swap boxes */}
               {hasSwap('Wrong drug') && (
