@@ -10,6 +10,9 @@
     "build": "npm -w client run build && npm -w server run build"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^8.2.0"
+  },
+  "overrides": {
+    "esbuild": "0.17.19"
   }
 }
