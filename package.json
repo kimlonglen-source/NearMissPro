@@ -13,6 +13,6 @@
     "concurrently": "^8.2.0"
   },
   "overrides": {
-    "esbuild": "0.17.19"
+    "esbuild": "0.15.18"
   }
 }
