@@ -188,3 +188,15 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('factor', 'People', 'Unfamiliar drug', 22),
   ('factor', 'People', 'Process not followed', 23),
   ('factor', 'People', 'Communication gap', 24);
+
+-- ============================================================
+-- TEST PHARMACY (password: test1234)
+-- bcrypt hash of "test1234" with 12 rounds
+-- ============================================================
+
+INSERT INTO pharmacies (name, password_hash, manager_email)
+VALUES (
+  'Test Pharmacy',
+  '$2a$12$h62Yg3CO5T7Sd9BFzmFuwOnL1W0BDPXNgDZIsj82q.6VgfVH1oWn6',
+  'test@nearmisspro.co.nz'
+);
