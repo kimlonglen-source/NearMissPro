@@ -8,232 +8,378 @@ import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
-function signToken(payload: object): string {
-  return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn } as jwt.SignOptions);
-}
-
+// ─── Staff login (pharmacy name + password) ─────────────────
 const staffLoginSchema = z.object({
-  pharmacyCode: z.string().min(1),
+  name: z.string().min(1),
+  password: z.string().min(1),
 });
 
 router.post('/staff/login', async (req: Request, res: Response) => {
   try {
-    const { pharmacyCode } = staffLoginSchema.parse(req.body);
+    const { name, password } = staffLoginSchema.parse(req.body);
 
     const { data: pharmacy, error } = await supabase
       .from('pharmacies')
-      .select('id, name, is_active')
-      .eq('pharmacy_code', pharmacyCode.toUpperCase())
+      .select('id, name, password_hash, login_attempts, locked_until')
+      .ilike('name', name)
       .single();
 
     if (error || !pharmacy) {
-      res.status(401).json({ error: 'Invalid pharmacy code' });
+      res.status(401).json({ error: 'Invalid pharmacy name or password' });
       return;
     }
 
-    if (!pharmacy.is_active) {
-      res.status(403).json({ error: 'Pharmacy account is inactive' });
+    // Check lockout (10 attempts)
+    if (pharmacy.locked_until && new Date(pharmacy.locked_until) > new Date()) {
+      res.status(423).json({ error: 'Account locked. Contact your manager.' });
       return;
     }
 
-    const token = signToken({
-      pharmacyId: pharmacy.id,
-      role: 'staff',
-      pharmacyName: pharmacy.name,
-    });
+    const passwordValid = await bcrypt.compare(password, pharmacy.password_hash);
+    if (!passwordValid) {
+      const attempts = (pharmacy.login_attempts || 0) + 1;
+      const lockout = attempts >= 10 ? new Date(Date.now() + 30 * 60 * 1000).toISOString() : null;
+      await supabase.from('pharmacies').update({
+        login_attempts: attempts,
+        ...(lockout && { locked_until: lockout }),
+      }).eq('id', pharmacy.id);
 
-    res.json({ token, role: 'staff', pharmacyName: pharmacy.name });
+      if (attempts >= 10) {
+        console.log(`[EMAIL] To: manager | Subject: Account locked | Body: ${pharmacy.name} has been locked after 10 failed login attempts.`);
+        res.status(423).json({ error: 'Account locked after too many attempts. Check manager email.' });
+        return;
+      }
+      res.status(401).json({ error: 'Invalid pharmacy name or password' });
+      return;
+    }
+
+    // Reset login attempts on success
+    await supabase.from('pharmacies').update({ login_attempts: 0, locked_until: null }).eq('id', pharmacy.id);
+
+    // Permanent token for staff (no expiry)
+    const token = jwt.sign(
+      { pharmacyId: pharmacy.id, pharmacyName: pharmacy.name, role: 'staff' },
+      env.jwtSecret
+    );
+
+    res.json({ token, role: 'staff', pharmacyName: pharmacy.name, pharmacyId: pharmacy.id });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ error: 'Invalid input', details: err.errors });
+      res.status(400).json({ error: 'Invalid input' });
       return;
     }
     console.error('Staff login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
-const managerLoginSchema = z.object({
-  pharmacyCode: z.string().min(1),
-  pin: z.string().min(4).max(8),
+// ─── Manager PIN verification ───────────────────────────────
+const pinSchema = z.object({
+  pin: z.string().min(4).max(6),
 });
 
-router.post('/manager/login', async (req: Request, res: Response) => {
+router.post('/manager/verify-pin', authenticate, async (req: Request, res: Response) => {
   try {
-    const { pharmacyCode, pin } = managerLoginSchema.parse(req.body);
+    const { pin } = pinSchema.parse(req.body);
+    const pharmacyId = req.auth!.pharmacyId;
 
-    const { data: pharmacy, error } = await supabase
+    const { data: pharmacy } = await supabase
       .from('pharmacies')
-      .select('id, name, manager_pin, is_active')
-      .eq('pharmacy_code', pharmacyCode.toUpperCase())
+      .select('manager_pin_hash, manager_pin_enabled')
+      .eq('id', pharmacyId)
       .single();
 
-    if (error || !pharmacy) {
-      res.status(401).json({ error: 'Invalid pharmacy code' });
+    if (!pharmacy?.manager_pin_enabled || !pharmacy.manager_pin_hash) {
+      res.status(400).json({ error: 'PIN not enabled' });
       return;
     }
 
-    if (!pharmacy.is_active) {
-      res.status(403).json({ error: 'Pharmacy account is inactive' });
-      return;
-    }
-
-    if (!pharmacy.manager_pin) {
-      res.status(403).json({ error: 'Manager access not configured for this pharmacy' });
-      return;
-    }
-
-    const pinValid = await bcrypt.compare(pin, pharmacy.manager_pin);
-    if (!pinValid) {
+    const valid = await bcrypt.compare(pin, pharmacy.manager_pin_hash);
+    if (!valid) {
       res.status(401).json({ error: 'Invalid PIN' });
       return;
     }
 
-    const token = signToken({
-      pharmacyId: pharmacy.id,
-      role: 'manager',
-      pharmacyName: pharmacy.name,
-    });
+    // Upgrade token to manager role
+    const token = jwt.sign(
+      { pharmacyId: req.auth!.pharmacyId, pharmacyName: req.auth!.pharmacyName, role: 'manager' },
+      env.jwtSecret,
+      { expiresIn: '12h' } as jwt.SignOptions
+    );
 
-    res.json({ token, role: 'manager', pharmacyName: pharmacy.name });
+    res.json({ token, role: 'manager' });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ error: 'Invalid input', details: err.errors });
+      res.status(400).json({ error: 'Invalid input' });
       return;
     }
-    console.error('Manager login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('PIN verify error:', err);
+    res.status(500).json({ error: 'Verification failed' });
   }
 });
 
+// ─── Manager access (no PIN) ────────────────────────────────
+router.post('/manager/access', authenticate, async (req: Request, res: Response) => {
+  try {
+    const pharmacyId = req.auth!.pharmacyId;
+
+    const { data: pharmacy } = await supabase
+      .from('pharmacies')
+      .select('manager_pin_enabled')
+      .eq('id', pharmacyId)
+      .single();
+
+    if (pharmacy?.manager_pin_enabled) {
+      res.json({ requiresPin: true });
+      return;
+    }
+
+    const token = jwt.sign(
+      { pharmacyId: req.auth!.pharmacyId, pharmacyName: req.auth!.pharmacyName, role: 'manager' },
+      env.jwtSecret,
+      { expiresIn: '12h' } as jwt.SignOptions
+    );
+
+    res.json({ token, role: 'manager', requiresPin: false });
+  } catch (err) {
+    console.error('Manager access error:', err);
+    res.status(500).json({ error: 'Access failed' });
+  }
+});
+
+// ─── Manager PIN management ─────────────────────────────────
+router.post('/manager/pin/enable', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
+  try {
+    const { pin } = z.object({ pin: z.string().min(4).max(6) }).parse(req.body);
+    const hash = await bcrypt.hash(pin, 12);
+
+    await supabase.from('pharmacies').update({
+      manager_pin_hash: hash,
+      manager_pin_enabled: true,
+    }).eq('id', req.auth!.pharmacyId);
+
+    await supabase.from('audit_log').insert({
+      pharmacy_id: req.auth!.pharmacyId,
+      action: 'manager_pin_enabled',
+      performed_by: 'manager',
+      details: {},
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to enable PIN' });
+  }
+});
+
+router.post('/manager/pin/disable', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
+  try {
+    const { currentPin } = z.object({ currentPin: z.string() }).parse(req.body);
+
+    const { data: pharmacy } = await supabase
+      .from('pharmacies')
+      .select('manager_pin_hash')
+      .eq('id', req.auth!.pharmacyId)
+      .single();
+
+    if (!pharmacy?.manager_pin_hash || !(await bcrypt.compare(currentPin, pharmacy.manager_pin_hash))) {
+      res.status(401).json({ error: 'Invalid current PIN' });
+      return;
+    }
+
+    await supabase.from('pharmacies').update({
+      manager_pin_hash: null,
+      manager_pin_enabled: false,
+    }).eq('id', req.auth!.pharmacyId);
+
+    await supabase.from('audit_log').insert({
+      pharmacy_id: req.auth!.pharmacyId,
+      action: 'manager_pin_disabled',
+      performed_by: 'manager',
+      details: {},
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to disable PIN' });
+  }
+});
+
+// ─── Founder login (email + password + MFA) ─────────────────
 const founderLoginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  mfaCode: z.string().optional(),
+  mfaCode: z.string().length(6).optional(),
 });
 
 router.post('/founder/login', async (req: Request, res: Response) => {
   try {
     const { email, password, mfaCode } = founderLoginSchema.parse(req.body);
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, email, password_hash, full_name, role, mfa_enabled, mfa_secret, is_active')
+    const { data: founder, error } = await supabase
+      .from('founder_accounts')
+      .select('*')
       .eq('email', email.toLowerCase())
-      .eq('role', 'founder')
       .single();
 
-    if (error || !user) {
-      res.status(401).json({ error: 'Invalid email or password' });
+    if (error || !founder) {
+      res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
 
-    if (!user.is_active) {
-      res.status(403).json({ error: 'Account is inactive' });
+    // Check lockout (5 attempts)
+    if (founder.locked_until && new Date(founder.locked_until) > new Date()) {
+      res.status(423).json({ error: 'Account locked. Try again later.' });
       return;
     }
 
-    const passwordValid = await bcrypt.compare(password, user.password_hash);
+    const passwordValid = await bcrypt.compare(password, founder.password_hash);
     if (!passwordValid) {
-      res.status(401).json({ error: 'Invalid email or password' });
+      const attempts = (founder.login_attempts || 0) + 1;
+      const lockout = attempts >= 5 ? new Date(Date.now() + 60 * 60 * 1000).toISOString() : null;
+      await supabase.from('founder_accounts').update({
+        login_attempts: attempts,
+        ...(lockout && { locked_until: lockout }),
+      }).eq('id', founder.id);
+
+      res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
 
-    if (user.mfa_enabled) {
-      if (!mfaCode) {
-        res.json({ requiresMfa: true });
+    // MFA always required for founder
+    if (!mfaCode) {
+      res.json({ requiresMfa: true });
+      return;
+    }
+
+    // Verify MFA
+    const { authenticator } = await import('otplib');
+    const mfaValid = authenticator.verify({ token: mfaCode, secret: founder.mfa_secret });
+    if (!mfaValid) {
+      res.status(401).json({ error: 'Invalid MFA code' });
+      return;
+    }
+
+    // Reset attempts
+    await supabase.from('founder_accounts').update({ login_attempts: 0, locked_until: null }).eq('id', founder.id);
+
+    // 8-hour session
+    const token = jwt.sign(
+      { founderId: founder.id, role: 'founder', pharmacyId: 'all', pharmacyName: 'Founder' },
+      env.jwtSecret,
+      { expiresIn: '8h' } as jwt.SignOptions
+    );
+
+    await supabase.from('audit_log').insert({
+      action: 'founder_login',
+      performed_by: founder.email,
+      details: {},
+    });
+
+    res.json({ token, role: 'founder', email: founder.email, fullName: founder.full_name });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: 'Invalid input' });
+      return;
+    }
+    console.error('Founder login error:', err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// ─── Current auth info ──────────────────────────────────────
+router.get('/me', authenticate, (req: Request, res: Response) => {
+  res.json({ auth: req.auth });
+});
+
+// ─── Founder: create pharmacy ───────────────────────────────
+const createPharmacySchema = z.object({
+  name: z.string().min(1),
+  password: z.string().min(8),
+  managerEmail: z.string().email(),
+  address: z.string().optional(),
+  licenceNumber: z.string().optional(),
+});
+
+router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Request, res: Response) => {
+  try {
+    const data = createPharmacySchema.parse(req.body);
+    const passwordHash = await bcrypt.hash(data.password, 12);
+
+    const { data: pharmacy, error } = await supabase
+      .from('pharmacies')
+      .insert({
+        name: data.name,
+        password_hash: passwordHash,
+        manager_email: data.managerEmail,
+        address: data.address,
+        licence_number: data.licenceNumber,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        res.status(409).json({ error: 'Pharmacy name already exists' });
         return;
       }
-
-      if (env.nodeEnv === 'production' && user.mfa_secret) {
-        const { authenticator } = await import('otplib');
-        const valid = authenticator.verify({ token: mfaCode, secret: user.mfa_secret });
-        if (!valid) {
-          res.status(401).json({ error: 'Invalid MFA code' });
-          return;
-        }
-      }
+      throw error;
     }
 
-    const token = signToken({
-      userId: user.id,
-      role: 'founder',
-      pharmacyId: 'all',
+    await supabase.from('audit_log').insert({
+      pharmacy_id: pharmacy.id,
+      action: 'pharmacy_created',
+      performed_by: 'founder',
+      details: { name: data.name },
     });
 
-    res.json({
-      token,
-      role: 'founder',
-      user: { id: user.id, email: user.email, fullName: user.full_name },
-    });
+    console.log(`[EMAIL] To: ${data.managerEmail} | Subject: Welcome to NearMiss Pro | Body: Your pharmacy "${data.name}" has been set up. Login at ${env.appUrl} with your pharmacy name and password.`);
+
+    res.status(201).json(pharmacy);
   } catch (err) {
     if (err instanceof z.ZodError) {
       res.status(400).json({ error: 'Invalid input', details: err.errors });
       return;
     }
-    console.error('Founder login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Create pharmacy error:', err);
+    res.status(500).json({ error: 'Failed to create pharmacy' });
   }
 });
 
-router.get('/me', authenticate, async (req: Request, res: Response) => {
-  res.json({ auth: req.auth });
+// ─── Manager: change password ───────────────────────────────
+const changePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string().min(8),
 });
 
-const registerPharmacySchema = z.object({
-  name: z.string().min(1),
-  pharmacyCode: z.string().min(4).max(12),
-  managerPin: z.string().min(4).max(8).optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  region: z.string().optional(),
-  nzbn: z.string().optional(),
-});
+router.post('/change-password', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
 
-router.post(
-  '/pharmacies',
-  authenticate,
-  requireRole('founder'),
-  async (req: Request, res: Response) => {
-    try {
-      const data = registerPharmacySchema.parse(req.body);
+    const { data: pharmacy } = await supabase
+      .from('pharmacies')
+      .select('password_hash')
+      .eq('id', req.auth!.pharmacyId)
+      .single();
 
-      const hashedPin = data.managerPin
-        ? await bcrypt.hash(data.managerPin, 12)
-        : null;
-
-      const { data: pharmacy, error } = await supabase
-        .from('pharmacies')
-        .insert({
-          name: data.name,
-          pharmacy_code: data.pharmacyCode.toUpperCase(),
-          manager_pin: hashedPin,
-          address: data.address,
-          city: data.city,
-          region: data.region,
-          nzbn: data.nzbn,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        if (error.code === '23505') {
-          res.status(409).json({ error: 'Pharmacy code already exists' });
-          return;
-        }
-        throw error;
-      }
-
-      res.status(201).json(pharmacy);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        res.status(400).json({ error: 'Invalid input', details: err.errors });
-        return;
-      }
-      console.error('Register pharmacy error:', err);
-      res.status(500).json({ error: 'Internal server error' });
+    if (!pharmacy || !(await bcrypt.compare(currentPassword, pharmacy.password_hash))) {
+      res.status(401).json({ error: 'Current password is incorrect' });
+      return;
     }
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await supabase.from('pharmacies').update({ password_hash: newHash }).eq('id', req.auth!.pharmacyId);
+
+    await supabase.from('audit_log').insert({
+      pharmacy_id: req.auth!.pharmacyId,
+      action: 'password_changed',
+      performed_by: 'manager',
+      details: {},
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to change password' });
   }
-);
+});
 
 export default router;

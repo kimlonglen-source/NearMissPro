@@ -4,9 +4,9 @@ import { env } from '../config/env.js';
 
 export interface AuthPayload {
   pharmacyId: string;
+  pharmacyName: string;
   role: 'staff' | 'manager' | 'founder';
-  userId?: string;
-  pharmacyName?: string;
+  founderId?: string;
 }
 
 declare global {

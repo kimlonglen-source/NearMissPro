@@ -6,7 +6,12 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-in-production-min32chars!!',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+  founderEmail: process.env.FOUNDER_EMAIL || '',
+  awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+  awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  awsS3Bucket: process.env.AWS_S3_BUCKET || '',
+  appUrl: process.env.APP_URL || 'http://localhost:5173',
 } as const;

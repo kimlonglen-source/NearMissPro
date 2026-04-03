@@ -1,260 +1,279 @@
--- NearMissPro Supabase Schema
--- Phase 1: Core tables with Row-Level Security
+-- NearMissPro Database Schema
+-- Aligned to Product Specification v4.0
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- ============================================================
+-- ENUMS
+-- ============================================================
+
 CREATE TYPE user_role AS ENUM ('staff', 'manager', 'founder');
-CREATE TYPE incident_status AS ENUM ('draft', 'submitted', 'reviewed', 'archived');
-CREATE TYPE dispensary_stage AS ENUM ('data_entry', 'dispensing', 'labelling');
-CREATE TYPE error_type AS ENUM (
-  'wrong_drug', 'wrong_dose', 'wrong_formulation', 'wrong_patient',
-  'wrong_quantity', 'wrong_label', 'wrong_directions', 'omission', 'other'
-);
-CREATE TYPE detection_point AS ENUM (
-  'data_entry_check', 'dispensing_check', 'labelling_check',
-  'final_check', 'patient_counselling', 'after_collection', 'other'
-);
-CREATE TYPE time_of_day AS ENUM ('morning', 'midday', 'afternoon', 'evening');
+CREATE TYPE incident_status AS ENUM ('active', 'voided', 'redacted');
+CREATE TYPE manager_outcome AS ENUM ('accepted', 'modified', 'no_action');
+CREATE TYPE review_outcome AS ENUM ('added', 'dismissed', 'pending');
+
+-- ============================================================
+-- TABLES
+-- ============================================================
 
 CREATE TABLE pharmacies (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  nzbn TEXT,
+  name TEXT UNIQUE NOT NULL,            -- used as username for staff login
+  password_hash TEXT NOT NULL,           -- bcrypt hashed
+  manager_email TEXT NOT NULL,
   address TEXT,
-  city TEXT,
-  region TEXT,
-  pharmacy_code TEXT UNIQUE NOT NULL,
-  manager_pin TEXT,
-  is_active BOOLEAN DEFAULT true,
+  licence_number TEXT,
+  manager_pin_hash TEXT,                 -- bcrypt hashed, nullable
+  manager_pin_enabled BOOLEAN DEFAULT false,
   subscription_status TEXT DEFAULT 'trial',
-  stripe_customer_id TEXT,
+  trial_ends_at TIMESTAMPTZ DEFAULT (now() + interval '30 days'),
+  login_attempts INT DEFAULT 0,
+  locked_until TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE users (
+CREATE TABLE founder_accounts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   full_name TEXT NOT NULL,
-  role user_role NOT NULL DEFAULT 'founder',
-  mfa_secret TEXT,
-  mfa_enabled BOOLEAN DEFAULT false,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE sessions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  pharmacy_id UUID REFERENCES pharmacies(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  role user_role NOT NULL,
-  token_hash TEXT NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE checkbox_options (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  pharmacy_id UUID REFERENCES pharmacies(id) ON DELETE CASCADE,
-  category TEXT NOT NULL,
-  group_name TEXT,
-  label TEXT NOT NULL,
-  sort_order INT DEFAULT 0,
-  is_default BOOLEAN DEFAULT true,
-  is_active BOOLEAN DEFAULT true,
+  mfa_secret TEXT NOT NULL,
+  login_attempts INT DEFAULT 0,
+  locked_until TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE incidents (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   pharmacy_id UUID NOT NULL REFERENCES pharmacies(id) ON DELETE CASCADE,
-  status incident_status DEFAULT 'submitted',
-  dispensary_stage dispensary_stage NOT NULL,
-  error_types error_type[] NOT NULL DEFAULT '{}',
-  prescribed_drug TEXT,
-  dispensed_drug TEXT,
+  error_types TEXT[] NOT NULL DEFAULT '{}',
+  drug_name TEXT,
+  dispensed_drug TEXT,                   -- wrong drug swap
   prescribed_strength TEXT,
-  dispensed_strength TEXT,
-  prescribed_formulation TEXT,
-  dispensed_formulation TEXT,
-  detection_point detection_point NOT NULL,
-  time_of_day time_of_day NOT NULL,
-  contributing_factors UUID[] DEFAULT '{}',
+  dispensed_strength TEXT,               -- wrong dose swap
+  correct_formulation TEXT,
+  dispensed_formulation TEXT,            -- wrong formulation swap
+  where_caught TEXT,
+  time_of_day TEXT,
+  factors TEXT[] DEFAULT '{}',
+  other_entries JSONB DEFAULT '[]',      -- [{category, text}]
   notes TEXT,
-  reported_by TEXT DEFAULT 'Staff',
-  reviewed_by UUID REFERENCES users(id),
-  reviewed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE other_entries (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  incident_id UUID NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
-  field_name TEXT NOT NULL,
-  value TEXT NOT NULL,
+  submitted_at TIMESTAMPTZ DEFAULT now(),
+  edited_at TIMESTAMPTZ,
+  edit_reason TEXT,
+  status incident_status DEFAULT 'active',
+  void_reason TEXT,
+  flagged_by_staff BOOLEAN DEFAULT false,
+  flag_note TEXT,
+  editable_until TIMESTAMPTZ DEFAULT (now() + interval '15 minutes'),
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE recommendations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  incident_id UUID REFERENCES incidents(id) ON DELETE CASCADE,
+  incident_id UUID NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
   pharmacy_id UUID NOT NULL REFERENCES pharmacies(id) ON DELETE CASCADE,
-  recommendation_text TEXT NOT NULL,
-  model_used TEXT DEFAULT 'claude-sonnet-4-6',
-  prompt_tokens INT,
-  completion_tokens INT,
+  ai_text TEXT NOT NULL,
+  manager_outcome manager_outcome,
+  manager_text TEXT,
+  manager_note TEXT,                     -- private, not in report
+  reviewed_at TIMESTAMPTZ,
+  reviewed_by TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE reports (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   pharmacy_id UUID NOT NULL REFERENCES pharmacies(id) ON DELETE CASCADE,
-  report_month DATE NOT NULL,
+  period_start DATE NOT NULL,
+  period_end DATE NOT NULL,
+  generated_at TIMESTAMPTZ DEFAULT now(),
+  generated_by TEXT,
   pdf_url TEXT,
   s3_key TEXT,
+  locked BOOLEAN DEFAULT false,
+  previous_summary TEXT,                 -- editable AI summary of last period
+  previous_summary_edited BOOLEAN DEFAULT false,
+  period_summary TEXT,                   -- editable AI summary of this period
+  period_summary_edited BOOLEAN DEFAULT false,
+  meeting_agenda JSONB DEFAULT '[]',     -- [{text, edited}]
+  meeting_agenda_edited BOOLEAN DEFAULT false,
   incident_count INT DEFAULT 0,
-  generated_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+CREATE TABLE checkbox_options (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category TEXT NOT NULL,                -- 'error_type', 'where_caught', 'factor'
+  group_name TEXT,                       -- 'Data entry', 'Dispensing', 'Labelling', 'Workload', 'Product', 'People'
+  label TEXT NOT NULL,
+  sort_order INT DEFAULT 0,
+  active BOOLEAN DEFAULT true,
+  created_by_founder BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE other_entries (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  pharmacy_id UUID NOT NULL REFERENCES pharmacies(id) ON DELETE CASCADE,
+  incident_id UUID NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  text TEXT NOT NULL,
+  reviewed_by_founder BOOLEAN DEFAULT false,
+  review_outcome review_outcome DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE audit_log (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  pharmacy_id UUID REFERENCES pharmacies(id),
+  action TEXT NOT NULL,
+  performed_by TEXT NOT NULL,
+  details JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================================
+-- INDEXES
+-- ============================================================
+
 CREATE INDEX idx_incidents_pharmacy ON incidents(pharmacy_id);
+CREATE INDEX idx_incidents_pharmacy_date ON incidents(pharmacy_id, submitted_at DESC);
 CREATE INDEX idx_incidents_status ON incidents(status);
-CREATE INDEX idx_incidents_created ON incidents(created_at DESC);
-CREATE INDEX idx_incidents_pharmacy_date ON incidents(pharmacy_id, created_at DESC);
-CREATE INDEX idx_sessions_token ON sessions(token_hash);
-CREATE INDEX idx_sessions_expires ON sessions(expires_at);
-CREATE INDEX idx_checkbox_options_pharmacy ON checkbox_options(pharmacy_id, category);
-CREATE INDEX idx_reports_pharmacy_month ON reports(pharmacy_id, report_month);
 CREATE INDEX idx_recommendations_incident ON recommendations(incident_id);
+CREATE INDEX idx_recommendations_pharmacy ON recommendations(pharmacy_id);
+CREATE INDEX idx_reports_pharmacy ON reports(pharmacy_id, period_start);
+CREATE INDEX idx_other_entries_pharmacy ON other_entries(pharmacy_id);
+CREATE INDEX idx_other_entries_outcome ON other_entries(review_outcome);
+CREATE INDEX idx_audit_log_pharmacy ON audit_log(pharmacy_id, created_at DESC);
+CREATE INDEX idx_checkbox_options_category ON checkbox_options(category, sort_order);
+
+-- ============================================================
+-- ROW-LEVEL SECURITY
+-- ============================================================
 
 ALTER TABLE pharmacies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE incidents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recommendations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE checkbox_options ENABLE ROW LEVEL SECURITY;
 ALTER TABLE other_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY pharmacy_staff_read ON pharmacies
-  FOR SELECT USING (
+-- Pharmacies: own row only; founder sees all
+CREATE POLICY pharmacies_own ON pharmacies
+  FOR ALL USING (
     id = current_setting('app.pharmacy_id', true)::uuid
     OR current_setting('app.role', true) = 'founder'
   );
 
-CREATE POLICY pharmacy_founder_manage ON pharmacies
-  FOR ALL USING (current_setting('app.role', true) = 'founder');
+-- Incidents: own pharmacy only; founder sees all
+CREATE POLICY incidents_own ON incidents
+  FOR ALL USING (
+    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
+    OR current_setting('app.role', true) = 'founder'
+  );
 
-CREATE POLICY incidents_pharmacy_read ON incidents
+-- Recommendations: own pharmacy; founder sees all
+CREATE POLICY recommendations_own ON recommendations
+  FOR ALL USING (
+    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
+    OR current_setting('app.role', true) = 'founder'
+  );
+
+-- Reports: own pharmacy; founder sees all
+CREATE POLICY reports_own ON reports
+  FOR ALL USING (
+    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
+    OR current_setting('app.role', true) = 'founder'
+  );
+
+-- Other entries: own pharmacy; founder sees all
+CREATE POLICY other_entries_own ON other_entries
+  FOR ALL USING (
+    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
+    OR current_setting('app.role', true) = 'founder'
+  );
+
+-- Audit log: INSERT only for all roles; SELECT for founder only
+CREATE POLICY audit_log_insert ON audit_log
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY audit_log_read ON audit_log
   FOR SELECT USING (
     pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
     OR current_setting('app.role', true) = 'founder'
   );
 
-CREATE POLICY incidents_pharmacy_insert ON incidents
-  FOR INSERT WITH CHECK (
-    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
-  );
+-- No UPDATE or DELETE on audit_log — immutable by design
 
-CREATE POLICY incidents_pharmacy_update ON incidents
-  FOR UPDATE USING (
-    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
-    OR current_setting('app.role', true) = 'founder'
-  );
-
-CREATE POLICY recommendations_pharmacy ON recommendations
-  FOR ALL USING (
-    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
-    OR current_setting('app.role', true) = 'founder'
-  );
-
-CREATE POLICY reports_pharmacy ON reports
-  FOR ALL USING (
-    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
-    OR current_setting('app.role', true) = 'founder'
-  );
-
+-- checkbox_options: readable by all, writable by founder only
+ALTER TABLE checkbox_options ENABLE ROW LEVEL SECURITY;
 CREATE POLICY checkbox_options_read ON checkbox_options
-  FOR SELECT USING (
-    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
-    OR pharmacy_id IS NULL
-    OR current_setting('app.role', true) = 'founder'
-  );
+  FOR SELECT USING (true);
+CREATE POLICY checkbox_options_write ON checkbox_options
+  FOR INSERT WITH CHECK (current_setting('app.role', true) = 'founder');
+CREATE POLICY checkbox_options_update ON checkbox_options
+  FOR UPDATE USING (current_setting('app.role', true) = 'founder');
 
-CREATE POLICY checkbox_options_manage ON checkbox_options
-  FOR ALL USING (
-    current_setting('app.role', true) IN ('manager', 'founder')
-  );
+-- ============================================================
+-- SEED DATA
+-- ============================================================
 
-CREATE POLICY other_entries_read ON other_entries
-  FOR SELECT USING (
-    incident_id IN (
-      SELECT id FROM incidents
-      WHERE pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
-    )
-    OR current_setting('app.role', true) = 'founder'
-  );
+-- Error types — Data entry
+INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
+  ('error_type', 'Data entry', 'Wrong patient', 1),
+  ('error_type', 'Data entry', 'Repeat dispensed early', 2);
 
-CREATE POLICY other_entries_insert ON other_entries
-  FOR INSERT WITH CHECK (
-    incident_id IN (
-      SELECT id FROM incidents
-      WHERE pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
-    )
-  );
+-- Error types — Dispensing
+INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
+  ('error_type', 'Dispensing', 'Wrong drug', 10),
+  ('error_type', 'Dispensing', 'Wrong dose', 11),
+  ('error_type', 'Dispensing', 'Wrong quantity', 12),
+  ('error_type', 'Dispensing', 'Wrong formulation', 13),
+  ('error_type', 'Dispensing', 'Expired medication', 14);
 
-CREATE POLICY sessions_own ON sessions
-  FOR ALL USING (
-    pharmacy_id = current_setting('app.pharmacy_id', true)::uuid
-    OR user_id = current_setting('app.user_id', true)::uuid
-  );
+-- Error types — Labelling
+INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
+  ('error_type', 'Labelling', 'Wrong patient details on label', 20),
+  ('error_type', 'Labelling', 'Wrong directions on label', 21),
+  ('error_type', 'Labelling', 'CAL missing or incorrect', 22),
+  ('error_type', 'Labelling', 'Label on wrong item', 23);
 
-INSERT INTO checkbox_options (pharmacy_id, category, group_name, label, sort_order) VALUES
-  (NULL, 'error_type', 'Data entry', 'Wrong patient selected', 1),
-  (NULL, 'error_type', 'Data entry', 'Wrong drug entered', 2),
-  (NULL, 'error_type', 'Data entry', 'Wrong dose entered', 3),
-  (NULL, 'error_type', 'Data entry', 'Wrong quantity entered', 4),
-  (NULL, 'error_type', 'Data entry', 'Wrong directions entered', 5),
-  (NULL, 'error_type', 'Data entry', 'Interaction/allergy missed', 6),
-  (NULL, 'error_type', 'Dispensing', 'Wrong drug picked', 10),
-  (NULL, 'error_type', 'Dispensing', 'Wrong strength picked', 11),
-  (NULL, 'error_type', 'Dispensing', 'Wrong formulation picked', 12),
-  (NULL, 'error_type', 'Dispensing', 'Wrong quantity counted', 13),
-  (NULL, 'error_type', 'Dispensing', 'Expired product picked', 14),
-  (NULL, 'error_type', 'Dispensing', 'Wrong generic brand', 15),
-  (NULL, 'error_type', 'Labelling', 'Wrong label applied', 20),
-  (NULL, 'error_type', 'Labelling', 'Wrong directions on label', 21),
-  (NULL, 'error_type', 'Labelling', 'Wrong patient on label', 22),
-  (NULL, 'error_type', 'Labelling', 'Auxiliary labels missing', 23),
-  (NULL, 'error_type', 'Labelling', 'Label not attached', 24);
+-- Where caught
+INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
+  ('where_caught', NULL, 'Data entry check', 1),
+  ('where_caught', NULL, 'Initial pharmacist check', 2),
+  ('where_caught', NULL, 'Final pharmacist check', 3),
+  ('where_caught', NULL, 'Technician query', 4),
+  ('where_caught', NULL, 'Patient at collection', 5);
 
-INSERT INTO checkbox_options (pharmacy_id, category, group_name, label, sort_order) VALUES
-  (NULL, 'detection_point', NULL, 'During data entry', 1),
-  (NULL, 'detection_point', NULL, 'During dispensing', 2),
-  (NULL, 'detection_point', NULL, 'During labelling', 3),
-  (NULL, 'detection_point', NULL, 'At final check', 4),
-  (NULL, 'detection_point', NULL, 'At patient counselling', 5),
-  (NULL, 'detection_point', NULL, 'After collection', 6);
+-- Factors — Workload
+INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
+  ('factor', 'Workload', 'High volume period', 1),
+  ('factor', 'Workload', 'Interruption / distraction', 2),
+  ('factor', 'Workload', 'Understaffed', 3),
+  ('factor', 'Workload', 'System slow / down', 4);
 
-INSERT INTO checkbox_options (pharmacy_id, category, group_name, label, sort_order) VALUES
-  (NULL, 'contributing_factor', 'Workload', 'High prescription volume', 1),
-  (NULL, 'contributing_factor', 'Workload', 'Understaffed', 2),
-  (NULL, 'contributing_factor', 'Workload', 'Interruptions/distractions', 3),
-  (NULL, 'contributing_factor', 'Workload', 'Time pressure', 4),
-  (NULL, 'contributing_factor', 'Workload', 'End of shift fatigue', 5),
-  (NULL, 'contributing_factor', 'Product', 'Look-alike packaging', 10),
-  (NULL, 'contributing_factor', 'Product', 'Sound-alike names', 11),
-  (NULL, 'contributing_factor', 'Product', 'Similar strengths available', 12),
-  (NULL, 'contributing_factor', 'Product', 'Shelf placement', 13),
-  (NULL, 'contributing_factor', 'Product', 'Manufacturer change', 14),
-  (NULL, 'contributing_factor', 'People', 'Inexperienced staff', 20),
-  (NULL, 'contributing_factor', 'People', 'Unfamiliar medication', 21),
-  (NULL, 'contributing_factor', 'People', 'Communication breakdown', 22),
-  (NULL, 'contributing_factor', 'People', 'Training gap', 23),
-  (NULL, 'contributing_factor', 'People', 'Handwriting legibility', 24);
+-- Factors — Product
+INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
+  ('factor', 'Product', 'Similar packaging', 10),
+  ('factor', 'Product', 'Similar drug names', 11),
+  ('factor', 'Product', 'Illegible prescription', 12),
+  ('factor', 'Product', 'Unusual dose / strength', 13);
+
+-- Factors — People
+INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
+  ('factor', 'People', 'Script not checked against original', 20),
+  ('factor', 'People', 'New staff member', 21),
+  ('factor', 'People', 'Unfamiliar drug', 22),
+  ('factor', 'People', 'Process not followed', 23),
+  ('factor', 'People', 'Communication gap', 24);
+
+-- ============================================================
+-- TRIGGERS
+-- ============================================================
 
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
@@ -265,7 +284,4 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER tr_pharmacies_updated BEFORE UPDATE ON pharmacies
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER tr_incidents_updated BEFORE UPDATE ON incidents
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
