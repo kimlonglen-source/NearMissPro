@@ -90,12 +90,14 @@ export function RecordPage() {
   if (!hasWhereCaught) stillNeeded.push('where caught');
   if (!hasFactor) stillNeeded.push('a factor');
 
+  const DISPENSING_LABELS = [...SWAP_CHIPS, 'Wrong quantity', 'Expired medication'];
+  const LABELLING_LABELS = ['Wrong directions on label', 'CAL missing or incorrect', 'Label on wrong item'];
   const toggleError = (label: string) => {
     setSelectedErrors(prev => {
       const next = prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label];
-      // If selecting a patient-level error, clear dispensing errors
+      // If selecting a patient-level error, clear dispensing + labelling errors
       if ((label === 'Wrong patient' || label === 'Repeat dispensed early') && next.includes(label)) {
-        return next.filter(l => !SWAP_CHIPS.includes(l) && !['Wrong quantity', 'Expired medication'].includes(l));
+        return next.filter(l => !DISPENSING_LABELS.includes(l) && !LABELLING_LABELS.includes(l));
       }
       return next;
     });
@@ -188,9 +190,9 @@ export function RecordPage() {
   const caughtOpts = (options.where_caught || {}).default || [];
   const factorOpts = options.factor || {};
 
-  // If "Wrong patient" or "Repeat dispensed early" selected, Dispensing errors don't apply
+  // If "Wrong patient" or "Repeat dispensed early" selected, Dispensing and Labelling don't apply
   const patientLevelError = selectedErrors.includes('Wrong patient') || selectedErrors.includes('Repeat dispensed early');
-  const shouldHideGroup = (group: string) => patientLevelError && group === 'Dispensing';
+  const shouldHideGroup = (group: string) => patientLevelError && (group === 'Dispensing' || group === 'Labelling');
 
   // Summary tags for sidebar
   const tags: { label: string; color: string }[] = [];
@@ -245,7 +247,9 @@ export function RecordPage() {
                       </button>
                     ))}
                     <button onClick={() => setShowOther(p => ({ ...p, [group]: !p[group] }))}
-                      className={`chip text-[13px] py-2 px-3 ${showOther[group] ? 'chip-green' : 'chip-other'}`}>+ Other</button>
+                      className={`chip text-[13px] py-2 px-3 ${showOther[group] || otherTexts[group]?.trim() ? 'chip-green' : 'chip-other'}`}>
+                      {otherTexts[group]?.trim() ? `Other: "${otherTexts[group].trim().slice(0, 20)}${otherTexts[group].trim().length > 20 ? '...' : ''}"` : '+ Other'}
+                    </button>
                   </div>
                   {showOther[group] && (
                     <input type="text" maxLength={120} value={otherTexts[group] || ''} autoFocus
@@ -257,7 +261,7 @@ export function RecordPage() {
               })}
 
               {patientLevelError && (
-                <p className="text-xs text-gray-400 italic mt-2">Dispensing errors not applicable for patient-level incidents.</p>
+                <p className="text-xs text-gray-400 italic mt-2">Dispensing and labelling errors not applicable when wrong patient or repeat dispensed early is selected.</p>
               )}
 
               {/* Swap boxes */}
@@ -344,7 +348,9 @@ export function RecordPage() {
                     className={`chip text-[13px] py-2 px-3 ${whereCaught === opt.label ? 'chip-blue' : 'chip-off'}`}>{opt.label}</button>
                 ))}
                 <button onClick={() => { setShowOtherCaught(!showOtherCaught); setWhereCaught(''); }}
-                  className={`chip text-[13px] py-2 px-3 ${showOtherCaught ? 'chip-blue' : 'chip-other'}`}>+ Other</button>
+                  className={`chip text-[13px] py-2 px-3 ${showOtherCaught || otherCaught.trim() ? 'chip-blue' : 'chip-other'}`}>
+                  {otherCaught.trim() ? `Other: "${otherCaught.trim().slice(0, 20)}${otherCaught.trim().length > 20 ? '...' : ''}"` : '+ Other'}
+                </button>
               </div>
               {showOtherCaught && (
                 <input type="text" maxLength={120} value={otherCaught} onChange={e => setOtherCaught(e.target.value)} autoFocus
@@ -381,7 +387,9 @@ export function RecordPage() {
                         className={`chip text-[13px] py-2 px-3 ${selectedFactors.includes(opt.label) ? 'chip-amber' : 'chip-off'}`}>{opt.label}</button>
                     ))}
                     <button onClick={() => setShowFactorOther(p => ({ ...p, [group]: !p[group] }))}
-                      className={`chip text-[13px] py-2 px-3 ${showFactorOther[group] ? 'chip-amber' : 'chip-other'}`}>+ Other</button>
+                      className={`chip text-[13px] py-2 px-3 ${showFactorOther[group] || factorOtherTexts[group]?.trim() ? 'chip-amber' : 'chip-other'}`}>
+                      {factorOtherTexts[group]?.trim() ? `Other: "${factorOtherTexts[group].trim().slice(0, 20)}${factorOtherTexts[group].trim().length > 20 ? '...' : ''}"` : '+ Other'}
+                    </button>
                   </div>
                   {showFactorOther[group] && (
                     <input type="text" maxLength={120} value={factorOtherTexts[group] || ''} autoFocus
