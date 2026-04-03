@@ -19,6 +19,7 @@ const PERIODS = [
   { label: 'This month', days: 30 },
   { label: 'Last 7 days', days: 7 },
   { label: 'Last 90 days', days: 90 },
+  { label: 'Custom range', days: 0 },
 ];
 
 export function DashboardPage() {
@@ -38,11 +39,20 @@ export function DashboardPage() {
   const [voidReason, setVoidReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+
+  const getFrom = () => period.days > 0 ? dateAgo(period.days) : customFrom;
+  const getTo = () => period.days > 0 ? undefined : (customTo || undefined);
 
   const load = async () => {
+    const from = getFrom();
+    if (!from) return;
     try {
+      const params: Record<string, string> = { from };
+      if (getTo()) params.to = getTo()!;
       const [res, pa] = await Promise.all([
-        api.getIncidents({ from: dateAgo(period.days) }),
+        api.getIncidents(params),
         api.getPatternAlert().catch(() => ({ alert: null })),
       ]);
       const list = (res.incidents as unknown as Incident[]).sort((a, b) => {
@@ -56,7 +66,7 @@ export function DashboardPage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { setLoading(true); load(); }, [period]);
+  useEffect(() => { if (period.days > 0 || (customFrom && customTo)) { setLoading(true); load(); } }, [period, customFrom, customTo]);
 
   const isPending = (i: Incident) => i.status === 'active' && !i.recommendations?.[0]?.manager_outcome;
   const pendingList = incidents.filter(isPending);
@@ -93,8 +103,9 @@ export function DashboardPage() {
   const handleReport = async () => {
     setBusy(true);
     try {
-      const start = dateAgo(period.days);
-      const end = new Date().toISOString().slice(0, 10);
+      const start = period.days > 0 ? dateAgo(period.days) : customFrom;
+      const end = period.days > 0 ? new Date().toISOString().slice(0, 10) : customTo;
+      if (!start || !end) return;
       const report = await api.generateReport({ periodStart: start, periodEnd: end, generatedBy: pharmacyName || 'Manager' });
       nav(`/reports/${(report as { id: string }).id}`);
     } finally { setBusy(false); }
@@ -228,10 +239,19 @@ export function DashboardPage() {
           <h1 className="text-xl font-bold text-gray-900">{pharmacyName || 'Dashboard'}</h1>
           <p className="text-xs text-gray-500">{pendingList.length} pending review</p>
         </div>
-        <select className="input-field w-auto text-sm" value={period.days}
-          onChange={e => setPeriod(PERIODS.find(p => p.days === +e.target.value) || PERIODS[0])}>
-          {PERIODS.map(p => <option key={p.days} value={p.days}>{p.label}</option>)}
-        </select>
+        <div className="flex items-center gap-2">
+          <select className="input-field w-auto text-sm" value={period.days}
+            onChange={e => setPeriod(PERIODS.find(p => p.days === +e.target.value) || PERIODS[0])}>
+            {PERIODS.map(p => <option key={p.days} value={p.days}>{p.label}</option>)}
+          </select>
+          {period.days === 0 && (
+            <>
+              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="input-field w-auto text-sm" />
+              <span className="text-gray-400 text-sm">to</span>
+              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="input-field w-auto text-sm" />
+            </>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -351,20 +371,20 @@ export function DashboardPage() {
                       </div>
                     )}
 
-                    {/* Actions for pending incidents */}
-                    {pending && rec && !showMod && !showNote && (
+                    {/* Actions — available on all non-voided incidents */}
+                    {inc.status !== 'voided' && rec && !showMod && !showNote && (
                       <div className="flex gap-2 flex-wrap">
                         <button className="btn-teal text-xs" disabled={busy} onClick={() => doAction(rec, 'accepted')}>
                           <CheckCircle2 size={14} /> Accept
                         </button>
-                        <button className="btn text-xs bg-[#EEEDFE] text-[#3C3489] hover:bg-[#E0DEFE]" onClick={() => { setShowMod(true); setModText(rec.ai_text); }}>
+                        <button className="btn text-xs bg-[#EEEDFE] text-[#3C3489] hover:bg-[#E0DEFE]" onClick={() => { setShowMod(true); setModText(rec.manager_text || rec.ai_text); }}>
                           <Edit3 size={14} /> Modify
                         </button>
                         <button className="btn-grey text-xs" disabled={busy} onClick={() => doAction(rec, 'no_action')}>No action</button>
                         <button className="btn text-xs bg-red-50 text-red-700 hover:bg-red-100" onClick={() => setVoidId(inc.id)}>
                           <XCircle size={14} /> Void
                         </button>
-                        <button className="btn-outline text-xs" onClick={() => setShowNote(true)}>
+                        <button className="btn-outline text-xs" onClick={() => { setShowNote(true); setNoteText(rec.private_note || ''); }}>
                           <MessageSquare size={14} /> Note
                         </button>
                       </div>
@@ -395,11 +415,10 @@ export function DashboardPage() {
                       </div>
                     )}
 
-                    {/* Already reviewed badge */}
-                    {!pending && outcome && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <CheckCircle2 size={14} className="text-[#1D9E75]" />
-                        {outcome === 'accepted' ? 'Recommendation accepted' : outcome === 'modified' ? 'Modified by pharmacist-in-charge' : outcome === 'no_action' ? 'No action needed' : 'Voided'}
+                    {/* Voided badge */}
+                    {inc.status === 'voided' && (
+                      <div className="flex items-center gap-2 text-xs text-red-600">
+                        <XCircle size={14} /> Voided — {inc.notes || 'no reason given'}
                       </div>
                     )}
                   </div>

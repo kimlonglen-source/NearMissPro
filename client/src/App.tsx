@@ -10,6 +10,7 @@ import { HomePage } from './pages/HomePage';
 import { RecordPage } from './pages/RecordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ReportPage } from './pages/ReportPage';
+import { ReportsListPage } from './pages/ReportsListPage';
 import { AdminPage } from './pages/AdminPage';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/" element={<ProtectedRoute allow={['staff', 'manager']}><HomePage /></ProtectedRoute>} />
         <Route path="/record" element={<ProtectedRoute allow={['staff', 'manager']}><RecordPage /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute allow={['manager']}><DashboardPage /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute allow={['manager']}><ReportsListPage /></ProtectedRoute>} />
         <Route path="/reports/:id" element={<ProtectedRoute allow={['manager']}><ReportPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute allow={['manager']}><SettingsPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute allow={['founder']}><AdminPage /></ProtectedRoute>} />

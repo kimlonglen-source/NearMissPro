@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from './Logo';
-import { LogOut, ClipboardPlus, LayoutDashboard, Settings, Shield } from 'lucide-react';
+import { LogOut, ClipboardPlus, LayoutDashboard, Settings, Shield, FileText } from 'lucide-react';
 
 export function Layout() {
   const { role, pharmacyName, logout } = useAuth();
@@ -12,6 +12,7 @@ export function Layout() {
     ...(role === 'staff' || role === 'manager' ? [{ to: '/', icon: ClipboardPlus, label: 'Home' }] : []),
     ...(role === 'manager' ? [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/reports', icon: FileText, label: 'Reports' },
       { to: '/settings', icon: Settings, label: 'Settings' },
     ] : []),
     ...(role === 'founder' ? [{ to: '/admin', icon: Shield, label: 'Admin' }] : []),
