@@ -65,16 +65,20 @@ export function DashboardPage() {
   useEffect(() => { if (period.days > 0 || (customFrom && customTo)) { setLoading(true); load(); } }, [period, customFrom, customTo]);
 
   const isPending = (i: Incident) => i.status === 'active' && !i.recommendations?.[0]?.manager_outcome;
-  const pendingList = incidents.filter(isPending);
-  const reviewedList = incidents.filter(i => !isPending(i));
-  const allReviewed = pendingList.length === 0 && incidents.length > 0;
+  const activeIncidents = incidents.filter(i => i.status === 'active');
+  const voidedIncidents = incidents.filter(i => i.status === 'voided');
+  const pendingList = activeIncidents.filter(isPending);
+  const reviewedList = activeIncidents.filter(i => !isPending(i));
+  const allReviewed = pendingList.length === 0 && activeIncidents.length > 0;
 
   const peakTime = (() => {
     const counts: Record<string, number> = {};
-    incidents.forEach(i => { if (i.time_of_day) counts[i.time_of_day] = (counts[i.time_of_day] || 0) + 1; });
+    activeIncidents.forEach(i => { if (i.time_of_day) counts[i.time_of_day] = (counts[i.time_of_day] || 0) + 1; });
     const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
     return top ? top[0] : '-';
   })();
+
+  const [reportGenerated, setReportGenerated] = useState(false);
 
   const doAction = async (rec: Rec, outcome: string, text?: string, note?: string) => {
     setBusy(true);
@@ -98,7 +102,9 @@ export function DashboardPage() {
       const end = period.days > 0 ? new Date().toISOString().slice(0, 10) : customTo;
       if (!start || !end) return;
       const report = await api.generateReport({ periodStart: start, periodEnd: end, generatedBy: pharmacyName || 'Manager', isCustomRange: period.days === 0 });
-      nav(`/reports/${(report as { id: string }).id}`);
+      setReportGenerated(true);
+      // Navigate to report after a brief delay so the user sees the success state
+      setTimeout(() => nav(`/reports/${(report as { id: string }).id}`), 100);
     } finally { setBusy(false); }
   };
 
@@ -154,8 +160,8 @@ export function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-          <div className="text-xl font-bold">{incidents.length}</div>
-          <div className="text-[11px] text-gray-500">Total</div>
+          <div className="text-xl font-bold">{activeIncidents.length}</div>
+          <div className="text-[11px] text-gray-500">Active</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
           <div className="text-xl font-bold text-[#BA7517]">{pendingList.length}</div>
@@ -181,7 +187,7 @@ export function DashboardPage() {
 
       {/* ── Guided instruction box ── */}
       <div className={`rounded-xl p-4 mb-4 border ${step === 1 ? 'bg-[#FAEEDA] border-[#BA7517]' : step === 2 ? 'bg-[#E1F5EE] border-[#1D9E75]' : 'bg-gray-50 border-gray-200'}`}>
-        {incidents.length === 0 ? (
+        {activeIncidents.length === 0 ? (
           <div className="text-center py-4">
             <Clock size={32} className="mx-auto mb-2 text-gray-300" />
             <p className="text-sm font-medium text-gray-500">No incidents recorded this period</p>
@@ -194,28 +200,30 @@ export function DashboardPage() {
               <p className="text-xs text-[#633806]/70 mt-0.5">Click each incident below to read the AI recommendation, then Accept, Modify, or take No action.</p>
             </div>
             <div className="text-right">
-              <div className="text-xs text-[#633806]/60 mb-1">{reviewedList.length}/{incidents.length} done</div>
+              <div className="text-xs text-[#633806]/60 mb-1">{reviewedList.length}/{activeIncidents.length} done</div>
               <div className="w-24 h-2 bg-[#BA7517]/20 rounded-full">
-                <div className="h-2 bg-[#BA7517] rounded-full transition-all" style={{ width: `${(reviewedList.length / incidents.length) * 100}%` }} />
+                <div className="h-2 bg-[#BA7517] rounded-full transition-all" style={{ width: `${(reviewedList.length / activeIncidents.length) * 100}%` }} />
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <p className="text-sm font-semibold text-[#085041]"><CheckCircle2 size={16} className="inline mr-1" />All incidents reviewed</p>
+              <p className="text-sm font-semibold text-[#085041]"><CheckCircle2 size={16} className="inline mr-1" />All {activeIncidents.length} incidents reviewed</p>
               <p className="text-xs text-[#085041]/70 mt-0.5">Step 2: Generate the report for your team meeting and compliance file.</p>
             </div>
-            <button onClick={handleReport} disabled={busy} className="btn-teal text-sm">
-              <FileText size={16} /> Generate report
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleReport} disabled={busy} className="btn-teal text-sm">
+                <FileText size={16} /> Generate report
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── Incident list ── */}
+      {/* ── Active incident list ── */}
       <div className="space-y-2">
-        {incidents.map(inc => {
+        {activeIncidents.map(inc => {
           const isOpen = activeId === inc.id;
           const outcome = getOutcome(inc);
           const rec = inc.recommendations?.[0];
@@ -333,10 +341,28 @@ export function DashboardPage() {
           );
         })}
 
-        {incidents.length === 0 && (
-          <div className="text-center py-8 text-gray-400 text-sm">No incidents for this period.</div>
+        {activeIncidents.length === 0 && (
+          <div className="text-center py-8 text-gray-400 text-sm">No active incidents for this period.</div>
         )}
       </div>
+
+      {/* ── Voided incidents ── */}
+      {voidedIncidents.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-gray-500 mb-2">Voided incidents ({voidedIncidents.length})</h3>
+          <div className="space-y-1">
+            {voidedIncidents.map(inc => (
+              <div key={inc.id} className="bg-gray-50 rounded-lg border border-gray-200 px-4 py-2 flex items-center gap-3 opacity-60">
+                <XCircle size={14} className="text-red-400 flex-shrink-0" />
+                <span className="text-sm text-gray-600">{inc.error_types.join(', ')}</span>
+                {inc.drug_name && <span className="text-xs text-gray-500">{inc.drug_name}</span>}
+                <span className="text-xs text-gray-400 ml-auto">{new Date(inc.submitted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F]">Voided</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Past reports link */}
       <div className="mt-6 text-center">
