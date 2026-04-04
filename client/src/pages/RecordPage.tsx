@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { CheckCircle2, AlertTriangle, ArrowRight, Flag, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -17,6 +18,7 @@ function chipColor(label: string, selected: boolean): string {
 }
 
 export function RecordPage() {
+  const nav = useNavigate();
   const [options, setOptions] = useState<Record<string, Record<string, Opt[]>>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -63,7 +65,7 @@ export function RecordPage() {
   useEffect(() => {
     if (!submitted) return;
     const interval = setInterval(() => {
-      setAutoResetTimer(prev => { if (prev <= 1) { resetForm(); return 30; } return prev - 1; });
+      setAutoResetTimer(prev => { if (prev <= 1) { nav('/'); return 30; } return prev - 1; });
       setEditTimer(prev => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(interval);
@@ -175,7 +177,7 @@ export function RecordPage() {
         </div>
         <div className="flex gap-3 flex-wrap justify-center">
           {editTimer > 0 && <button onClick={() => { setSubmitted(false); setAutoResetTimer(999); }} className="btn-outline text-sm">Edit this report</button>}
-          <button onClick={resetForm} className="btn-teal text-sm">Done</button>
+          <button onClick={() => nav('/')} className="btn-teal text-sm">Done — back to home</button>
         </div>
         <p className="text-xs text-gray-300 mt-6">Auto-reset in {autoResetTimer}s</p>
       </div>
