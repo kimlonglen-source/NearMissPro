@@ -209,13 +209,16 @@ export function RecordPage() {
   selectedFactors.forEach(f => tags.push({ label: f, color: 'chip-amber' }));
 
   // Section header component
-  const SectionHeader = ({ num, title, done, open, onClick }: { num: number; title: string; done: boolean; open: boolean; onClick: () => void }) => (
+  const SectionHeader = ({ num, title, subtitle, done, open, onClick }: { num: number; title: string; subtitle: string; done: boolean; open: boolean; onClick: () => void }) => (
     <button onClick={onClick} className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl text-left transition-colors ${open ? 'bg-white shadow-sm border border-gray-200' : done ? 'bg-[#F0FAF5] border border-[#C8E6D8]' : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'}`}>
       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${done ? 'bg-[#1D9E75] text-white' : open ? 'bg-[#0F6E56] text-white' : 'bg-gray-300 text-white'}`}>
         {done ? <svg width="12" height="10" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> : num}
       </div>
-      <span className={`flex-1 text-sm font-semibold ${done ? 'text-[#085041]' : 'text-gray-900'}`}>{title}</span>
-      {done && !open && <span className="text-xs text-[#1D9E75]">Done</span>}
+      <div className="flex-1">
+        <span className={`text-sm font-semibold ${done ? 'text-[#085041]' : 'text-gray-900'}`}>{title}</span>
+        {!done && !open && <p className="text-[11px] text-gray-400 mt-0.5">{subtitle}</p>}
+      </div>
+      {done && !open && <span className="text-xs text-[#1D9E75]">\u2713 Done</span>}
       {open ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
     </button>
   );
@@ -232,10 +235,11 @@ export function RecordPage() {
           {error && <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
           {/* ═══ Section 1: What went wrong ═══ */}
-          <SectionHeader num={1} title="What went wrong?" done={hasErrorType && hasDrugDetails} open={openSection === 1} onClick={() => setOpenSection(openSection === 1 ? 0 : 1)} />
+          <SectionHeader num={1} title="What went wrong?" subtitle="Tap the error type that best describes the near miss" done={hasErrorType && hasDrugDetails} open={openSection === 1} onClick={() => setOpenSection(openSection === 1 ? 0 : 1)} />
 
           {openSection === 1 && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1">
+              <p className="text-xs text-gray-500 mb-3 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg">Tap one or more options below. If a wrong drug, dose, or formulation was involved, you'll be asked for the details.</p>
               {Object.entries(errorOpts).map(([group, opts]) => {
                 if (shouldHideGroup(group)) return null;
                 return (
@@ -340,10 +344,11 @@ export function RecordPage() {
           )}
 
           {/* ═══ Section 2: Where caught ═══ */}
-          <SectionHeader num={2} title="Where was it caught?" done={hasWhereCaught} open={openSection === 2} onClick={() => setOpenSection(openSection === 2 ? 0 : 2)} />
+          <SectionHeader num={2} title="Where was it caught?" subtitle="Select the stage where the error was noticed" done={hasWhereCaught} open={openSection === 2} onClick={() => setOpenSection(openSection === 2 ? 0 : 2)} />
 
           {openSection === 2 && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+              <p className="text-xs bg-blue-50 text-blue-700 px-3 py-2 rounded-lg">At which stage was the error noticed before it reached the patient?</p>
               <div className="flex flex-wrap gap-1.5">
                 {caughtOpts.map((opt: Opt) => (
                   <button key={opt.id} onClick={() => { setWhereCaught(opt.label); setShowOtherCaught(false); setOtherCaught(''); }}
@@ -376,10 +381,11 @@ export function RecordPage() {
           )}
 
           {/* ═══ Section 3: Factors ═══ */}
-          <SectionHeader num={3} title="What contributed?" done={hasFactor} open={openSection === 3} onClick={() => setOpenSection(openSection === 3 ? 0 : 3)} />
+          <SectionHeader num={3} title="What contributed?" subtitle="What factors may have led to this near miss" done={hasFactor} open={openSection === 3} onClick={() => setOpenSection(openSection === 3 ? 0 : 3)} />
 
           {openSection === 3 && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1">
+              <p className="text-xs bg-blue-50 text-blue-700 px-3 py-2 rounded-lg mb-2">What was happening at the time? Select any factors that may have contributed.</p>
               {Object.entries(factorOpts).map(([group, opts]) => (
                 <div key={group}>
                   <GroupLabel text={group} />

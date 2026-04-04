@@ -61,11 +61,12 @@ export function HomePage() {
       </div>
       <p className="text-gray-500 mb-1">{pharmacyName}</p>
 
-      {count > 0 && (
-        <p className="text-sm text-gray-400 mb-6">{count} incident{count !== 1 ? 's' : ''} this month</p>
-      )}
-      {count === 0 && (
-        <p className="text-sm text-gray-400 mb-6">No incidents recorded this month</p>
+      {count > 0 ? (
+        <div className="bg-gray-50 rounded-lg px-4 py-2 mb-6">
+          <p className="text-sm text-gray-600"><span className="font-bold text-gray-900">{count}</span> near miss{count !== 1 ? 'es' : ''} recorded this month</p>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-400 mb-6">No near misses recorded this month</p>
       )}
 
       {/* Main action — record a near miss */}
@@ -73,12 +74,14 @@ export function HomePage() {
         className="w-full max-w-xs bg-[#0F6E56] text-white text-lg font-semibold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-lg hover:bg-[#0B5A46] hover:shadow-xl transition-all">
         <ClipboardPlus size={24} /> Record a near miss
       </button>
+      <p className="text-xs text-gray-400 mt-2 max-w-xs text-center">Takes under 60 seconds. Your report is anonymous.</p>
 
       {/* Manager access */}
       <button onClick={handleManager}
-        className="mt-4 w-full max-w-xs bg-white text-gray-700 text-sm font-medium py-3 rounded-xl border border-gray-300 flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
+        className="mt-6 w-full max-w-xs bg-white text-gray-700 text-sm font-medium py-3 rounded-xl border border-gray-300 flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
         <LayoutDashboard size={16} /> Manager dashboard {pinEnabled && <Lock size={12} className="text-gray-400" />}
       </button>
+      <p className="text-xs text-gray-400 mt-1">Review incidents and generate reports</p>
     </div>
   );
 }

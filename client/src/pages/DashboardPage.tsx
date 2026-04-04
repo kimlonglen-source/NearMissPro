@@ -230,7 +230,8 @@ export function DashboardPage() {
                   {/* AI Recommendation */}
                   {rec && (
                     <div className="bg-[#F0FAF5] border border-[#C8E6D8] rounded-xl p-4">
-                      <p className="text-xs font-bold text-[#085041] uppercase tracking-wider mb-2">Recommendation</p>
+                      <p className="text-xs font-bold text-[#085041] uppercase tracking-wider mb-1">AI Recommendation</p>
+                      <p className="text-[10px] text-[#085041]/60 mb-2">Read this suggestion, then choose an action below.</p>
                       <p className="text-sm text-gray-800 leading-relaxed">{rec.ai_text}</p>
                       {rec.manager_outcome === 'modified' && rec.manager_text && (
                         <div className="mt-3 pt-3 border-t border-[#C8E6D8]">
