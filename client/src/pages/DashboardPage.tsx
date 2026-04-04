@@ -113,14 +113,14 @@ export function DashboardPage() {
 
   const getOutcome = (i: Incident) => i.status === 'voided' ? 'voided' : (i.recommendations?.[0]?.manager_outcome || null);
   const outcomeBadge = (outcome: string | null) => {
-    const map: Record<string, { cls: string; label: string }> = {
-      accepted: { cls: 'bg-[#E1F5EE] text-[#085041]', label: 'Accepted' },
-      modified: { cls: 'bg-[#EEEDFE] text-[#3C3489]', label: 'Modified' },
-      no_action: { cls: 'bg-gray-100 text-gray-600', label: 'No action' },
-      voided: { cls: 'bg-[#FCEBEB] text-[#791F1F]', label: 'Voided' },
+    const map: Record<string, { cls: string; label: string; icon: string }> = {
+      accepted: { cls: 'bg-[#E1F5EE] text-[#085041]', label: '\u2713 Accepted', icon: '' },
+      modified: { cls: 'bg-[#EEEDFE] text-[#3C3489]', label: '\u2713 Modified', icon: '' },
+      no_action: { cls: 'bg-gray-100 text-gray-600', label: '\u2713 No action', icon: '' },
+      voided: { cls: 'bg-[#FCEBEB] text-[#791F1F]', label: 'Voided', icon: '' },
     };
     const d = outcome ? map[outcome] : null;
-    if (!d) return <span className="bg-[#FAEEDA] text-[#633806] text-xs font-semibold px-2 py-0.5 rounded-full">Pending</span>;
+    if (!d) return <span className="bg-[#FAEEDA] text-[#633806] text-xs font-semibold px-2 py-0.5 rounded-full">\u25CB Pending</span>;
     return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.cls}`}>{d.label}</span>;
   };
 
