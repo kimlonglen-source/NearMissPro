@@ -162,24 +162,27 @@ export function RecordPage() {
 
   // ── Confirmation ──
   if (submitted) {
-    const editPct = (editTimer / 900) * 100;
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-sm mx-auto">
         <div className="w-20 h-20 rounded-full bg-[#E1F5EE] flex items-center justify-center mb-4">
           <CheckCircle2 size={40} className="text-[#0F6E56]" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Report submitted</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Near miss recorded</h2>
         <p className="text-sm text-gray-500 mb-1">Logged at {submittedAt}</p>
-        <p className="text-sm text-gray-500 mb-6">Thank you \u2014 your report helps keep patients safe.</p>
-        <div className="w-full max-w-xs mb-4">
-          <div className="text-xs text-gray-400 mb-1">Edit window: {Math.floor(editTimer / 60)}:{String(editTimer % 60).padStart(2, '0')}</div>
-          <div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-[#0F6E56] h-2 rounded-full transition-all" style={{ width: `${editPct}%` }} /></div>
-        </div>
-        <div className="flex gap-3 flex-wrap justify-center">
-          {editTimer > 0 && <button onClick={() => { setSubmitted(false); setAutoResetTimer(999); }} className="btn-outline text-sm">Edit this report</button>}
-          <button onClick={() => nav('/')} className="btn-teal text-sm">Done — back to home</button>
-        </div>
-        <p className="text-xs text-gray-300 mt-6">Auto-reset in {autoResetTimer}s</p>
+        <p className="text-sm text-gray-500 mb-8">Thank you \u2014 your report helps keep patients safe.</p>
+
+        <button onClick={() => nav('/')} className="w-full bg-[#0F6E56] text-white font-semibold py-4 rounded-xl text-base hover:bg-[#0B5A46] transition-colors mb-3">
+          Done
+        </button>
+
+        {editTimer > 0 && (
+          <button onClick={() => { setSubmitted(false); setAutoResetTimer(999); }}
+            className="w-full bg-white text-gray-600 font-medium py-3 rounded-xl text-sm border border-gray-300 hover:bg-gray-50 transition-colors">
+            Edit this report ({Math.floor(editTimer / 60)}:{String(editTimer % 60).padStart(2, '0')} remaining)
+          </button>
+        )}
+
+        <p className="text-xs text-gray-300 mt-8">Returning to home in {autoResetTimer}s</p>
       </div>
     );
   }
