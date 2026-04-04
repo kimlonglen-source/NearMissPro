@@ -24,7 +24,7 @@ export function ReportPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
+  const [_editing] = useState(true); // Always editable
   const [prevSummary, setPrevSummary] = useState('');
   const [periodSummary, setPeriodSummary] = useState('');
   const [agenda, setAgenda] = useState<{ text: string; edited: boolean }[]>([]);
@@ -59,7 +59,6 @@ export function ReportPage() {
       period_summary: periodSummary,
       agenda_items: agenda,
     });
-    setEditing(false);
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin text-[#0F6E56]" size={32} /></div>;
@@ -87,10 +86,11 @@ export function ReportPage() {
           <ArrowLeft size={14} /> Back
         </button>
         <div className="flex-1" />
-        <button onClick={() => { if (editing) saveEdits(); else setEditing(true); }}
-          className={`btn text-sm ${editing ? 'bg-[#0F6E56] text-white' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
-          {editing ? <><Save size={14} /> Save edits</> : <><Edit3 size={14} /> Edit summary &amp; agenda</>}
-        </button>
+        {(prevEdited || summaryEdited || agendaEdited) && (
+          <button onClick={saveEdits} className="btn text-sm bg-[#0F6E56] text-white">
+            <Save size={14} /> Save changes
+          </button>
+        )}
         <button onClick={() => { if (id) { api.emailReport(id); alert('Email logged to console'); } }}
           className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200"><Mail size={14} /> Email PDF</button>
         <button onClick={() => window.print()} className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200">
@@ -136,13 +136,13 @@ export function ReportPage() {
 
         {/* 3. Previous period improvements */}
         {prevSummary && (
-          <div className={`rounded-xl p-4 mb-6 ${editing ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
+          <div className={`rounded-xl p-4 mb-6 ${true ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-[#1D9E75]" />
               <span className="text-xs font-semibold uppercase text-gray-600">Last period improvements</span>
               {prevEdited && <EditBadge />}
             </div>
-            {editing ? (
+            {true ? (
               <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
                 rows={3} className="w-full p-2 rounded-lg border border-[#9FE1CB] text-sm bg-white" />
             ) : (
@@ -215,12 +215,12 @@ export function ReportPage() {
         )}
 
         {/* 5. Period summary */}
-        <div className={`rounded-xl p-4 mb-6 ${editing ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
+        <div className={`rounded-xl p-4 mb-6 ${true ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-semibold uppercase text-gray-600">Period summary</span>
             {summaryEdited && <EditBadge />}
           </div>
-          {editing ? (
+          {true ? (
             <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
               rows={4} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white" />
           ) : (
@@ -236,7 +236,7 @@ export function ReportPage() {
         <ol className="list-decimal list-inside space-y-2 mb-6">
           {agenda.map((item, i) => (
             <li key={i} className="text-sm">
-              {editing ? (
+              {true ? (
                 <input type="text" value={item.text} className="input-field inline-block w-[calc(100%-2rem)] text-sm"
                   onChange={e => {
                     const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
@@ -248,7 +248,7 @@ export function ReportPage() {
             </li>
           ))}
         </ol>
-        {editing && (
+        {true && (
           <button onClick={() => { setAgenda([...agenda, { text: '', edited: true }]); setAgendaEdited(true); }}
             className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add item</button>
         )}
