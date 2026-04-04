@@ -106,7 +106,7 @@ export function DashboardPage() {
       const start = period.days > 0 ? dateAgo(period.days) : customFrom;
       const end = period.days > 0 ? new Date().toISOString().slice(0, 10) : customTo;
       if (!start || !end) return;
-      const report = await api.generateReport({ periodStart: start, periodEnd: end, generatedBy: pharmacyName || 'Manager' });
+      const report = await api.generateReport({ periodStart: start, periodEnd: end, generatedBy: pharmacyName || 'Manager', isCustomRange: period.days === 0 });
       nav(`/reports/${(report as { id: string }).id}`);
     } finally { setBusy(false); }
   };

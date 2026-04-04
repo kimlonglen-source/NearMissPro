@@ -1,257 +1,303 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from '../components/Logo';
+import { Printer, Mail, Edit3, Save, Plus, Loader2, ArrowLeft } from 'lucide-react';
 
-interface AgendaItem { text: string; edited?: boolean }
-interface Rec { id: string; ai_text: string; manager_outcome: string | null; manager_text?: string }
 interface Incident {
-  id: string; error_types: string[]; drug_name: string; dispensed_drug?: string;
-  prescribed_strength?: string; dispensed_strength?: string; correct_formulation?: string;
-  dispensed_formulation?: string; where_caught: string; time_of_day: string;
-  factors: string[]; notes?: string; submitted_at: string; recommendations: Rec[];
+  id: string; error_types: string[]; drug_name?: string; dispensed_drug?: string;
+  prescribed_strength?: string; dispensed_strength?: string; correct_formulation?: string; dispensed_formulation?: string;
+  where_caught?: string; time_of_day?: string; factors: string[]; notes?: string; submitted_at: string; status: string;
+  recommendations?: { ai_text: string; manager_outcome?: string; manager_text?: string; private_note?: string }[];
 }
 interface Report {
-  id: string; pharmacy_name: string; period_start: string; period_end: string;
-  generated_by: string; generated_at: string; previous_period_summary: string;
-  period_summary: string; agenda_items: AgendaItem[]; locked: boolean;
-  total_incidents: number; vs_last_period: number; actions_taken: number; peak_risk_time: string;
-  is_first_report?: boolean;
+  id: string; period_start: string; period_end: string; generated_by: string; generated_at: string; locked: boolean;
+  previous_period_summary?: string; period_summary?: string; agenda_items: { text: string; edited: boolean }[];
 }
-interface AckRow { name: string; role: string; initials: string; date: string }
-
-function fmtDate(d: string) { return d ? new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
+interface AckRow { name: string; role: string; initials: string; date: string; }
 
 export function ReportPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
+  const nav = useNavigate();
   const { pharmacyName } = useAuth();
   const [report, setReport] = useState<Report | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [prevSummary, setPrevSummary] = useState('');
   const [periodSummary, setPeriodSummary] = useState('');
-  const [agenda, setAgenda] = useState<AgendaItem[]>([]);
-  const [editedFields, setEditedFields] = useState<Set<string>>(new Set());
+  const [agenda, setAgenda] = useState<{ text: string; edited: boolean }[]>([]);
+  const [prevEdited, setPrevEdited] = useState(false);
+  const [summaryEdited, setSummaryEdited] = useState(false);
+  const [agendaEdited, setAgendaEdited] = useState(false);
   const [ackRows, setAckRows] = useState<AckRow[]>([]);
 
   useEffect(() => {
     if (!id) return;
-    api.getReport(id).then((r: any) => {
-      setReport(r); setPrevSummary(r.previous_period_summary || '');
-      setPeriodSummary(r.period_summary || '');
-      setAgenda(r.agenda_items || []);
-      const picRow: AckRow = { name: r.generated_by, role: 'PIC', initials: '', date: '' };
-      setAckRows([picRow, ...Array.from({ length: 5 }, () => ({ name: '', role: '', initials: '', date: '' }))]);
-      api.getIncidents({ from: r.period_start, to: r.period_end }).then((d: any) => setIncidents(d.incidents || []));
-    });
+    Promise.all([
+      api.getReport(id).then((r: unknown) => {
+        const rpt = r as Report;
+        setReport(rpt);
+        setPrevSummary(rpt.previous_period_summary || '');
+        setPeriodSummary(rpt.period_summary || '');
+        setAgenda(rpt.agenda_items || []);
+        setAckRows([
+          { name: rpt.generated_by || '', role: 'Pharmacist-in-charge', initials: '', date: '' },
+          ...Array(5).fill(null).map(() => ({ name: '', role: '', initials: '', date: '' })),
+        ]);
+        // Load only active incidents (exclude voided)
+        return api.getIncidents({ from: rpt.period_start, to: rpt.period_end, status: 'active' });
+      }).then((d: { incidents: unknown[] }) => setIncidents(d.incidents as Incident[])),
+    ]).finally(() => setLoading(false));
   }, [id]);
 
-  const markEdited = (field: string) => setEditedFields(prev => new Set(prev).add(field));
-
   const saveEdits = async () => {
-    if (!id) return;
-    await api.updateReport(id, { previous_period_summary: prevSummary, period_summary: periodSummary, agenda_items: agenda });
+    if (!report) return;
+    await api.updateReport(report.id, {
+      previous_period_summary: prevSummary,
+      period_summary: periodSummary,
+      agenda_items: agenda,
+    });
     setEditing(false);
   };
 
-  const handleEmail = () => { if (id) { api.emailReport(id); console.log('Email PDF triggered for report', id); } };
-  const handlePrint = () => window.print();
+  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin text-[#0F6E56]" size={32} /></div>;
+  if (!report) return <div className="text-center py-12 text-gray-500">Report not found</div>;
 
-  const addAckRow = () => setAckRows(r => [...r, { name: '', role: '', initials: '', date: '' }]);
-  const updateAck = (i: number, field: keyof AckRow, val: string) =>
-    setAckRows(rows => rows.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
 
-  const editBorder = 'border-2 border-[#1D9E75]';
-  const Badge = () => <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700 font-medium no-print">Edited by manager</span>;
+  // Compute stats from loaded incidents
+  const activeIncidents = incidents.filter(i => i.status === 'active');
+  const actionsCount = activeIncidents.filter(i => i.recommendations?.[0]?.manager_outcome && i.recommendations[0].manager_outcome !== 'no_action').length;
+  const peakTime = (() => {
+    const counts: Record<string, number> = {};
+    activeIncidents.forEach(i => { if (i.time_of_day) counts[i.time_of_day] = (counts[i.time_of_day] || 0) + 1; });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    return top ? top[0] : '-';
+  })();
 
-  if (!report) return <div className="flex justify-center items-center h-64 text-gray-500">Loading report...</div>;
+  const EditBadge = () => <span className="ml-2 px-2 py-0.5 text-[10px] rounded-full bg-[#EEEDFE] text-[#3C3489] font-semibold no-print">Edited by manager</span>;
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Preview bar */}
-      <div className="no-print sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3">
-        <button onClick={() => { setEditing(!editing); if (editing) saveEdits(); }}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
-          {editing ? 'Save edits' : 'Edit summary & agenda'}
+      <div className="no-print sticky top-[53px] z-40 bg-white border-b px-4 py-3 flex items-center gap-3">
+        <button onClick={() => nav('/reports')} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+          <ArrowLeft size={14} /> Back
         </button>
-        <button onClick={handleEmail} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50">Email PDF</button>
-        <button onClick={handlePrint} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50">Print report</button>
+        <div className="flex-1" />
+        <button onClick={() => { if (editing) saveEdits(); else setEditing(true); }}
+          className={`btn text-sm ${editing ? 'bg-[#0F6E56] text-white' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+          {editing ? <><Save size={14} /> Save edits</> : <><Edit3 size={14} /> Edit summary &amp; agenda</>}
+        </button>
+        <button onClick={() => { if (id) { api.emailReport(id); alert('Email logged to console'); } }}
+          className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200"><Mail size={14} /> Email PDF</button>
+        <button onClick={() => window.print()} className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200">
+          <Printer size={14} /> Print report
+        </button>
       </div>
 
-      <div className="max-w-4xl mx-auto p-8 bg-white shadow-sm my-6 print:shadow-none print:my-0 print:p-6">
+      {/* Report content */}
+      <div className="max-w-4xl mx-auto px-6 py-8 bg-white my-4 shadow-sm rounded-xl print:shadow-none print:my-0 print:rounded-none">
+
         {/* 1. Header */}
-        <div className="pb-4 mb-6 border-b-2 border-[#0F6E56]">
-          <div className="flex items-center gap-3 mb-1">
-            <ShieldIcon size={40} />
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <ShieldIcon size={36} />
             <div>
-              <h1 className="text-xl font-bold text-[#0F6E56]">NearMiss <span className="text-gray-900">Pro</span></h1>
-              <p className="text-xs text-gray-500">Pharmacy Near-Miss Incident Report</p>
+              <div className="text-lg font-bold"><span className="text-[#0F6E56]">NearMiss</span> <span className="text-[#1A1A1A]">Pro</span></div>
+              <div className="text-xs text-gray-500">Near miss quality improvement report</div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1 mt-3 text-sm text-gray-700">
-            <p><span className="font-medium">Pharmacy:</span> {report.pharmacy_name || pharmacyName}</p>
-            <p><span className="font-medium">Period:</span> {fmtDate(report.period_start)} — {fmtDate(report.period_end)}</p>
-            <p><span className="font-medium">PIC:</span> {report.generated_by}</p>
-            <p><span className="font-medium">Generated:</span> {fmtDate(report.generated_at)}</p>
+          <div className="text-right text-sm text-gray-600">
+            <p className="font-semibold text-gray-900">{pharmacyName}</p>
+            <p>Reviewed by: {report.generated_by}</p>
+            <p>{fmtDate(report.period_start)} — {fmtDate(report.period_end)}</p>
+            <p>Generated: {fmtDate(report.generated_at)}</p>
           </div>
         </div>
+        <div className="h-[2px] bg-[#0F6E56] mb-6" />
 
-        {/* 2. Stats row */}
+        {/* 2. Stats */}
         <div className="grid grid-cols-4 gap-3 mb-6">
           {[
-            { label: 'Total Incidents', value: report.total_incidents },
-            { label: 'vs Last Period', value: `${report.vs_last_period >= 0 ? '+' : ''}${report.vs_last_period}` },
-            { label: 'Actions Taken', value: report.actions_taken },
-            { label: 'Peak Risk Time', value: report.peak_risk_time },
+            { label: 'Total incidents', value: activeIncidents.length },
+            { label: 'Actions taken', value: actionsCount },
+            { label: 'Reviewed', value: activeIncidents.filter(i => i.recommendations?.[0]?.manager_outcome).length },
+            { label: 'Peak risk time', value: peakTime },
           ].map(s => (
-            <div key={s.label} className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
-              <p className="text-lg font-bold text-[#0F6E56]">{s.value}</p>
-              <p className="text-xs text-gray-500">{s.label}</p>
+            <div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
+              <div className="text-lg font-bold text-gray-900">{s.value}</div>
+              <div className="text-[11px] text-gray-500">{s.label}</div>
             </div>
           ))}
         </div>
 
         {/* 3. Previous period improvements */}
-        {!report.is_first_report && (
-          <div className={`mb-6 rounded-lg p-4 bg-[#F0FAF5] border ${editing ? editBorder : 'border-[#9FE1CB]'}`}>
-            <h2 className="text-sm font-semibold text-[#0F6E56] mb-2">
-              Improvements from Previous Period
-              {editedFields.has('prev') && <Badge />}
-            </h2>
+        {prevSummary && (
+          <div className={`rounded-xl p-4 mb-6 ${editing ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-[#1D9E75]" />
+              <span className="text-xs font-semibold uppercase text-gray-600">Last period improvements</span>
+              {prevEdited && <EditBadge />}
+            </div>
             {editing ? (
-              <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); markEdited('prev'); }}
-                className="w-full p-2 rounded border border-[#9FE1CB] bg-white text-sm min-h-[80px]" />
+              <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
+                rows={3} className="w-full p-2 rounded-lg border border-[#9FE1CB] text-sm bg-white" />
             ) : (
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{prevSummary || 'No previous period summary.'}</p>
+              <p className="text-sm text-gray-700 leading-relaxed">{prevSummary}</p>
             )}
           </div>
         )}
 
         {/* 4. Incident log */}
-        <h2 className="text-sm font-semibold text-gray-800 mb-3">Incident Log</h2>
-        <div className="space-y-4 mb-6">
-          {incidents.map(inc => (
-            <div key={inc.id} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 text-xs font-medium rounded bg-[#E8F5F0] text-[#0F6E56]">{inc.error_types?.join(', ')}</span>
-                {inc.drug_name && <span className="px-2 py-0.5 text-xs rounded bg-amber-50 text-amber-700 border border-amber-200">{inc.drug_name}</span>}
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-xs text-gray-600 mb-3">
-                {inc.dispensed_drug && <p><span className="font-medium">Dispensed:</span> {inc.dispensed_drug}</p>}
-                {inc.prescribed_strength && <p><span className="font-medium">Prescribed:</span> {inc.prescribed_strength}</p>}
-                {inc.dispensed_strength && <p><span className="font-medium">Dispensed strength:</span> {inc.dispensed_strength}</p>}
-                <p><span className="font-medium">Caught at:</span> {inc.where_caught}</p>
-                <p><span className="font-medium">Time:</span> {inc.time_of_day}</p>
-                {inc.factors?.length > 0 && <p><span className="font-medium">Factors:</span> {inc.factors.join(', ')}</p>}
-              </div>
-              {inc.notes && <p className="text-xs text-gray-500 mb-2 italic">{inc.notes}</p>}
-              {inc.recommendations?.map(rec => (
-                <div key={rec.id} className="mt-2 p-2 rounded bg-gray-50 text-xs">
-                  <p className="text-gray-700"><span className="font-medium">AI Recommendation:</span> {rec.ai_text}</p>
-                  {rec.manager_outcome === 'modified' && rec.manager_text && (
-                    <p className="text-purple-700 mt-1"><span className="font-medium">Manager modified:</span> {rec.manager_text}</p>
-                  )}
-                  {rec.manager_outcome && rec.manager_outcome !== 'modified' && (
-                    <p className="text-gray-500 mt-1 capitalize"><span className="font-medium">Outcome:</span> {rec.manager_outcome.replace('_', ' ')}</p>
+        <h3 className="text-lg font-bold mb-3">Incident log</h3>
+        {activeIncidents.length === 0 ? (
+          <p className="text-sm text-gray-400 mb-6">No active incidents in this period.</p>
+        ) : (
+          <div className="space-y-3 mb-6">
+            {activeIncidents.map(inc => {
+              const rec = inc.recommendations?.[0];
+              const outcome = rec?.manager_outcome;
+              return (
+                <div key={inc.id} className="border border-gray-200 rounded-xl p-4">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    {inc.error_types.map(e => (
+                      <span key={e} className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{e}</span>
+                    ))}
+                    {inc.drug_name && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{inc.drug_name}</span>
+                    )}
+                    {/* Tick for reviewed */}
+                    {outcome && (
+                      <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${outcome === 'accepted' ? 'bg-[#E1F5EE] text-[#085041]' : outcome === 'modified' ? 'bg-[#EEEDFE] text-[#3C3489]' : 'bg-gray-100 text-gray-600'}`}>
+                        {outcome === 'accepted' ? '\u2713 Accepted' : outcome === 'modified' ? '\u2713 Modified' : '\u2713 No action'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Detail grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-500 mb-3">
+                    <div>Date: {fmtDate(inc.submitted_at)}</div>
+                    <div>Caught: {inc.where_caught || '-'}</div>
+                    <div>Time: {inc.time_of_day || '-'}</div>
+                    <div>Factors: {inc.factors.join(', ') || '-'}</div>
+                  </div>
+
+                  {/* Swap details */}
+                  {inc.dispensed_drug && <p className="text-xs text-gray-600 mb-1">Drug swap: {inc.drug_name} \u2192 {inc.dispensed_drug}</p>}
+                  {inc.dispensed_strength && <p className="text-xs text-gray-600 mb-1">Strength: {inc.prescribed_strength} \u2192 {inc.dispensed_strength}</p>}
+                  {inc.dispensed_formulation && <p className="text-xs text-gray-600 mb-1">Formulation: {inc.correct_formulation} \u2192 {inc.dispensed_formulation}</p>}
+
+                  {/* Recommendation */}
+                  {rec && (
+                    <div className="bg-gray-50 rounded-lg p-3 mt-2">
+                      <div className="text-xs font-semibold text-gray-600 mb-1">
+                        {outcome === 'modified' ? 'Recommendation \u2014 modified by pharmacist-in-charge' : outcome === 'accepted' ? 'Recommendation accepted' : outcome === 'no_action' ? 'No action needed' : 'Recommendation'}
+                      </div>
+                      {outcome === 'modified' && rec.manager_text ? (
+                        <>
+                          <p className="text-sm text-gray-800">{rec.manager_text}</p>
+                          <p className="text-sm text-gray-400 line-through mt-1">{rec.ai_text}</p>
+                          <p className="text-[10px] text-gray-400 italic mt-0.5">Modified from AI suggestion</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-800">{rec.ai_text}</p>
+                      )}
+                    </div>
                   )}
                 </div>
-              ))}
-            </div>
-          ))}
-          {incidents.length === 0 && <p className="text-sm text-gray-400 italic">No incidents in this period.</p>}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* 5. Period summary */}
-        <div className={`mb-6 rounded-lg p-4 bg-[#F8FAF8] border ${editing ? editBorder : 'border-[#C8E6D8]'}`}>
-          <h2 className="text-sm font-semibold text-gray-800 mb-2">
-            Period Summary
-            {editedFields.has('summary') && <Badge />}
-          </h2>
+        <div className={`rounded-xl p-4 mb-6 ${editing ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold uppercase text-gray-600">Period summary</span>
+            {summaryEdited && <EditBadge />}
+          </div>
           {editing ? (
-            <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); markEdited('summary'); }}
-              className="w-full p-2 rounded border border-[#C8E6D8] bg-white text-sm min-h-[80px]" />
+            <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
+              rows={4} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white" />
           ) : (
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{periodSummary || 'No summary provided.'}</p>
+            <p className="text-sm text-gray-700 leading-relaxed">{periodSummary || 'No summary generated.'}</p>
           )}
         </div>
 
         {/* 6. Staff meeting agenda */}
-        <div className={`mb-6 rounded-lg p-4 bg-[#F8FAF8] border ${editing ? editBorder : 'border-[#C8E6D8]'}`}>
-          <h2 className="text-sm font-semibold text-gray-800 mb-2">
-            Staff Meeting Agenda
-            {editedFields.has('agenda') && <Badge />}
-          </h2>
-          <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
-            {agenda.map((item, i) => (
-              <li key={i}>
-                {editing ? (
-                  <input value={item.text} onChange={e => {
-                    const next = [...agenda]; next[i] = { ...next[i], text: e.target.value, edited: true }; setAgenda(next); markEdited('agenda');
-                  }} className="ml-1 px-2 py-0.5 border border-[#C8E6D8] rounded text-sm w-[85%]" />
-                ) : (
-                  <span>{item.text}{item.edited && <span className="ml-1 text-xs text-purple-600">(edited)</span>}</span>
-                )}
-              </li>
+        <h3 className="text-lg font-bold mb-3">
+          Staff meeting agenda
+          {agendaEdited && <EditBadge />}
+        </h3>
+        <ol className="list-decimal list-inside space-y-2 mb-6">
+          {agenda.map((item, i) => (
+            <li key={i} className="text-sm">
+              {editing ? (
+                <input type="text" value={item.text} className="input-field inline-block w-[calc(100%-2rem)] text-sm"
+                  onChange={e => {
+                    const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
+                    setAgenda(next); setAgendaEdited(true);
+                  }} />
+              ) : (
+                <span>{item.text}</span>
+              )}
+            </li>
+          ))}
+        </ol>
+        {editing && (
+          <button onClick={() => { setAgenda([...agenda, { text: '', edited: true }]); setAgendaEdited(true); }}
+            className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add item</button>
+        )}
+
+        {/* 7. Staff acknowledgement table */}
+        <h3 className="text-lg font-bold mb-1">Staff acknowledgement</h3>
+        <p className="text-xs text-gray-500 mb-3">I confirm I have attended the near miss review meeting and have read and understood the incidents and actions in this report.</p>
+        <table className="w-full border-collapse text-sm mb-4">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="border border-gray-200 px-3 py-2 text-left font-medium">Staff name</th>
+              <th className="border border-gray-200 px-3 py-2 text-left font-medium">Role</th>
+              <th className="border border-gray-200 px-3 py-2 text-left font-medium">Initials</th>
+              <th className="border border-gray-200 px-3 py-2 text-left font-medium">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ackRows.map((row, i) => (
+              <tr key={i}>
+                <td className="border border-gray-200 px-3 py-2">{row.name || '\u00A0'}</td>
+                <td className="border border-gray-200 px-3 py-2">{row.role || '\u00A0'}</td>
+                <td className="border border-gray-200 px-3 py-2">{'\u00A0'}</td>
+                <td className="border border-gray-200 px-3 py-2">{'\u00A0'}</td>
+              </tr>
             ))}
-          </ol>
-          {editing && (
-            <button onClick={() => { setAgenda(a => [...a, { text: '', edited: true }]); markEdited('agenda'); }}
-              className="mt-2 text-xs text-[#0F6E56] hover:underline">+ Add item</button>
-          )}
-        </div>
+          </tbody>
+        </table>
+        <button onClick={() => setAckRows([...ackRows, { name: '', role: '', initials: '', date: '' }])}
+          className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add row</button>
 
-        {/* 7. Staff acknowledgement */}
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-800 mb-2">Staff Acknowledgement</h2>
-          <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
-            <thead className="bg-gray-50">
-              <tr>{['Staff Name', 'Role', 'Initials', 'Date'].map(h => (
-                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500">{h}</th>
-              ))}</tr>
-            </thead>
-            <tbody>
-              {ackRows.map((row, i) => (
-                <tr key={i} className="border-t border-gray-100">
-                  {(['name', 'role', 'initials', 'date'] as (keyof AckRow)[]).map(f => (
-                    <td key={f} className="px-3 py-1.5">
-                      <input value={row[f]} onChange={e => updateAck(i, f, e.target.value)}
-                        className="w-full text-sm border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#0F6E56] rounded px-1" />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <button onClick={addAckRow} className="mt-2 text-xs text-[#0F6E56] hover:underline no-print">+ Add row</button>
-        </div>
-
-        {/* 8. PIC signature */}
-        <div className="mb-8 flex items-end gap-12">
+        {/* 8. PIC Signature */}
+        <div className="grid grid-cols-2 gap-12 mt-8 mb-8">
           <div>
-            <p className="text-xs text-gray-500 mb-1">Pharmacist-in-Charge</p>
-            <p className="text-sm font-medium text-gray-800">{report.generated_by}</p>
+            <div className="border-b border-gray-400 mb-2 h-12" />
+            <div className="text-sm font-medium">{report.generated_by}</div>
+            <div className="text-xs text-gray-500">Pharmacist-in-charge</div>
           </div>
-          <div className="flex-1 border-b border-gray-300 mb-0.5" />
           <div>
-            <p className="text-xs text-gray-500 mb-1">Date</p>
-            <div className="w-32 border-b border-gray-300">&nbsp;</div>
+            <div className="border-b border-gray-400 mb-2 h-12" />
+            <div className="text-sm font-medium">Date</div>
           </div>
         </div>
 
         {/* 9. Footer */}
-        <div className="border-t border-gray-200 pt-3 text-center text-xs text-gray-400">
-          <p>{report.pharmacy_name || pharmacyName} — {fmtDate(report.period_start)} to {fmtDate(report.period_end)}</p>
-          <p className="mt-1 italic">Recommendations generated by AI. All clinical decisions reviewed and approved by the Pharmacist-in-Charge.</p>
+        <div className="border-t pt-4 text-xs text-gray-400 text-center">
+          NearMiss Pro \u00B7 {pharmacyName} \u00B7 {fmtDate(report.period_start)} \u2014 {fmtDate(report.period_end)}
+          <br />AI recommendations are advisory only. The pharmacist-in-charge is responsible for all professional decisions.
         </div>
       </div>
-
-      <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          body { background: white; }
-        }
-      `}</style>
     </div>
   );
 }
