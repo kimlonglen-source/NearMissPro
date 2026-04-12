@@ -27,6 +27,8 @@ app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', version: '2.0.0' }));
 
-app.listen(env.port, () => console.log(`NearMissPro server on port ${env.port}`));
+if (!process.env.VERCEL) {
+  app.listen(env.port, () => console.log(`NearMissPro server on port ${env.port}`));
+}
 
 export default app;
