@@ -1,0 +1,145 @@
+{
+  "version": 2,
+  "crons": [
+    {
+      "path": "/api/cron-alerts?secret=${CRON_SECRET}",
+      "schedule": "0 20 * * *"
+    }
+  ],
+  "builds": [
+    {
+      "src": "api/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/chat",
+      "dest": "/api/chat.js"
+    },
+    {
+      "src": "/api/jobs",
+      "dest": "/api/jobs.js"
+    },
+    {
+      "src": "/api/register",
+      "dest": "/api/register.js"
+    },
+    {
+      "src": "/api/login",
+      "dest": "/api/register.js"
+    },
+    {
+      "src": "/api/submit-job",
+      "dest": "/api/employer-jobs.js"
+    },
+    {
+      "src": "/api/admin",
+      "dest": "/api/admin.js"
+    },
+    {
+      "src": "/api/approved-jobs",
+      "dest": "/api/approved-jobs.js"
+    },
+    {
+      "src": "/api/employer-jobs",
+      "dest": "/api/employer-jobs.js"
+    },
+    {
+      "src": "/api/reset-password",
+      "dest": "/api/reset-password.js"
+    },
+    {
+      "src": "/api/track",
+      "dest": "/api/approved-jobs.js"
+    },
+    {
+      "src": "/api/apply",
+      "dest": "/api/apply.js"
+    },
+    {
+      "src": "/api/seeker",
+      "dest": "/api/seeker.js"
+    },
+    {
+      "src": "/api/seeker-apps",
+      "dest": "/api/seeker-apps.js"
+    },
+    {
+      "src": "/api/cron-alerts",
+      "dest": "/api/cron-alerts.js"
+    },
+    {
+      "src": "/admin.html",
+      "dest": "/public/admin.html"
+    },
+    {
+      "src": "/employer-portal.html",
+      "dest": "/public/employer-portal.html"
+    },
+    {
+      "src": "/logo-icon.svg",
+      "dest": "/public/logo-icon.svg"
+    },
+    {
+      "src": "/challenge",
+      "dest": "/public/challenge.html"
+    },
+    {
+      "src": "/decide",
+      "dest": "/public/decide.html"
+    },
+    {
+      "src": "/decode",
+      "dest": "/public/decode.html"
+    },
+    {
+      "src": "/interview",
+      "dest": "/public/interview.html"
+    },
+    {
+      "src": "/negotiate",
+      "dest": "/public/negotiate.html"
+    },
+    {
+      "src": "/compare",
+      "dest": "/public/compare.html"
+    },
+    {
+      "src": "/score",
+      "dest": "/public/score.html"
+    },
+    {
+      "src": "/email",
+      "dest": "/public/email.html"
+    },
+    {
+      "src": "/sitemap.xml",
+      "dest": "/api/approved-jobs.js?sitemap=1"
+    },
+    {
+      "src": "/blog/rss",
+      "dest": "/api/approved-jobs.js?blogRss=1"
+    },
+    {
+      "src": "/blog/(.+)",
+      "dest": "/api/approved-jobs.js?blogPost=$1"
+    },
+    {
+      "src": "/blog/?",
+      "dest": "/api/approved-jobs.js?blogPage=1"
+    },
+    {
+      "src": "/",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ]
+}

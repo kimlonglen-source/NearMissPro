@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — FindMeAJob.co.nz</title>
+<meta name="robots" content="noindex,nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#09090b;--bg2:rgba(255,255,255,.03);--bg3:rgba(255,255,255,.06);--text:#f4f4f5;--text2:#a1a1aa;--text3:#71717a;--em:#10b981;--em2:#059669;--gold:#f59e0b;--purple:#8b5cf6;--red:#ef4444;--border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.08);--card:rgba(255,255,255,.03);--r:12px;--rl:16px;}
+body.light{--bg:#f8fafc;--bg2:#ffffff;--bg3:rgba(0,0,0,.03);--text:#0f172a;--text2:#475569;--text3:#64748b;--em:#059669;--em2:#0d9488;--gold:#b45309;--purple:#7c3aed;--red:#dc2626;--border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.15);--card:rgba(255,255,255,.9);--hdr:rgba(248,250,252,.9)}
+body.light .login-box{background:#fff}
+body.light input{background:#fff;border-color:rgba(0,0,0,.15)}
+body.light .toast{background:rgba(255,255,255,.95);color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.1)}
+body.light .confirm-box{background:#fff}
+body.light .job-row{background:var(--card)}
+body.light .hlogo span{color:var(--em)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;font-size:15px;line-height:1.6}
+
+/* Toast */
+#toast-container{position:fixed;top:1.5rem;right:1.5rem;z-index:99999;display:flex;flex-direction:column;gap:.5rem}
+.toast{background:rgba(24,24,27,.95);border:1px solid var(--border2);backdrop-filter:blur(12px);border-radius:var(--r);padding:.85rem 1.25rem;font-size:.85rem;font-weight:600;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.4);animation:toastIn .3s ease;display:flex;align-items:center;gap:.6rem;max-width:360px}
+.toast.success{border-color:rgba(16,185,129,.3);color:var(--em)}
+.toast.error{border-color:rgba(239,68,68,.3);color:#fca5a5}
+.toast.out{animation:toastOut .3s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(30px)}}
+
+/* Login */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2.5rem;width:100%;max-width:400px;backdrop-filter:blur(20px)}
+.login-logo{font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:.35rem}
+.login-logo span{color:var(--em)}
+.login-sub{font-size:.85rem;color:var(--text3);font-weight:600;margin-bottom:2rem}
+label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);display:block;margin-bottom:.5rem}
+input{background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:15px;padding:.85rem 1.15rem;outline:none;width:100%;margin-bottom:1rem;transition:border-color .2s}
+input:focus{border-color:var(--em);box-shadow:0 0 0 3px rgba(16,185,129,.1)}
+.btn{display:flex;align-items:center;justify-content:center;background:var(--em);color:#fff;padding:.85rem;border-radius:999px;font-family:'Inter',system-ui,sans-serif;font-size:.9rem;font-weight:700;border:none;cursor:pointer;width:100%;transition:all .2s}
+.btn:hover{background:var(--em2);transform:translateY(-1px);box-shadow:0 4px 20px rgba(16,185,129,.3)}
+.err{color:#fca5a5;font-size:.82rem;font-weight:600;margin-top:.65rem;display:none}
+
+/* App */
+#app{display:none;min-height:100vh}
+header{background:var(--hdr,rgba(9,9,11,.8));border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.hlogo{font-size:1.05rem;font-weight:800}.hlogo span{color:var(--em)}
+.hright{display:flex;align-items:center;gap:1rem}
+.badge{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--em);font-size:.72rem;font-weight:700;padding:.3rem .75rem;border-radius:999px}
+.signout{background:none;border:1px solid var(--border2);color:var(--text3);padding:.45rem 1rem;border-radius:999px;cursor:pointer;font-family:'Inter',system-ui,sans-serif;font-size:.78rem;font-weight:600;transition:all .2s}
+.signout:hover{color:var(--text);border-color:var(--text3)}
+
+main{padding:2rem;max-width:1200px;margin:0 auto}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:.85rem;margin-bottom:1.75rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem 1.5rem;transition:all .25s}
+.stat:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.stat-n{font-size:2rem;font-weight:900;color:var(--text);line-height:1}
+.stat-l{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-top:.4rem}
+
+/* Tabs */
+.tabs{display:flex;gap:.35rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.tab{background:none;border:1px solid var(--border2);color:var(--text3);padding:.5rem 1.15rem;border-radius:999px;cursor:pointer;font-family:'Inter',system-ui,sans-serif;font-size:.82rem;font-weight:600;transition:all .2s}
+.tab.active{background:var(--em);color:#fff;border-color:var(--em)}
+.tab:hover:not(.active){border-color:var(--text3);color:var(--text)}
+
+/* Refresh */
+.refresh-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem}
+.refresh-txt{font-size:.78rem;color:var(--text3);font-weight:500}
+.rbtn{background:var(--bg2);border:1px solid var(--border2);color:var(--text2);padding:.45rem 1rem;border-radius:999px;cursor:pointer;font-family:'Inter',system-ui,sans-serif;font-size:.78rem;font-weight:600;transition:all .2s}
+.rbtn:hover{border-color:var(--em);color:var(--em)}
+
+/* Job list */
+#job-list{display:grid;gap:.75rem}
+.job-row{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;display:grid;grid-template-columns:1fr auto;gap:1.25rem;align-items:start;transition:all .25s}
+.job-row:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.25);border-color:var(--border2)}
+.job-row.pending{border-left:3px solid var(--gold)}
+.job-row.approved{border-left:3px solid var(--em)}
+.job-row.rejected{border-left:3px solid var(--red);opacity:.75}
+.job-row.expired{border-left:3px solid var(--text3);opacity:.75}
+.jr-title{font-weight:800;font-size:1rem;color:var(--text);margin-bottom:.3rem}
+.jr-co{font-size:.85rem;font-weight:700;color:var(--gold);margin-bottom:.35rem}
+.jr-meta{font-size:.78rem;color:var(--text3);font-weight:500;margin-bottom:.5rem;line-height:1.8}
+.jr-meta a{color:var(--em);text-decoration:none}
+.jr-meta a:hover{text-decoration:underline}
+.jr-dates{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.6rem}
+.jr-date{font-size:.72rem;font-weight:600;padding:.25rem .7rem;border-radius:999px;display:inline-flex;align-items:center;gap:.3rem}
+.jr-date.submitted{background:var(--bg3);border:1px solid var(--border2);color:var(--text3)}
+.jr-date.approved-date{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--em)}
+.jr-date.expires-ok{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);color:var(--em)}
+.jr-date.expires-soon{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:var(--gold)}
+.jr-date.expires-now{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#fca5a5}
+.pills{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.6rem}
+.status-pill{display:inline-flex;align-items:center;padding:.22rem .65rem;border-radius:999px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.sp-pending{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:var(--gold)}
+.sp-approved{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--em)}
+.sp-rejected{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#fca5a5}
+.sp-featured{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--gold)}
+.sp-expired{background:var(--bg3);border:1px solid var(--border2);color:var(--text3)}
+.actions{display:flex;flex-direction:column;gap:.4rem;flex-shrink:0;align-items:flex-end}
+.action-row{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
+.abtn{border:none;padding:.4rem .85rem;border-radius:999px;font-family:'Inter',system-ui,sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.abtn:hover{transform:translateY(-1px)}
+.abtn-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:var(--em)}
+.abtn-ok:hover{background:var(--em);color:#fff;box-shadow:0 4px 16px rgba(16,185,129,.3)}
+.abtn-rej{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#fca5a5}
+.abtn-rej:hover{background:var(--red);color:#fff;box-shadow:0 4px 16px rgba(239,68,68,.3)}
+.abtn-feat{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:var(--gold)}
+.abtn-feat:hover{background:var(--gold);color:#000;box-shadow:0 4px 16px rgba(245,158,11,.3)}
+.abtn-relist{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);color:var(--purple)}
+.abtn-relist:hover{background:var(--purple);color:#fff;box-shadow:0 4px 16px rgba(139,92,246,.3)}
+.abtn-del{background:var(--bg3);border:1px solid var(--border2);color:var(--text3)}
+.abtn-del:hover{background:rgba(239,68,68,.1);border-color:var(--red);color:#fca5a5}
+.jr-desc{font-size:.82rem;color:var(--text2);line-height:1.7;margin-bottom:.6rem;white-space:pre-line}
+.jr-desc.collapsed{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.desc-toggle{background:none;border:none;color:var(--purple);font-family:'Inter',system-ui,sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;padding:0;margin-bottom:.5rem;transition:color .2s}
+.desc-toggle:hover{color:var(--em)}
+.jr-extra{font-size:.78rem;color:var(--text3);margin-bottom:.35rem;margin-top:.35rem;line-height:1.7}
+.jr-extra strong{color:var(--text2)}
+.empty{text-align:center;padding:4rem;color:var(--text3);font-size:.9rem;font-weight:600}
+
+/* Modal */
+#confirm-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(8px)}
+#confirm-modal.show{display:flex}
+.confirm-box{background:rgba(24,24,27,.98);border:1px solid var(--border);border-radius:20px;padding:2rem;width:100%;max-width:420px;text-align:center;backdrop-filter:blur(20px)}
+.confirm-icon{font-size:2.5rem;margin-bottom:1rem}
+.confirm-title{font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:.6rem}
+.confirm-sub{font-size:.85rem;color:var(--text3);margin-bottom:1.75rem;line-height:1.7;font-weight:500}
+.confirm-btns{display:flex;gap:.6rem}
+.confirm-cancel{flex:1;padding:.85rem;border-radius:999px;font-family:'Inter',system-ui,sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);transition:all .2s}
+.confirm-ok{flex:1;padding:.85rem;border-radius:999px;font-family:'Inter',system-ui,sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;border:none;color:#fff;transition:all .2s}
+.confirm-ok.action-delete{background:var(--red)}
+.confirm-ok.action-delete:hover{background:#dc2626}
+.confirm-ok.action-approve{background:var(--em)}
+.confirm-ok.action-approve:hover{background:var(--em2)}
+.confirm-ok.action-reject{background:var(--red)}
+.confirm-ok.action-reject:hover{background:#dc2626}
+.confirm-cancel:hover{border-color:var(--text3);color:var(--text)}
+
+@media(max-width:768px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.stats{grid-template-columns:1fr 1fr}.job-row{grid-template-columns:1fr}.actions{flex-direction:row;flex-wrap:wrap;align-items:flex-start}header{padding:.85rem 1.25rem}main{padding:1.25rem}}
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<div id="login">
+  <div style="position:absolute;top:1.5rem;right:1.5rem"><button id="tbtn-login" onclick="toggleTheme()" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text3);width:34px;height:34px;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem">&#9790;</button></div>
+  <div class="login-box">
+    <div class="login-logo">FindMe<span>AJob</span>.co.nz</div>
+    <div class="login-sub">Admin Panel</div>
+    <label>Password</label>
+    <input type="password" id="pw" placeholder="Enter admin password" autocomplete="current-password">
+    <button class="btn" id="btn-login" type="button">Sign In</button>
+    <div class="err" id="login-err">Incorrect password.</div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="hlogo">FindMe<span>AJob</span> <span style="font-size:.72rem;color:var(--text3);font-weight:600">Admin</span></div>
+    <div class="hright">
+      <span class="badge" id="pending-badge">0 pending</span>
+      <button id="tbtn" onclick="toggleTheme()" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text3);width:34px;height:34px;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem">&#9790;</button>
+      <button class="signout" id="btn-signout" type="button">Sign out</button>
+    </div>
+  </header>
+  <main>
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="st-total">0</div><div class="stat-l">Total listings</div></div>
+      <div class="stat"><div class="stat-n" id="st-pending" style="color:var(--gold)">0</div><div class="stat-l">Pending review</div></div>
+      <div class="stat"><div class="stat-n" id="st-approved" style="color:var(--em)">0</div><div class="stat-l">Live now</div></div>
+      <div class="stat"><div class="stat-n" id="st-rejected" style="color:var(--red)">0</div><div class="stat-l">Rejected</div></div>
+      <div class="stat"><div class="stat-n" id="st-expired" style="color:var(--text3)">0</div><div class="stat-l">Expired</div></div>
+    </div>
+    <div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.75rem">
+      <div class="stat" style="border-left:3px solid var(--purple)"><div class="stat-n" id="st-seekers" style="color:var(--purple)">0</div><div class="stat-l">Job Seekers</div></div>
+      <div class="stat" style="border-left:3px solid var(--gold)"><div class="stat-n" id="st-employers" style="color:var(--gold)">0</div><div class="stat-l">Employers</div></div>
+      <div class="stat" style="border-left:3px solid var(--em)"><div class="stat-n" id="st-apps" style="color:var(--em)">0</div><div class="stat-l">Applications</div></div>
+      <div class="stat" style="border-left:3px solid #06b6d4"><div class="stat-n" id="st-cvs" style="color:#06b6d4">0</div><div class="stat-l">CV Uploads</div></div>
+    </div>
+    <div class="refresh-bar">
+      <div class="tabs">
+        <button class="tab active" data-tab="pending" type="button">Pending</button>
+        <button class="tab" data-tab="approved" type="button">Live</button>
+        <button class="tab" data-tab="rejected" type="button">Rejected</button>
+        <button class="tab" data-tab="expired" type="button">Expired</button>
+        <button class="tab" data-tab="all" type="button">All</button>
+        <button class="tab" data-tab="seekers" type="button" style="margin-left:.5rem;border-color:rgba(139,92,246,.2);color:var(--purple)">Job Seekers</button>
+        <button class="tab" data-tab="employers" type="button" style="border-color:rgba(245,158,11,.2);color:var(--gold)">Employers</button>
+        <button class="tab" data-tab="social" type="button" style="margin-left:.5rem;border-color:rgba(236,72,153,.2);color:#ec4899">Social Media</button>
+        <button class="tab" data-tab="blog" type="button" style="border-color:rgba(16,185,129,.2);color:var(--em)">Blog</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.65rem">
+        <span class="refresh-txt" id="last-refresh">Never refreshed</span>
+        <button class="rbtn" id="btn-refresh" type="button">&#8635; Refresh</button>
+      </div>
+    </div>
+    <div id="job-list"></div>
+    <div id="people-list" style="display:none"></div>
+    <div id="blog-list" style="display:none">
+      <div style="padding:1.5rem 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
+          <div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Blog Content Generator</div>
+            <div style="font-size:.78rem;color:var(--text3);margin-top:.2rem">AI writes daily blog posts for job seekers &amp; employers. Publish to <a href="/blog" target="_blank" style="color:var(--em)">/blog</a></div>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button onclick="generateBlog()" id="btn-gen-blog" style="background:linear-gradient(135deg,var(--em),#14b8a6);color:#fff;border:none;padding:.55rem 1.25rem;border-radius:999px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Generate Posts</button>
+            <button onclick="loadExistingBlog()" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text2);padding:.55rem 1rem;border-radius:999px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">View Published</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem">
+          <select id="blog-count" style="background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:inherit;font-size:.82rem;padding:.45rem .75rem;outline:none">
+            <option value="3">3 posts</option>
+            <option value="5">5 posts</option>
+            <option value="7">7 posts (weekly batch)</option>
+          </select>
+        </div>
+        <div id="blog-output"></div>
+      </div>
+    </div>
+    <div id="social-list" style="display:none">
+      <div style="padding:1.5rem 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+          <div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Social Media Generator</div>
+            <div style="font-size:.78rem;color:var(--text3);margin-top:.2rem">AI generates fresh posts for every platform. Just copy &amp; paste.</div>
+          </div>
+          <button onclick="generateSocial()" id="btn-gen-social" style="background:linear-gradient(135deg,#ec4899,var(--purple));color:#fff;border:none;padding:.55rem 1.25rem;border-radius:999px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Generate Posts</button>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem">
+          <select id="social-tone" style="background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:inherit;font-size:.82rem;padding:.45rem .75rem;outline:none">
+            <option value="funny">Funny / Roast</option>
+            <option value="professional">Professional</option>
+            <option value="hype">Hype / Excited</option>
+            <option value="casual">Casual / Chill</option>
+          </select>
+          <select id="social-focus" style="background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:inherit;font-size:.82rem;padding:.45rem .75rem;outline:none">
+            <option value="challenge">Promote #cvchallengenz</option>
+            <option value="challenge-viral">Viral challenge — POST YOUR RESULTS</option>
+            <option value="platform">Promote FindMeAJob.co.nz</option>
+            <option value="results">Share funny results</option>
+            <option value="milestone">Share milestone / stats</option>
+            <option value="seeker-tips">Job seeker tips</option>
+            <option value="employer-tips">Employer / hiring tips</option>
+            <option value="market-insight">NZ job market insight</option>
+          </select>
+        </div>
+        <div id="social-output"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">&#128465;</div>
+    <div class="confirm-title" id="confirm-title">Delete this listing?</div>
+    <div class="confirm-sub" id="confirm-sub">This will permanently remove the listing and cannot be undone.</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" id="confirm-cancel" type="button">Cancel</button>
+      <button class="confirm-ok action-delete" id="confirm-ok" type="button">Yes, delete permanently</button>
+    </div>
+  </div>
+</div>
+
+<div id="email-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(8px)">
+  <div class="confirm-box" style="max-width:520px;text-align:left">
+    <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:.25rem">&#9993; Send Email</div>
+    <div style="font-size:.78rem;color:var(--text3);margin-bottom:1.25rem" id="email-to-label">To: user@example.com</div>
+    <label>Subject</label>
+    <input type="text" id="email-subject" placeholder="Subject line" style="margin-bottom:.75rem">
+    <label>Message</label>
+    <textarea id="email-body" placeholder="Type your message..." style="background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:15px;padding:.85rem 1.15rem;outline:none;width:100%;min-height:120px;resize:vertical;margin-bottom:1rem"></textarea>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="document.getElementById('email-modal').style.display='none'" type="button">Cancel</button>
+      <button class="confirm-ok action-approve" id="email-send-btn" type="button">Send Email</button>
+    </div>
+  </div>
+</div>
+
+<div id="plan-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(8px)">
+  <div class="confirm-box" style="max-width:420px;text-align:left">
+    <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:.25rem">&#9881; Change Plan</div>
+    <div style="font-size:.78rem;color:var(--text3);margin-bottom:1.25rem" id="plan-label">Employer: company</div>
+    <label>Select Plan</label>
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem">
+      <button class="abtn" data-plan="free" type="button" style="flex:1;padding:.65rem;border:1px solid var(--border2);background:var(--bg3);color:var(--text3);border-radius:var(--r);font-weight:700;cursor:pointer" onclick="selectPlan('free',this)">Starter</button>
+      <button class="abtn" data-plan="basic" type="button" style="flex:1;padding:.65rem;border:1px solid rgba(16,185,129,.2);background:rgba(16,185,129,.08);color:var(--em);border-radius:var(--r);font-weight:700;cursor:pointer" onclick="selectPlan('basic',this)">Growth</button>
+      <button class="abtn" data-plan="pro" type="button" style="flex:1;padding:.65rem;border:1px solid rgba(245,158,11,.2);background:rgba(245,158,11,.08);color:var(--gold);border-radius:var(--r);font-weight:700;cursor:pointer" onclick="selectPlan('pro',this)">Pro</button>
+    </div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="document.getElementById('plan-modal').style.display='none'" type="button">Cancel</button>
+      <button class="confirm-ok action-approve" id="plan-save-btn" type="button">Save Plan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleTheme(){document.body.classList.toggle('light');var l=document.body.classList.contains('light');localStorage.setItem('theme',l?'light':'dark');var icon=l?'&#9788;':'&#9790;';var t1=document.getElementById('tbtn');var t2=document.getElementById('tbtn-login');if(t1)t1.innerHTML=icon;if(t2)t2.innerHTML=icon;}
+if(localStorage.getItem('theme')==='light'){document.body.classList.add('light');var icon2='&#9788;';var t1b=document.getElementById('tbtn');var t2b=document.getElementById('tbtn-login');if(t1b)t1b.innerHTML=icon2;if(t2b)t2b.innerHTML=icon2;}
+var pw="", allJobs=[], currentTab="pending", refreshTimer=null;
+var pendingAction=null, pendingActionId=null;
+var PLAN_DAYS = { free:30, basic:60, pro:90 };
+
+function esc(s){var d=document.createElement("div");d.textContent=s||"";return d.innerHTML;}
+
+function showToast(msg, type) {
+  var container = document.getElementById("toast-container");
+  var el = document.createElement("div");
+  el.className = "toast " + (type || "");
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(function(){ el.classList.add("out"); }, 2800);
+  setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 3200);
+}
+
+function getDaysLeft(job) {
+  var start = job.approvedAt || job.submitted;
+  if (!start) return null;
+  var days = PLAN_DAYS[job.plan] || 30;
+  var expiry = new Date(new Date(start).getTime() + days*24*60*60*1000);
+  return { days: Math.ceil((expiry - new Date()) / (1000*60*60*24)), expiry: expiry };
+}
+function fmtDate(d) { return new Date(d).toLocaleDateString("en-NZ",{day:"numeric",month:"short",year:"numeric"}); }
+function isExpired(j) { if(j.status!=="approved")return false; var i=getDaysLeft(j); return i&&i.days<=0; }
+
+document.getElementById("pw").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
+document.getElementById("btn-login").addEventListener("click",doLogin);
+document.getElementById("btn-signout").addEventListener("click",function(){pw="";document.getElementById("login").style.display="flex";document.getElementById("app").style.display="none";clearInterval(refreshTimer);});
+document.getElementById("btn-refresh").addEventListener("click",loadJobs);
+document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("active");});this.classList.add("active");currentTab=this.dataset.tab;document.getElementById("job-list").style.display="none";document.getElementById("people-list").style.display="none";document.getElementById("social-list").style.display="none";document.getElementById("blog-list").style.display="none";if(currentTab==="social"){document.getElementById("social-list").style.display="block";}else if(currentTab==="blog"){document.getElementById("blog-list").style.display="block";}else if(currentTab==="seekers"){loadPeople("seekers");}else if(currentTab==="employers"){loadPeople("employers");}else{document.getElementById("job-list").style.display="grid";renderJobs();}});});
+document.getElementById("confirm-cancel").addEventListener("click",function(){document.getElementById("confirm-modal").classList.remove("show");pendingAction=null;pendingActionId=null;});
+document.getElementById("confirm-ok").addEventListener("click",function(){document.getElementById("confirm-modal").classList.remove("show");if(pendingAction&&pendingActionId){if(pendingAction==="delete-seeker"||pendingAction==="delete-employer"){execUserAction(pendingAction,pendingActionId);}else{execAction(pendingAction,pendingActionId);}pendingAction=null;pendingActionId=null;}});
+
+function showConfirm(action, id, title) {
+  var modal = document.getElementById("confirm-modal");
+  var iconEl = document.getElementById("confirm-icon");
+  var titleEl = document.getElementById("confirm-title");
+  var subEl = document.getElementById("confirm-sub");
+  var okBtn = document.getElementById("confirm-ok");
+  okBtn.className = "confirm-ok action-" + action;
+  pendingAction = action;
+  pendingActionId = id;
+  if (action === "delete") {
+    iconEl.textContent = "\ud83d\uddd1";
+    titleEl.textContent = "Delete this listing?";
+    subEl.textContent = "You are about to permanently delete \"" + title + "\". This cannot be undone.";
+    okBtn.textContent = "Yes, delete permanently";
+  } else if (action === "approve") {
+    iconEl.textContent = "\u2713";
+    titleEl.textContent = "Approve this listing?";
+    subEl.textContent = "\"" + title + "\" will go live and be visible to job seekers.";
+    okBtn.textContent = "Yes, approve it";
+  } else if (action === "reject") {
+    iconEl.textContent = "\u2717";
+    titleEl.textContent = "Reject this listing?";
+    subEl.textContent = "\"" + title + "\" will be rejected and hidden from job seekers.";
+    okBtn.textContent = "Yes, reject it";
+  } else if (action === "delete-seeker") {
+    iconEl.textContent = "\ud83d\uddd1";
+    titleEl.textContent = "Delete this job seeker?";
+    subEl.textContent = "This will permanently delete " + title + " and all their applications. This cannot be undone.";
+    okBtn.textContent = "Yes, delete user";
+  } else if (action === "delete-employer") {
+    iconEl.textContent = "\ud83d\uddd1";
+    titleEl.textContent = "Delete this employer?";
+    subEl.textContent = "This will permanently delete " + title + " and all their job listings. This cannot be undone.";
+    okBtn.textContent = "Yes, delete employer";
+  }
+  modal.classList.add("show");
+}
+
+async function doLogin(){
+  var p=document.getElementById("pw").value; if(!p)return;
+  try {
+    var r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"list",password:p})});
+    if(r.status===401){document.getElementById("login-err").style.display="block";return;}
+    var d=await r.json();
+    if(d.jobs!==undefined){pw=p;document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";document.getElementById("login-err").style.display="none";allJobs=d.jobs;updateStats();renderJobs();loadStats();refreshTimer=setInterval(function(){loadJobs();loadStats();},30000);document.getElementById("last-refresh").textContent="Refreshed just now";}
+    else{document.getElementById("login-err").style.display="block";}
+  } catch(e) {
+    showToast("Connection error. Please try again.", "error");
+  }
+}
+
+async function loadJobs(){
+  try {
+    var r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"list",password:pw})});
+    if(!r.ok)return; var d=await r.json(); allJobs=d.jobs||[]; updateStats(); renderJobs();
+    document.getElementById("last-refresh").textContent="Refreshed "+new Date().toLocaleTimeString("en-NZ");
+  } catch(e) {
+    showToast("Failed to refresh jobs.", "error");
+  }
+}
+
+function updateStats(){
+  var p=allJobs.filter(function(j){return j.status==="pending";}).length;
+  var a=allJobs.filter(function(j){return j.status==="approved"&&!isExpired(j);}).length;
+  var rej=allJobs.filter(function(j){return j.status==="rejected";}).length;
+  var e=allJobs.filter(function(j){return isExpired(j);}).length;
+  document.getElementById("st-total").textContent=allJobs.length;
+  document.getElementById("st-pending").textContent=p;
+  document.getElementById("st-approved").textContent=a;
+  document.getElementById("st-rejected").textContent=rej;
+  document.getElementById("st-expired").textContent=e;
+  document.getElementById("pending-badge").textContent=p+" pending";
+}
+
+function renderJobs(){
+  var filtered=allJobs.filter(function(j){
+    if(currentTab==="all")return true;
+    if(currentTab==="expired")return isExpired(j);
+    if(currentTab==="approved")return j.status==="approved"&&!isExpired(j);
+    return j.status===currentTab;
+  });
+  var list=document.getElementById("job-list");
+  if(!filtered.length){list.innerHTML="<div class=\"empty\">No listings in this category.</div>";return;}
+  list.innerHTML="";
+  filtered.forEach(function(j){
+    var expired=isExpired(j);
+    var row=document.createElement("div");
+    row.className="job-row "+(expired?"expired":(j.status||""));
+
+    var statusLabel=expired?"expired":j.status;
+    var statusCls=expired?"sp-expired":"sp-"+j.status;
+    var pills="<div class=\"pills\"><span class=\"status-pill "+esc(statusCls)+"\">"+esc(statusLabel)+"</span>";
+    if(j.featured&&!expired)pills+="<span class=\"status-pill sp-featured\">\u2b50 Featured</span>";
+    pills+="</div>";
+
+    var dates="<div class=\"jr-dates\">";
+    if(j.submitted)dates+="<span class=\"jr-date submitted\">\ud83d\udcc5 "+esc(fmtDate(j.submitted))+"</span>";
+    if(j.approvedAt)dates+="<span class=\"jr-date approved-date\">\u2713 Live from "+esc(fmtDate(j.approvedAt))+"</span>";
+    if(j.status==="approved"){
+      var info=getDaysLeft(j);
+      if(info){
+        var cls=info.days<=0?"expires-now":info.days<=7?"expires-soon":"expires-ok";
+        var label=info.days<=0?"Expired "+esc(fmtDate(info.expiry)):info.days<=7?"\u23f0 Expires in "+info.days+"d":"\ud83d\udcc6 Expires "+esc(fmtDate(info.expiry))+" ("+info.days+"d left)";
+        dates+="<span class=\"jr-date "+cls+"\">"+label+"</span>";
+      }
+    }
+    dates+="</div>";
+
+    var descId = "desc-" + j.id;
+    var descHtml = "<div class=\"jr-desc collapsed\" id=\""+esc(descId)+"\">"+esc(j.description)+"</div>";
+    descHtml += "<button class=\"desc-toggle\" data-target=\""+esc(descId)+"\" type=\"button\">Show more</button>";
+
+    var extras = "";
+    if(j.requirements) extras += "<div class=\"jr-extra\"><strong>Requirements:</strong> "+esc(j.requirements)+"</div>";
+    if(j.why) extras += "<div class=\"jr-extra\"><strong>Why work here:</strong> "+esc(j.why)+"</div>";
+
+    var act="<div class=\"actions\"><div class=\"action-row\">";
+    if(j.status==="pending"){act+="<button class=\"abtn abtn-ok\" data-id=\""+esc(j.id)+"\" data-title=\""+esc(j.title)+"\" data-action=\"approve\" type=\"button\">\u2713 Approve</button><button class=\"abtn abtn-rej\" data-id=\""+esc(j.id)+"\" data-title=\""+esc(j.title)+"\" data-action=\"reject\" type=\"button\">\u2717 Reject</button>";}
+    if(j.status==="approved"&&!expired){act+="<button class=\"abtn abtn-feat\" data-id=\""+esc(j.id)+"\" data-action=\"feature\" type=\"button\">"+(j.featured?"\u2605 Unfeature":"\u2606 Feature")+"</button>";}
+    if(j.status==="rejected"){act+="<button class=\"abtn abtn-ok\" data-id=\""+esc(j.id)+"\" data-title=\""+esc(j.title)+"\" data-action=\"approve\" type=\"button\">\u2713 Approve</button>";}
+    if(expired){act+="<button class=\"abtn abtn-relist\" data-id=\""+esc(j.id)+"\" data-action=\"relist\" type=\"button\">\u21ba Re-list</button>";}
+    act+="</div><div class=\"action-row\"><button class=\"abtn abtn-del\" data-id=\""+esc(j.id)+"\" data-title=\""+esc(j.title)+"\" data-action=\"delete\" type=\"button\">\ud83d\uddd1 Delete</button></div></div>";
+
+    row.innerHTML=
+      "<div>"+
+      "<div class=\"jr-title\">"+esc(j.title)+"</div>"+
+      "<div class=\"jr-co\">"+esc(j.company)+"</div>"+
+      "<div class=\"jr-meta\">"+esc(j.location)+" \u00b7 "+esc(j.category)+" \u00b7 "+esc(j.type)+" \u00b7 "+esc(j.salary)+" \u00b7 <a href=\"mailto:"+esc(j.email)+"\">"+esc(j.email)+"</a> \u00b7 Plan: <strong style=\"color:var(--text)\">"+esc(j.plan||"free")+"</strong></div>"+
+      dates+pills+
+      descHtml+
+      extras+
+      "</div>"+act;
+    list.appendChild(row);
+  });
+
+  document.querySelectorAll(".desc-toggle").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var target = document.getElementById(this.dataset.target);
+      if(target.classList.contains("collapsed")){
+        target.classList.remove("collapsed");
+        this.textContent = "Show less";
+      } else {
+        target.classList.add("collapsed");
+        this.textContent = "Show more";
+      }
+    });
+  });
+
+  document.querySelectorAll(".abtn[data-action]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var action=this.dataset.action, id=this.dataset.id, title=this.dataset.title||"";
+      if(action==="delete"||action==="approve"||action==="reject"){
+        showConfirm(action, id, title);
+      } else { execAction(action,id); }
+    });
+  });
+}
+
+async function execAction(action,id){
+  try {
+    var r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:action,password:pw,id:id})});
+    var d=await r.json();
+    if(d.success){
+      showToast("Action completed successfully.", "success");
+      loadJobs();
+    }else{
+      showToast("Error: "+(d.error||"Unknown error"), "error");
+    }
+  } catch(e) {
+    showToast("Network error. Please try again.", "error");
+  }
+}
+
+async function loadPeople(type) {
+  document.getElementById("job-list").style.display = "none";
+  var el = document.getElementById("people-list");
+  el.style.display = "block";
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">Loading...</div>';
+  try {
+    var r = await fetch("/api/admin", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"list-"+type,password:pw})});
+    var d = await r.json();
+    if (type === "seekers") {
+      var seekers = d.seekers || [];
+      if (!seekers.length) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">No registered job seekers yet.</div>'; return; }
+      var h = '<div style="font-size:.72rem;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem">'+seekers.length+' Registered Job Seeker'+(seekers.length===1?'':'s')+'</div>';
+      seekers.forEach(function(s) {
+        h += '<div class="job-row" style="border-left:3px solid var(--purple);grid-template-columns:1fr auto">';
+        h += '<div><div class="jr-title">'+esc(s.name)+'</div>';
+        h += '<div class="jr-meta"><a href="mailto:'+esc(s.email)+'">'+esc(s.email)+'</a>';
+        if (s.phone) h += ' \u00b7 '+esc(s.phone);
+        if (s.rtw) h += ' \u00b7 '+esc(s.rtw);
+        h += '</div>';
+        h += '<div class="pills">';
+        if (s.hasCv) h += '<span class="status-pill sp-approved">CV Saved</span>';
+        if (s.createdAt) h += '<span class="status-pill sp-expired">Joined '+new Date(s.createdAt).toLocaleDateString("en-NZ",{day:"numeric",month:"short",year:"numeric"})+'</span>';
+        h += '</div></div>';
+        h += '<div class="actions"><div class="action-row">';
+        h += '<button class="abtn abtn-ok" onclick="openEmailModal(\''+esc(s.email)+'\',\''+esc(s.name)+'\')" type="button">&#9993; Email</button>';
+        h += '<button class="abtn abtn-del" onclick="showConfirm(\'delete-seeker\',\''+esc(s.email)+'\',\''+esc(s.name)+' ('+esc(s.email)+')\');currentTab=\'seekers\'" type="button">&#128465; Delete</button>';
+        h += '</div></div>';
+        h += '</div>';
+      });
+      el.innerHTML = h;
+    } else {
+      var employers = d.employers || [];
+      if (!employers.length) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">No registered employers yet.</div>'; return; }
+      var h2 = '<div style="font-size:.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem">'+employers.length+' Registered Employer'+(employers.length===1?'':'s')+'</div>';
+      employers.forEach(function(e) {
+        var planColor = e.plan==='pro'?'var(--gold)':e.plan==='basic'?'var(--em)':'var(--text3)';
+        h2 += '<div class="job-row" style="border-left:3px solid var(--gold);grid-template-columns:1fr auto">';
+        h2 += '<div><div class="jr-title">'+esc(e.company)+'</div>';
+        h2 += '<div class="jr-co" style="font-size:.82rem">'+esc(e.name)+'</div>';
+        h2 += '<div class="jr-meta"><a href="mailto:'+esc(e.email)+'">'+esc(e.email)+'</a>';
+        if (e.phone) h2 += ' \u00b7 '+esc(e.phone);
+        h2 += '</div>';
+        h2 += '<div class="pills">';
+        h2 += '<span class="status-pill" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:'+planColor+'">'+esc((e.plan||'free').toUpperCase())+' plan</span>';
+        if (e.registered) h2 += '<span class="status-pill sp-expired">Joined '+new Date(e.registered).toLocaleDateString("en-NZ",{day:"numeric",month:"short",year:"numeric"})+'</span>';
+        h2 += '</div></div>';
+        h2 += '<div class="actions"><div class="action-row">';
+        h2 += '<button class="abtn abtn-ok" onclick="openEmailModal(\''+esc(e.email)+'\',\''+esc(e.name)+'\')" type="button">&#9993; Email</button>';
+        h2 += '<button class="abtn abtn-feat" onclick="openPlanModal(\''+esc(e.email)+'\',\''+esc(e.company)+'\',\''+esc(e.plan||'free')+'\')" type="button">&#9881; Plan</button>';
+        h2 += '<button class="abtn abtn-del" onclick="showConfirm(\'delete-employer\',\''+esc(e.email)+'\',\''+esc(e.company)+' ('+esc(e.email)+')\');currentTab=\'employers\'" type="button">&#128465; Delete</button>';
+        h2 += '</div></div>';
+        h2 += '</div>';
+      });
+      el.innerHTML = h2;
+    }
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:#fca5a5">Failed to load. Please try again.</div>';
+  }
+}
+
+async function loadStats() {
+  try {
+    var r = await fetch("/api/admin", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"stats",password:pw})});
+    var d = await r.json();
+    document.getElementById("st-seekers").textContent = d.seekers || 0;
+    document.getElementById("st-employers").textContent = d.employers || 0;
+    document.getElementById("st-apps").textContent = d.applications || 0;
+    document.getElementById("st-cvs").textContent = d.cvUploads || 0;
+  } catch(e) {}
+}
+
+async function generateBlog() {
+  var btn = document.getElementById("btn-gen-blog");
+  var out = document.getElementById("blog-output");
+  var count = parseInt(document.getElementById("blog-count").value) || 3;
+  btn.disabled = true;
+  btn.textContent = "Generating...";
+  out.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:.85rem">Generating '+count+' blog posts<span class="dots"></span></div>';
+
+  var today = new Date().toLocaleDateString("en-NZ", {day:"numeric",month:"long",year:"numeric"});
+
+  var prompt = 'You are an expert content strategist for FindMeAJob.co.nz, a free AI job matching platform in New Zealand.\n\nWrite exactly '+count+' blog posts optimised for SEO and designed to attract backlinks from NZ websites.\n\nIMPORTANT: The current year is 2026. Never reference 2024 or 2025 as current.\n\nEach post MUST:\n1. Target a specific long-tail keyword that Kiwis actually search (put it in the title naturally)\n2. Reference REAL NZ organisations, laws, stats, or places to build credibility and attract backlinks from those orgs\n3. Be genuinely useful enough that NZ career blogs, recruiters, and news sites would want to link to it\n4. Include internal links by mentioning "FindMeAJob.co.nz" naturally where relevant\n\nContent mix — make each post DIFFERENT:\n- Job seeker guides: "How to [specific task] in NZ" — CV templates, Seek vs Trade Me Jobs vs FindMeAJob comparison, visa holder job tips, specific industry guides (healthcare, tech, trades, agriculture)\n- Employer resources: NZ employment law (90-day trials, Holidays Act, minimum wage 2026), hiring in specific regions, writing inclusive job ads, Fair Pay Agreements impact\n- Data/research posts: Salary benchmarks by region/role, fastest growing NZ industries, Auckland vs Wellington vs Christchurch job markets, remote work statistics NZ\n- Listicles: "Top 10 highest paying jobs in NZ 2026", "Best NZ cities for tech jobs", "Industries hiring in [region]"\n- Opinion/trend pieces: AI impact on NZ jobs, immigration policy changes, gig economy in NZ, skills shortage sectors\n\nReference REAL things like: MBIE, Stats NZ, Immigration NZ, NZQA, NZ Qualifications Authority, Holidays Act 2003, Employment Relations Act, Health and Safety at Work Act, specific NZ cities (Auckland, Wellington, Christchurch, Hamilton, Tauranga, Dunedin, Queenstown), industries (dairy, tourism, tech, construction, healthcare, film), NZ-specific terms (Kiwi, Aotearoa, ACC, KiwiSaver, IRD).\n\nFor each post return:\n- category: "seeker", "employer", "market", or "tips"\n- categoryLabel: human readable like "Job Seekers", "Employers", "Market Trends", "Tips"\n- icon: a single relevant emoji\n- imageId: a unique number between 1 and 800 (different for each post)\n- title: SEO-optimised headline with target keyword (max 65 chars)\n- excerpt: compelling meta description (max 155 chars, include keyword)\n- body: 300-500 words, conversational but authoritative. Use short paragraphs. Include subheadings using ** for bold. Reference specific NZ things. End with a call to action mentioning FindMeAJob.co.nz.\n- date: "'+today+'"\n\nNEVER duplicate titles of existing posts. Each title must be unique.\n\nReturn ONLY valid JSON array:\n[{"category":"seeker","categoryLabel":"Job Seekers","icon":"emoji","imageId":42,"title":"...","excerpt":"...","body":"...","date":"'+today+'"}]';
+
+  try {
+    var r = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:[{role:"user",content:prompt}]})});
+    var d = await r.json();
+    var raw = d.content.map(function(b){return b.text||"";}).join("").trim();
+    var si = raw.indexOf("["), ei = raw.lastIndexOf("]");
+    if (si === -1 || ei === -1) throw new Error("No JSON");
+    var posts = JSON.parse(raw.substring(si, ei+1));
+    if (!posts.length) throw new Error("Empty");
+
+    var gradients = {seeker:"linear-gradient(135deg,#059669,#10b981)",employer:"linear-gradient(135deg,#d97706,#f59e0b)",market:"linear-gradient(135deg,#7c3aed,#8b5cf6)",tips:"linear-gradient(135deg,#db2777,#ec4899)"};
+    var h = '';
+    posts.forEach(function(p, i) {
+      var tagColors = {seeker:"var(--em)",employer:"var(--gold)",market:"var(--purple)",tips:"#ec4899"};
+      var grad = gradients[p.category] || gradients.market;
+      var imgId = p.imageId || (i * 37 + 100);
+      h += '<div style="background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:var(--rl);padding:0;margin-bottom:.75rem;overflow:hidden" data-blog-idx="'+i+'">';
+      h += '<div style="position:relative;height:140px;background:'+grad+';display:flex;align-items:flex-end;overflow:hidden"><img src="https://picsum.photos/seed/'+imgId+'/800/300" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">';
+      h += '<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.7) 0%,transparent 60%)"></div>';
+      h += '<div style="position:relative;padding:1rem 1.15rem;display:flex;align-items:center;gap:.65rem;width:100%">';
+      h += '<span style="font-size:1.8rem">'+(p.icon||'📝')+'</span>';
+      h += '<div><span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.8)">'+esc(p.categoryLabel||p.category)+'</span>';
+      h += '<div style="font-size:.68rem;color:rgba(255,255,255,.5);margin-top:.1rem">'+esc(p.date)+'</div></div></div>';
+      h += '<button onclick="removePendingPost('+i+')" style="position:absolute;top:.5rem;right:.65rem;background:rgba(0,0,0,.5);border:none;color:rgba(255,255,255,.8);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center">&times;</button>';
+      h += '</div>';
+      // Editable fields
+      h += '<div style="padding:1.15rem">';
+      h += '<label style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.25rem">Title</label>';
+      h += '<input type="text" data-field="title" data-idx="'+i+'" value="'+esc(p.title).replace(/"/g,'&quot;')+'" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:inherit;font-size:.88rem;font-weight:700;padding:.45rem .65rem;outline:none;margin-bottom:.6rem">';
+      h += '<label style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.25rem">Excerpt</label>';
+      h += '<input type="text" data-field="excerpt" data-idx="'+i+'" value="'+esc(p.excerpt).replace(/"/g,'&quot;')+'" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:inherit;font-size:.8rem;padding:.45rem .65rem;outline:none;margin-bottom:.6rem;font-style:italic">';
+      h += '<label style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.25rem">Body</label>';
+      h += '<textarea data-field="body" data-idx="'+i+'" style="width:100%;min-height:120px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:inherit;font-size:.8rem;padding:.55rem .65rem;outline:none;resize:vertical;line-height:1.7">'+esc(p.body)+'</textarea>';
+      h += '</div></div>';
+    });
+
+    h += '<button onclick="publishBlog()" id="btn-publish-blog" style="width:100%;margin-top:.5rem;padding:.75rem;background:linear-gradient(135deg,var(--em),#14b8a6);color:#fff;border:none;border-radius:999px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:inherit">Publish '+posts.length+' Posts to Blog</button>';
+
+    out.innerHTML = h;
+    window._pendingBlogPosts = posts;
+
+    // Bind editable fields
+    out.querySelectorAll("[data-field]").forEach(function(el) {
+      el.addEventListener("input", function() {
+        var idx = parseInt(this.dataset.idx);
+        var field = this.dataset.field;
+        if (window._pendingBlogPosts[idx]) {
+          window._pendingBlogPosts[idx][field] = this.value;
+        }
+      });
+    });
+  } catch(e) {
+    out.innerHTML = '<div style="text-align:center;padding:2rem;color:#fca5a5;font-size:.85rem">Failed to generate. Try again.</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = "Generate Posts";
+}
+
+function removePendingPost(idx) {
+  if (!window._pendingBlogPosts) return;
+  window._pendingBlogPosts.splice(idx, 1);
+  // Re-trigger render
+  var out = document.getElementById("blog-output");
+  if (!window._pendingBlogPosts.length) {
+    out.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:.85rem">All posts removed. Generate new ones.</div>';
+    return;
+  }
+  // Re-render with updated indices
+  var posts = window._pendingBlogPosts;
+  var gradients = {seeker:"linear-gradient(135deg,#059669,#10b981)",employer:"linear-gradient(135deg,#d97706,#f59e0b)",market:"linear-gradient(135deg,#7c3aed,#8b5cf6)",tips:"linear-gradient(135deg,#db2777,#ec4899)"};
+  var h = '';
+  posts.forEach(function(p, i) {
+    var grad = gradients[p.category] || gradients.market;
+    var imgId = p.imageId || (i * 37 + 100);
+    h += '<div style="background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:var(--rl);padding:0;margin-bottom:.75rem;overflow:hidden">';
+    h += '<div style="position:relative;height:140px;background:'+grad+';display:flex;align-items:flex-end;overflow:hidden"><img src="https://picsum.photos/seed/'+imgId+'/800/300" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">';
+    h += '<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.7) 0%,transparent 60%)"></div>';
+    h += '<div style="position:relative;padding:1rem 1.15rem;display:flex;align-items:center;gap:.65rem;width:100%">';
+    h += '<span style="font-size:1.8rem">'+(p.icon||'📝')+'</span>';
+    h += '<div><span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.8)">'+esc(p.categoryLabel||p.category)+'</span>';
+    h += '<div style="font-size:.68rem;color:rgba(255,255,255,.5);margin-top:.1rem">'+esc(p.date)+'</div></div></div>';
+    h += '<button onclick="removePendingPost('+i+')" style="position:absolute;top:.5rem;right:.65rem;background:rgba(0,0,0,.5);border:none;color:rgba(255,255,255,.8);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center">&times;</button>';
+    h += '</div><div style="padding:1.15rem">';
+    h += '<label style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.25rem">Title</label>';
+    h += '<input type="text" data-field="title" data-idx="'+i+'" value="'+esc(p.title).replace(/"/g,'&quot;')+'" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:inherit;font-size:.88rem;font-weight:700;padding:.45rem .65rem;outline:none;margin-bottom:.6rem">';
+    h += '<label style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.25rem">Excerpt</label>';
+    h += '<input type="text" data-field="excerpt" data-idx="'+i+'" value="'+esc(p.excerpt).replace(/"/g,'&quot;')+'" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:inherit;font-size:.8rem;padding:.45rem .65rem;outline:none;margin-bottom:.6rem;font-style:italic">';
+    h += '<label style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.25rem">Body</label>';
+    h += '<textarea data-field="body" data-idx="'+i+'" style="width:100%;min-height:120px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:inherit;font-size:.8rem;padding:.55rem .65rem;outline:none;resize:vertical;line-height:1.7">'+esc(p.body)+'</textarea>';
+    h += '</div></div>';
+  });
+  h += '<button onclick="publishBlog()" id="btn-publish-blog" style="width:100%;margin-top:.5rem;padding:.75rem;background:linear-gradient(135deg,var(--em),#14b8a6);color:#fff;border:none;border-radius:999px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:inherit">Publish '+posts.length+' Posts to Blog</button>';
+  out.innerHTML = h;
+  out.querySelectorAll("[data-field]").forEach(function(el) {
+    el.addEventListener("input", function() {
+      var idx2 = parseInt(this.dataset.idx);
+      var field = this.dataset.field;
+      if (window._pendingBlogPosts[idx2]) window._pendingBlogPosts[idx2][field] = this.value;
+    });
+  });
+  showToast("Post removed", "success");
+}
+
+async function publishBlog() {
+  if (!window._pendingBlogPosts || !window._pendingBlogPosts.length) return;
+  var btn = document.getElementById("btn-publish-blog");
+  btn.disabled = true;
+  btn.textContent = "Publishing...";
+  try {
+    var r = await fetch("/api/approved-jobs", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({type:"save-blog", password:pw, posts:window._pendingBlogPosts})
+    });
+    var d = await r.json();
+    if (d.ok) {
+      btn.textContent = "Published!";
+      btn.style.background = "rgba(16,185,129,.15)";
+      btn.style.color = "var(--em)";
+      showToast("Blog posts published!", "success");
+      window._pendingBlogPosts = null;
+    } else {
+      btn.textContent = "Failed — try again";
+      btn.style.background = "rgba(239,68,68,.15)";
+      btn.style.color = "#fca5a5";
+    }
+  } catch(e) {
+    btn.textContent = "Failed — try again";
+  }
+}
+
+async function loadExistingBlog() {
+  var out = document.getElementById("blog-output");
+  out.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:.85rem">Loading published posts...</div>';
+  try {
+    var r = await fetch("/api/approved-jobs?blog=1");
+    var d = await r.json();
+    var posts = d.posts || [];
+    if (!posts.length) {
+      out.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:.85rem">No published posts yet. Generate some!</div>';
+      return;
+    }
+    window._publishedBlogPosts = posts;
+    var gradients = {seeker:"linear-gradient(135deg,#059669,#10b981)",employer:"linear-gradient(135deg,#d97706,#f59e0b)",market:"linear-gradient(135deg,#7c3aed,#8b5cf6)",tips:"linear-gradient(135deg,#db2777,#ec4899)"};
+    var h = '<div style="font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:.75rem">'+posts.length+' published posts</div>';
+    posts.forEach(function(p, i) {
+      var grad = gradients[p.category] || gradients.market;
+      h += '<div style="background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:var(--rl);margin-bottom:.6rem;overflow:hidden" id="pub-post-'+i+'">';
+      h += '<div style="background:'+grad+';padding:.65rem .85rem;display:flex;align-items:center;gap:.5rem;cursor:pointer" onclick="toggleEditPost('+i+')">';
+      h += '<span style="font-size:1.2rem">'+(p.icon||'')+'</span>';
+      h += '<span style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.85);flex:1">'+esc(p.title)+'</span>';
+      h += '<span style="font-size:.6rem;color:rgba(255,255,255,.5)">'+esc(p.date)+'</span>';
+      h += '<span style="font-size:.55rem;color:rgba(255,255,255,.4);margin-left:.25rem">&#9998; Edit</span>';
+      h += '<button onclick="event.stopPropagation();deletePublishedPost('+i+')" style="background:rgba(0,0,0,.3);border:none;color:rgba(255,255,255,.6);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:.7rem;margin-left:.35rem">&times;</button>';
+      h += '</div>';
+      // Collapsible edit section
+      h += '<div id="edit-section-'+i+'" style="display:none;padding:1rem">';
+      h += '<label style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.2rem">Title</label>';
+      h += '<input type="text" data-pub-field="title" data-pub-idx="'+i+'" value="'+esc(p.title).replace(/"/g,'&quot;')+'" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:inherit;font-size:.85rem;font-weight:700;padding:.4rem .6rem;outline:none;margin-bottom:.5rem">';
+      h += '<label style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.2rem">Excerpt</label>';
+      h += '<input type="text" data-pub-field="excerpt" data-pub-idx="'+i+'" value="'+esc(p.excerpt).replace(/"/g,'&quot;')+'" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:inherit;font-size:.8rem;padding:.4rem .6rem;outline:none;margin-bottom:.5rem;font-style:italic">';
+      h += '<label style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:.2rem">Body</label>';
+      h += '<textarea data-pub-field="body" data-pub-idx="'+i+'" style="width:100%;min-height:150px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:inherit;font-size:.8rem;padding:.5rem .6rem;outline:none;resize:vertical;line-height:1.7">'+esc(p.body)+'</textarea>';
+      h += '<button onclick="saveEditedPost('+i+')" style="margin-top:.5rem;padding:.45rem 1.2rem;background:var(--em);color:#fff;border:none;border-radius:999px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">Save Changes</button>';
+      h += '</div></div>';
+    });
+    out.innerHTML = h;
+    // Bind edit fields
+    out.querySelectorAll("[data-pub-field]").forEach(function(el) {
+      el.addEventListener("input", function() {
+        var idx = parseInt(this.dataset.pubIdx);
+        var field = this.dataset.pubField;
+        if (window._publishedBlogPosts[idx]) window._publishedBlogPosts[idx][field] = this.value;
+      });
+    });
+  } catch(e) {
+    out.innerHTML = '<div style="text-align:center;padding:2rem;color:#fca5a5;font-size:.85rem">Failed to load posts.</div>';
+  }
+}
+
+function toggleEditPost(idx) {
+  var el = document.getElementById("edit-section-"+idx);
+  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+async function saveEditedPost(idx) {
+  if (!window._publishedBlogPosts) return;
+  try {
+    var r = await fetch("/api/approved-jobs", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({type:"replace-blog", password:pw, posts:window._publishedBlogPosts})
+    });
+    var d = await r.json();
+    if (d.ok) {
+      showToast("Post updated!", "success");
+      document.getElementById("edit-section-"+idx).style.display = "none";
+    } else { showToast("Failed to save", "error"); }
+  } catch(e) { showToast("Network error", "error"); }
+}
+
+async function deletePublishedPost(idx) {
+  if (!window._publishedBlogPosts) return;
+  var title = window._publishedBlogPosts[idx].title;
+  if (!confirm("Delete post: \"" + title + "\"?")) return;
+  window._publishedBlogPosts.splice(idx, 1);
+  try {
+    var r = await fetch("/api/approved-jobs", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({type:"replace-blog", password:pw, posts:window._publishedBlogPosts})
+    });
+    var d = await r.json();
+    if (d.ok) {
+      showToast("Post deleted", "success");
+      loadExistingBlog();
+    }
+  } catch(e) { showToast("Failed to delete", "error"); }
+}
+
+async function generateSocial() {
+  var btn = document.getElementById("btn-gen-social");
+  var out = document.getElementById("social-output");
+  var tone = document.getElementById("social-tone").value;
+  var focus = document.getElementById("social-focus").value;
+  btn.disabled = true;
+  btn.textContent = "Generating...";
+  out.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:.85rem">Generating posts<span class="dots"></span></div>';
+
+  var cvCount = document.getElementById("st-cvs").textContent || "0";
+  var seekerCount = document.getElementById("st-seekers").textContent || "0";
+
+  var toneDesc = {funny:"Funny, cheeky, roast-style. Like your best mate taking the piss.",professional:"Professional but engaging. LinkedIn-appropriate.",hype:"Hyped up, excited energy. Lots of enthusiasm.",casual:"Casual, relaxed, conversational."}[tone];
+  var focusMap = {"challenge-viral":"Create viral challenge posts for #cvchallengenz. This is a TROLL challenge where AI ROASTS your career. The vibe is pure chaos and daring. Use phrases like: POST YOUR RESULTS, I DARE YOU, TAG SOMEONE WHO NEEDS TO BE HUMBLED, DROP YOUR RESULTS BELOW, AI JUST VIOLATED MY ENTIRE CAREER, THIS SITE JUST TOLD ME TO QUIT MY JOB, APPARENTLY I SHOULD BE A [funny job]. Make it feel like a dare people can't resist. Roast the reader. Be savage. Be the friend who says what everyone's thinking. The link is findmeajob.co.nz/challenge. Examples of good captions: 'AI looked at my CV and chose violence', 'this website just ended my whole career and I'm not okay', 'upload your CV if you're not scared', 'apparently my skills are wasted on my actual job lmaooo'. Every post should make people feel ATTACKED in a funny way and desperate to try it themselves.",challenge:"Promote the #cvchallengenz TikTok challenge at findmeajob.co.nz/challenge — it's a fun career roast tool where AI trolls your CV with wild career pivots",platform:"Promote FindMeAJob.co.nz as a free AI job matching platform for NZ",results:"Share funny example career pivot results from the challenge (make up entertaining examples)",milestone:"Share a milestone — "+cvCount+" CVs uploaded, "+seekerCount+" job seekers signed up","seeker-tips":"Share genuinely helpful job seeking advice for NZ job seekers — CV tips, interview prep, salary negotiation, career change advice. Mention findmeajob.co.nz as a helpful free tool but focus on the advice being valuable. Include NZ-specific context (regions, industries, culture).","employer-tips":"Share helpful hiring and recruitment tips for NZ employers — writing better job ads, reducing time-to-hire, retention strategies, NZ employment law basics, onboarding tips. Mention findmeajob.co.nz for free job posting but focus on the advice. NZ business context.","market-insight":"Share an interesting NZ job market insight or trend — in-demand skills, salary movements, regional differences, industry growth, immigration impact on talent. Be data-informed and NZ-specific. Position FindMeAJob.co.nz as a source of market knowledge."};
+  var focusDesc = focusMap[focus] || focusMap.challenge;
+
+  var prompt = 'Generate social media posts for a NZ job platform called FindMeAJob.co.nz. IMPORTANT: The current year is 2026. Never reference 2024 or 2025 as current. NEVER mention specific numbers of CV uploads, users, or job seekers — do not quote stats or numbers. Focus on the product and value instead.\n\nTone: '+toneDesc+'\nFocus: '+focusDesc+'\n\nIMPORTANT: Every single post MUST include the link findmeajob.co.nz (or findmeajob.co.nz/challenge if challenge-related). The link must appear naturally in the caption text, not hidden. For challenge posts use findmeajob.co.nz/challenge. For general platform posts use findmeajob.co.nz.\n\nGenerate ONE post for each platform. Each post must be ready to copy-paste with no editing needed.\n\nReturn ONLY valid JSON:\n{"twitter":"tweet text under 280 chars with hashtags and link","linkedin":"linkedin post with hashtags and link","facebook":"facebook post with hashtags and link","instagram":"instagram caption with hashtags and link","tiktok":"tiktok caption with hashtags and link","youtube":"youtube shorts description with hashtags and link","reddit":"reddit post — write a title and body separated by \\n\\n. Title should be attention-grabbing. Body must include the link and feel authentic, not like an ad. Suitable for r/newzealand or r/careerguidance"}\n\nMake each post feel native to the platform. Twitter is punchy. LinkedIn is insightful. Facebook is conversational. Instagram is visual-focused. TikTok is chaotic energy. YouTube is descriptive. Reddit hates ads — make it feel like a genuine person sharing something cool they found, not marketing.\n\nReturn ONLY the JSON.';
+
+  try {
+    var r = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:[{role:"user",content:prompt}]})});
+    var d = await r.json();
+    var raw = d.content.map(function(b){return b.text||"";}).join("").trim();
+    var si = raw.indexOf("{"), ei = raw.lastIndexOf("}");
+    if (si === -1 || ei === -1) throw new Error("No JSON");
+    var posts = JSON.parse(raw.substring(si, ei+1));
+
+    var platforms = [
+      {key:"twitter",name:"Twitter / X",icon:"&#120143;",color:"#1da1f2"},
+      {key:"linkedin",name:"LinkedIn",icon:"&#128188;",color:"#0a66c2"},
+      {key:"facebook",name:"Facebook",icon:"&#128220;",color:"#1877f2"},
+      {key:"instagram",name:"Instagram",icon:"&#128247;",color:"#e4405f"},
+      {key:"tiktok",name:"TikTok",icon:"&#127926;",color:"#ff0050"},
+      {key:"youtube",name:"YouTube Shorts",icon:"&#9654;",color:"#ff0000"},
+      {key:"reddit",name:"Reddit",icon:"&#129302;",color:"#ff4500"}
+    ];
+
+    var h = "";
+    platforms.forEach(function(p) {
+      var text = posts[p.key] || "";
+      if (!text) return;
+      h += '<div style="background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:var(--rl);padding:1.15rem;margin-bottom:.75rem">';
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">';
+      h += '<div style="display:flex;align-items:center;gap:.5rem"><span style="font-size:1.1rem">'+p.icon+'</span><span style="font-size:.88rem;font-weight:700;color:'+p.color+'">'+p.name+'</span></div>';
+      h += '<div style="display:flex;gap:.4rem">';
+      h += '<button onclick="downloadPostImage(this)" data-text="'+text.replace(/"/g,'&quot;').replace(/\n/g,'&#10;')+'" data-platform="'+p.name+'" data-color="'+p.color+'" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text2);padding:.35rem .85rem;border-radius:999px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">Image</button>';
+      h += '<button onclick="copyPost(this)" data-text="'+text.replace(/"/g,'&quot;').replace(/\n/g,'&#10;')+'" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text2);padding:.35rem .85rem;border-radius:999px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">Copy</button>';
+      h += '</div>';
+      h += '</div>';
+      h += '<div style="font-size:.82rem;color:var(--text);line-height:1.7;white-space:pre-wrap">'+text.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</div>';
+      h += '</div>';
+    });
+
+    out.innerHTML = h;
+  } catch(e) {
+    out.innerHTML = '<div style="text-align:center;padding:2rem;color:#fca5a5;font-size:.85rem">Failed to generate. Try again.</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = "Generate Posts";
+}
+
+function copyPost(btn) {
+  var text = btn.dataset.text.replace(/&#10;/g, "\n");
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = "Copied!";
+    btn.style.color = "var(--em)";
+    btn.style.borderColor = "rgba(16,185,129,.3)";
+    setTimeout(function() { btn.textContent = "Copy"; btn.style.color = "var(--text2)"; btn.style.borderColor = ""; }, 2000);
+  });
+}
+
+function downloadPostImage(btn) {
+  var text = btn.dataset.text.replace(/&#10;/g, "\n");
+  var platform = btn.dataset.platform;
+  var color = btn.dataset.color;
+  var cn = document.createElement("canvas");
+  var sizes = {"Twitter / X":{w:1200,h:675},"LinkedIn":{w:1200,h:627},"Facebook":{w:1200,h:630},"Instagram":{w:1080,h:1080},"TikTok":{w:1080,h:1920},"YouTube Shorts":{w:1280,h:720},"Reddit":{w:1200,h:628}};
+  var size = sizes[platform]||{w:1200,h:630};
+  var W = size.w, H = size.h;
+  cn.width = W; cn.height = H;
+  var ctx = cn.getContext("2d");
+  btn.textContent = "Loading...";
+  var imgSeed = Math.floor(Math.random()*500)+1;
+  var bgImg = new Image();
+  bgImg.crossOrigin = "anonymous";
+  bgImg.onload = function(){ drawCard(bgImg); };
+  bgImg.onerror = function(){ drawCard(null); };
+  bgImg.src = "https://picsum.photos/seed/"+imgSeed+"/"+W+"/"+H;
+  function drawCard(photo) {
+    if (photo) { ctx.drawImage(photo,0,0,W,H); ctx.fillStyle="rgba(9,9,11,.88)"; ctx.fillRect(0,0,W,H); }
+    else { var bg=ctx.createLinearGradient(0,0,W*0.3,H); bg.addColorStop(0,"#0f172a"); bg.addColorStop(1,"#09090b"); ctx.fillStyle=bg; ctx.fillRect(0,0,W,H); }
+    var g1=ctx.createRadialGradient(W*0.8,H*0.15,0,W*0.8,H*0.15,W*0.4); g1.addColorStop(0,"rgba(139,92,246,.12)"); g1.addColorStop(1,"transparent"); ctx.fillStyle=g1; ctx.fillRect(0,0,W,H);
+    var g2=ctx.createRadialGradient(W*0.15,H*0.8,0,W*0.15,H*0.8,W*0.35); g2.addColorStop(0,"rgba(16,185,129,.08)"); g2.addColorStop(1,"transparent"); ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
+    var tl=ctx.createLinearGradient(0,0,W,0); tl.addColorStop(0,"transparent"); tl.addColorStop(0.2,"#10b981"); tl.addColorStop(0.5,"#8b5cf6"); tl.addColorStop(0.8,"#ec4899"); tl.addColorStop(1,"transparent"); ctx.fillStyle=tl; ctx.fillRect(0,0,W,5);
+    var pad=Math.round(W*0.06);
+    // Logo icon
+    var logoS=Math.round(Math.min(W,H)*0.06);
+    var lx=pad, ly=pad;
+    ctx.beginPath(); ctx.roundRect(lx,ly,logoS,logoS,Math.round(logoS*0.22)); ctx.fillStyle="#10b981"; ctx.fill();
+    var mgCx=lx+logoS*0.41, mgCy=ly+logoS*0.41, mgR=logoS*0.19;
+    ctx.beginPath(); ctx.arc(mgCx,mgCy,mgR,0,Math.PI*2); ctx.strokeStyle="white"; ctx.lineWidth=Math.max(2,logoS*0.08); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mgCx+mgR*0.7,mgCy+mgR*0.7); ctx.lineTo(lx+logoS*0.72,ly+logoS*0.72); ctx.strokeStyle="white"; ctx.lineCap="round"; ctx.stroke();
+    // Brand text
+    var bs=Math.round(logoS*0.55);
+    ctx.font="800 "+bs+"px Inter, sans-serif"; ctx.textAlign="left"; ctx.fillStyle="#ffffff";
+    var bx=lx+logoS+Math.round(logoS*0.25), by=ly+logoS*0.68;
+    ctx.fillText("FindMe",bx,by); var fw=ctx.measureText("FindMe").width;
+    ctx.fillStyle="#10b981"; ctx.fillText("AJob",bx+fw,by);
+    // Platform top-right
+    ctx.font="600 "+Math.round(bs*0.65)+"px Inter, sans-serif"; ctx.textAlign="right"; ctx.fillStyle=color; ctx.fillText(platform,W-pad,by);
+    // --- SHORT PUNCHY HEADLINE ---
+    var textTop=ly+logoS+Math.round(H*0.03);
+    var footerH2=Math.round(H*0.08);
+    var textAreaH=H-textTop-footerH2;
+    // Extract the first sentence as headline, strip hashtags/emojis/URLs
+    var headline=text.split(/\n/)[0].replace(/#\w+/g,"").replace(/https?:\/\/\S+/g,"").replace(/[^\w\s'!?.,\-]/g,"").replace(/\s+/g," ").trim().toUpperCase();
+    // If first line is too short, grab next line too
+    if(headline.length<15){ var lines2=text.split(/\n/).filter(function(l){return l.trim().length>0;}); headline=lines2.slice(0,2).join(" ").replace(/#\w+/g,"").replace(/https?:\/\/\S+/g,"").replace(/[^\w\s'!?.,\-]/g,"").replace(/\s+/g," ").trim().toUpperCase(); }
+    // Truncate to ~60 chars max for readability
+    if(headline.length>65){ headline=headline.substring(0,62).replace(/\s\S*$/,"")+"..."; }
+    // Word-wrap headline into lines that fit the canvas
+    var maxFontSize=Math.round(Math.min(W,H)*0.18);
+    if(maxFontSize<50) maxFontSize=50;
+    var maxTextW=W-pad*2;
+    function wrapText(str,fs){
+      ctx.font="900 "+fs+"px Inter, sans-serif";
+      var words=str.split(" "), lines=[], cur="";
+      words.forEach(function(w){ var test=cur?cur+" "+w:w; if(ctx.measureText(test).width>maxTextW&&cur){ lines.push(cur); cur=w; } else { cur=test; } });
+      if(cur) lines.push(cur);
+      return lines;
+    }
+    // Find largest font size where every line fits within maxTextW and total height fits
+    var fontSize=maxFontSize, wrappedLines;
+    while(fontSize>=20){
+      wrappedLines=wrapText(headline,fontSize);
+      var lineH2=Math.round(fontSize*1.2);
+      var allFit=true;
+      ctx.font="900 "+fontSize+"px Inter, sans-serif";
+      for(var li=0;li<wrappedLines.length;li++){ if(ctx.measureText(wrappedLines[li]).width>maxTextW){ allFit=false; break; } }
+      if(allFit&&wrappedLines.length<=5&&wrappedLines.length*lineH2<textAreaH*0.85) break;
+      fontSize-=2;
+    }
+    var lineH=Math.round(fontSize*1.2);
+    var totalKH=wrappedLines.length*lineH;
+    var startY=textTop+Math.round((textAreaH-totalKH)/2)+fontSize;
+    ctx.textAlign="left";
+    wrappedLines.forEach(function(line,i){ ctx.font="900 "+fontSize+"px Inter, sans-serif"; ctx.fillStyle="#ffffff"; ctx.fillText(line,pad,startY+i*lineH); });
+    // Footer
+    var fy=H-Math.round(footerH2*0.35);
+    ctx.fillStyle="rgba(255,255,255,.08)"; ctx.fillRect(pad,fy-Math.round(footerH2*0.3),W-pad*2,1);
+    var footFs=Math.round(Math.min(W,H)*0.028); if(footFs<14) footFs=14; if(footFs>32) footFs=32;
+    ctx.textAlign="left"; ctx.font="700 "+footFs+"px Inter, sans-serif"; ctx.fillStyle="#10b981"; ctx.fillText("findmeajob.co.nz",pad,fy);
+    ctx.textAlign="right"; ctx.font="500 "+Math.round(footFs*0.8)+"px Inter, sans-serif"; ctx.fillStyle="#52525b"; ctx.fillText("Free AI job matching for New Zealand",W-pad,fy);
+    var bl=ctx.createLinearGradient(0,0,W,0); bl.addColorStop(0,"transparent"); bl.addColorStop(0.3,"#10b981"); bl.addColorStop(0.7,"#8b5cf6"); bl.addColorStop(1,"transparent"); ctx.fillStyle=bl; ctx.fillRect(0,H-5,W,5);
+    var dl=document.createElement("a"); dl.download="findmeajob-"+platform.toLowerCase().replace(/[\s\/]/g,"-")+".png"; dl.href=cn.toDataURL("image/png"); dl.click();
+    btn.textContent="Done!"; btn.style.color="var(--em)"; setTimeout(function(){ btn.textContent="Image"; btn.style.color="var(--text2)"; },2000);
+  }
+}
+
+async function execUserAction(action, email) {
+  try {
+    var r = await fetch("/api/admin", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:action,password:pw,email:email})});
+    var d = await r.json();
+    if (d.success) {
+      showToast("User deleted successfully.", "success");
+      if (currentTab === "seekers") loadPeople("seekers");
+      else if (currentTab === "employers") loadPeople("employers");
+      loadStats();
+      loadJobs();
+    } else {
+      showToast("Error: " + (d.error || "Unknown error"), "error");
+    }
+  } catch(e) {
+    showToast("Network error. Please try again.", "error");
+  }
+}
+
+var emailTarget = "";
+function openEmailModal(email, name) {
+  emailTarget = email;
+  document.getElementById("email-to-label").textContent = "To: " + name + " <" + email + ">";
+  document.getElementById("email-subject").value = "";
+  document.getElementById("email-body").value = "";
+  document.getElementById("email-modal").style.display = "flex";
+}
+
+document.getElementById("email-send-btn").addEventListener("click", async function() {
+  var subject = document.getElementById("email-subject").value.trim();
+  var body = document.getElementById("email-body").value.trim();
+  if (!subject || !body) { showToast("Subject and message are required.", "error"); return; }
+  this.textContent = "Sending..."; this.disabled = true;
+  try {
+    var r = await fetch("/api/admin", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"email-user",password:pw,to:emailTarget,subject:subject,body:body})});
+    var d = await r.json();
+    if (d.success) {
+      showToast("Email sent to " + emailTarget, "success");
+      document.getElementById("email-modal").style.display = "none";
+    } else {
+      showToast("Failed: " + (d.error || "Unknown error"), "error");
+    }
+  } catch(e) {
+    showToast("Network error.", "error");
+  }
+  this.textContent = "Send Email"; this.disabled = false;
+});
+
+var planTarget = "";
+var selectedPlan = "free";
+function selectPlan(plan, btn) {
+  selectedPlan = plan;
+  btn.parentNode.querySelectorAll("button").forEach(function(b) { b.style.outline = "none"; });
+  btn.style.outline = "2px solid var(--em)";
+  btn.style.outlineOffset = "2px";
+}
+function openPlanModal(email, company, currentPlan) {
+  planTarget = email;
+  selectedPlan = currentPlan;
+  document.getElementById("plan-label").textContent = "Employer: " + company + " (" + email + ")";
+  document.getElementById("plan-modal").style.display = "flex";
+  // Highlight current plan
+  document.querySelectorAll("#plan-modal [data-plan]").forEach(function(b) {
+    b.style.outline = b.dataset.plan === currentPlan ? "2px solid var(--em)" : "none";
+    b.style.outlineOffset = "2px";
+  });
+}
+
+document.getElementById("plan-save-btn").addEventListener("click", async function() {
+  this.textContent = "Saving..."; this.disabled = true;
+  try {
+    var r = await fetch("/api/admin", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"update-employer",password:pw,email:planTarget,plan:selectedPlan})});
+    var d = await r.json();
+    if (d.success) {
+      showToast("Plan updated to " + selectedPlan.toUpperCase(), "success");
+      document.getElementById("plan-modal").style.display = "none";
+      loadPeople("employers");
+    } else {
+      showToast("Failed: " + (d.error || "Unknown error"), "error");
+    }
+  } catch(e) {
+    showToast("Network error.", "error");
+  }
+  this.textContent = "Save Plan"; this.disabled = false;
+});
+</script>
+</body>
+</html>

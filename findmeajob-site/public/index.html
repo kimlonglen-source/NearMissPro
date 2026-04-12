@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FindMeAJob.co.nz — Your AI Career Toolkit for New Zealand</title>
+<meta name="description" content="9 free AI career tools for NZ job seekers. CV matching, salary insights, interview prep, job comparison, and more. No registration required.">
+<meta name="robots" content="index, follow">
+<meta name="google-site-verification" content="LpOzsXtBeVo5v2HBTUhvIVRjwnXGxnBPfv5t4DovNuc">
+<link rel="canonical" href="https://www.findmeajob.co.nz/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.findmeajob.co.nz/">
+<meta property="og:title" content="FindMeAJob.co.nz — Your AI Career Toolkit">
+<meta property="og:description" content="9 free AI career tools for NZ job seekers. CV matching, salary insights, interview prep, and more.">
+<meta property="og:image" content="https://www.findmeajob.co.nz/favicon-512.png">
+<meta property="og:site_name" content="FindMeAJob.co.nz">
+<meta property="og:locale" content="en_NZ">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FindMeAJob.co.nz — Your AI Career Toolkit">
+<meta name="twitter:description" content="9 free AI career tools for NZ job seekers.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"FindMeAJob.co.nz","url":"https://www.findmeajob.co.nz","description":"AI-powered career toolkit for New Zealand job seekers"}</script>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="/logo-icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#ffffff;color:#0f172a;font-family:'Inter',system-ui,sans-serif;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:#10b981;text-decoration:none}a:hover{text-decoration:underline}
+
+/* Nav */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid #f1f5f9;position:sticky;top:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px)}
+.nav-logo{font-size:1.05rem;font-weight:800;color:#0f172a;text-decoration:none}
+.nav-logo span{color:#10b981}
+.nav-logo:hover{text-decoration:none}
+.nav-links{display:flex;align-items:center;gap:1.5rem}
+.nav-links a{color:#64748b;font-size:.82rem;font-weight:600;text-decoration:none}
+.nav-links a:hover{color:#0f172a}
+.nav-cta{background:#10b981;color:#fff;padding:.45rem 1.15rem;border-radius:999px;font-size:.78rem;font-weight:700;text-decoration:none;transition:all .2s}
+.nav-cta:hover{background:#059669;text-decoration:none;transform:translateY(-1px);box-shadow:0 4px 12px rgba(16,185,129,.3)}
+
+/* Hero */
+.hero{text-align:center;padding:4.5rem 2rem 3rem;max-width:700px;margin:0 auto}
+.hero-badge{display:inline-block;background:#f0fdf4;color:#059669;padding:.3rem .85rem;border-radius:999px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1.25rem;border:1px solid #bbf7d0}
+.hero h1{font-size:2.6rem;font-weight:900;line-height:1.15;color:#0f172a;margin-bottom:.75rem}
+.hero h1 em{font-style:normal;color:#10b981}
+.hero p{color:#64748b;font-size:1.05rem;line-height:1.7;max-width:520px;margin:0 auto 1rem}
+.hero-stats{display:flex;justify-content:center;gap:2rem;margin-top:1.5rem;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat strong{display:block;font-size:1.3rem;font-weight:800;color:#0f172a}
+.hero-stat span{font-size:.72rem;color:#94a3b8;font-weight:500}
+
+/* Tools Grid */
+.tools-section{max-width:900px;margin:0 auto;padding:0 2rem 3rem}
+.tools-section h2{text-align:center;font-size:1.5rem;font-weight:800;margin-bottom:.35rem}
+.tools-section p{text-align:center;color:#64748b;font-size:.88rem;margin-bottom:2rem}
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.tool-card{display:block;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:1.5rem;text-decoration:none;color:inherit;transition:all .25s;position:relative;overflow:hidden}
+.tool-card:hover{border-color:#10b981;transform:translateY(-3px);box-shadow:0 8px 30px rgba(16,185,129,.1);text-decoration:none}
+.tool-card.primary{border:2px solid #10b981;background:#f0fdf4}
+.tool-card.primary:hover{box-shadow:0 8px 30px rgba(16,185,129,.2)}
+.tool-icon{font-size:1.8rem;margin-bottom:.75rem;display:block}
+.tool-name{font-size:.95rem;font-weight:800;color:#0f172a;margin-bottom:.25rem}
+.tool-desc{font-size:.78rem;color:#64748b;line-height:1.5}
+.tool-tag{display:inline-block;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:.15rem .5rem;border-radius:999px;margin-top:.65rem}
+.tag-popular{background:#fef3c7;color:#92400e}
+.tag-new{background:#ede9fe;color:#6d28d9}
+.tag-core{background:#f0fdf4;color:#059669}
+.tag-fun{background:#fce7f3;color:#be185d}
+
+/* Trust */
+.trust{text-align:center;padding:2.5rem 2rem;background:#f8fafc;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;margin-bottom:3rem}
+.trust h3{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:1rem}
+.trust-items{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;max-width:700px;margin:0 auto}
+.trust-item{display:flex;align-items:center;gap:.5rem;font-size:.82rem;font-weight:600;color:#475569}
+.trust-icon{font-size:1.1rem}
+
+/* How It Works */
+.how-section{max-width:700px;margin:0 auto;padding:0 2rem 3rem}
+.how-section h2{text-align:center;font-size:1.3rem;font-weight:800;margin-bottom:1.5rem}
+.how-steps{display:flex;gap:1.25rem}
+.how-step{flex:1;text-align:center;padding:1.25rem 1rem;background:#f8fafc;border-radius:16px;border:1px solid #f1f5f9}
+.how-num{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#10b981;color:#fff;font-size:.82rem;font-weight:800;margin-bottom:.65rem}
+.how-step h3{font-size:.85rem;font-weight:700;color:#0f172a;margin-bottom:.2rem}
+.how-step p{font-size:.72rem;color:#94a3b8}
+
+/* Email Capture */
+.email-section{max-width:500px;margin:0 auto;padding:0 2rem 3rem;text-align:center}
+.email-section h2{font-size:1.2rem;font-weight:800;margin-bottom:.35rem}
+.email-section p{color:#64748b;font-size:.85rem;margin-bottom:1.25rem}
+.email-form{display:flex;gap:.5rem;max-width:400px;margin:0 auto}
+.email-form input{flex:1;padding:.65rem 1rem;border:1px solid #e2e8f0;border-radius:999px;font-family:inherit;font-size:.85rem;outline:none;color:#0f172a}
+.email-form input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.1)}
+.email-form button{padding:.65rem 1.25rem;background:#10b981;color:#fff;border:none;border-radius:999px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
+.email-form button:hover{background:#059669}
+.email-perks{display:flex;justify-content:center;gap:1rem;margin-top:.75rem;flex-wrap:wrap}
+.email-perks span{font-size:.7rem;color:#94a3b8;font-weight:500}
+
+/* Footer */
+.footer{text-align:center;padding:2rem;border-top:1px solid #f1f5f9;background:#f8fafc}
+.footer p{font-size:.72rem;color:#94a3b8}
+.footer a{color:#94a3b8}.footer a:hover{color:#10b981}
+.footer-links{margin-bottom:.5rem}
+.footer-links a{margin:0 .5rem}
+.ai-disclaimer{max-width:600px;margin:.75rem auto 0;font-size:.62rem;color:#cbd5e1;line-height:1.5}
+
+/* Toast */
+#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#0f172a;color:#f0fdf4;padding:.65rem 1.25rem;border-radius:999px;font-size:.8rem;font-weight:600;display:none;z-index:999;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+
+/* Responsive */
+@media(max-width:640px){
+  .nav{padding:.75rem 1rem}
+  .nav-links{gap:.75rem}
+  .hero{padding:3rem 1.25rem 2rem}
+  .hero h1{font-size:1.7rem}
+  .hero-stats{gap:1.25rem}
+  .tools-grid{grid-template-columns:1fr 1fr}
+  .how-steps{flex-direction:column}
+  .trust-items{flex-direction:column;align-items:center;gap:.75rem}
+  .email-form{flex-direction:column}
+}
+@media(max-width:400px){
+  .tools-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <a class="nav-logo" href="/">FindMe<span>AJob</span></a>
+  <div class="nav-links">
+    <a href="/blog">Blog</a>
+    <a href="#tools">Tools</a>
+    <a href="/match.html" class="nav-cta">Match My CV</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">Free AI Career Tools for NZ</div>
+  <h1>Your career deserves<br><em>better tools.</em></h1>
+  <p>9 free AI-powered tools to help you find jobs, negotiate salary, decode job ads, and make smarter career decisions. Built for New Zealand.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><strong id="st-tools">9</strong><span>Free Tools</span></div>
+    <div class="hero-stat"><strong id="st-cvs">0</strong><span>CVs Analysed</span></div>
+    <div class="hero-stat"><strong>100%</strong><span>Free Forever</span></div>
+  </div>
+</section>
+
+<!-- Trust -->
+<div class="trust">
+  <h3>Why people trust us</h3>
+  <div class="trust-items">
+    <div class="trust-item"><span class="trust-icon">&#128274;</span> Your data is never stored or shared</div>
+    <div class="trust-item"><span class="trust-icon">&#127987;</span> Built in New Zealand</div>
+    <div class="trust-item"><span class="trust-icon">&#9889;</span> No registration required</div>
+    <div class="trust-item"><span class="trust-icon">&#129302;</span> Powered by Claude AI</div>
+  </div>
+</div>
+
+<!-- Tools Grid -->
+<section class="tools-section" id="tools">
+  <h2>Pick a tool. Get answers in seconds.</h2>
+  <p>No sign-up. No payment. Just results.</p>
+  <div class="tools-grid">
+    <a class="tool-card primary" href="/match.html">
+      <span class="tool-icon">&#128196;</span>
+      <div class="tool-name">Match My CV</div>
+      <div class="tool-desc">Upload your CV and AI matches you to real NZ jobs in seconds.</div>
+      <span class="tool-tag tag-core">Core Tool</span>
+    </a>
+    <a class="tool-card" href="/decide">
+      <span class="tool-icon">&#128678;</span>
+      <div class="tool-name">Should I Stay or Go?</div>
+      <div class="tool-desc">Find out if it is time to move on. AI career health check with salary insight.</div>
+      <span class="tool-tag tag-new">New</span>
+    </a>
+    <a class="tool-card" href="/decode">
+      <span class="tool-icon">&#128269;</span>
+      <div class="tool-name">Decode Job Ad</div>
+      <div class="tool-desc">Paste a job listing. AI translates the corporate buzzwords into plain English.</div>
+      <span class="tool-tag tag-popular">Popular</span>
+    </a>
+    <a class="tool-card" href="/interview">
+      <span class="tool-icon">&#127908;</span>
+      <div class="tool-name">Interview Questions</div>
+      <div class="tool-desc">Enter a job title. Get 10 likely interview questions with strong answers.</div>
+      <span class="tool-tag tag-popular">Popular</span>
+    </a>
+    <a class="tool-card" href="/negotiate">
+      <span class="tool-icon">&#128176;</span>
+      <div class="tool-name">Negotiate My Salary</div>
+      <div class="tool-desc">Get a word-for-word script to negotiate your salary with confidence.</div>
+      <span class="tool-tag tag-new">New</span>
+    </a>
+    <a class="tool-card" href="/compare">
+      <span class="tool-icon">&#9878;</span>
+      <div class="tool-name">Compare Jobs</div>
+      <div class="tool-desc">Paste two job descriptions. AI compares salary, benefits, red flags side-by-side.</div>
+      <span class="tool-tag tag-new">New</span>
+    </a>
+    <a class="tool-card" href="/score">
+      <span class="tool-icon">&#128202;</span>
+      <div class="tool-name">CV Score</div>
+      <div class="tool-desc">Upload your CV and get a score out of 100 with specific fixes to improve it.</div>
+      <span class="tool-tag tag-popular">Popular</span>
+    </a>
+    <a class="tool-card" href="/email">
+      <span class="tool-icon">&#9993;</span>
+      <div class="tool-name">Write This Email</div>
+      <div class="tool-desc">Need to email your boss, follow up after an interview, or push back? AI writes it.</div>
+      <span class="tool-tag tag-new">New</span>
+    </a>
+    <a class="tool-card" href="/challenge">
+      <span class="tool-icon">&#128293;</span>
+      <div class="tool-name">Career Roast</div>
+      <div class="tool-desc">Upload your CV and let AI roast your career with savage pivot suggestions.</div>
+      <span class="tool-tag tag-fun">Fun</span>
+    </a>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section">
+  <h2>How it works</h2>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <h3>Pick a tool</h3>
+      <p>Choose from 9 free AI tools above</p>
+    </div>
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <h3>Get instant results</h3>
+      <p>AI analyses in seconds. No waiting.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <h3>Take action</h3>
+      <p>Apply for jobs, negotiate salary, make decisions</p>
+    </div>
+  </div>
+</section>
+
+<!-- Email Capture -->
+<section class="email-section">
+  <h2>Get weekly NZ job alerts</h2>
+  <p>Real jobs from Adzuna delivered every Monday. Matched to your interests. Free.</p>
+  <div class="email-form">
+    <input type="email" id="alert-email" placeholder="your@email.com">
+    <button onclick="subscribeAlerts()">Subscribe</button>
+  </div>
+  <div class="email-perks">
+    <span>&#10003; Real NZ jobs weekly</span>
+    <span>&#10003; No spam ever</span>
+    <span>&#10003; Unsubscribe anytime</span>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-links">
+    <a href="/">Home</a>
+    <a href="/blog">Blog</a>
+    <a href="/challenge">Career Roast</a>
+    <a href="/admin.html">Admin</a>
+  </div>
+  <p>&copy; 2026 FindMeAJob.co.nz &mdash; AI-powered career tools for New Zealand</p>
+  <div class="ai-disclaimer">
+    AI Disclaimer: This platform uses artificial intelligence (Claude by Anthropic) to analyse CVs, match jobs, estimate salary ranges, and generate content. AI results are estimates and suggestions, not professional career advice. Salary figures are approximations based on market data and may not reflect actual offers. Always verify information independently. Your CV is processed by AI for matching purposes only and is not stored permanently. By using this site you acknowledge that AI-generated results may contain inaccuracies.
+  </div>
+</footer>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* Load CV upload count */
+fetch("/api/approved-jobs?stats=1").then(function(r){return r.json();}).then(function(d){
+  var el=document.getElementById("st-cvs");
+  if(el&&d.totalJobs) el.textContent=d.totalJobs.toLocaleString();
+}).catch(function(){});
+
+/* Email subscribe */
+function subscribeAlerts(){
+  var email=document.getElementById("alert-email").value.trim();
+  if(!email||email.indexOf("@")===-1){showToast("Please enter a valid email.");return;}
+  fetch("/api/seeker",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"register",email:email,password:"__alerts_only__",name:email.split("@")[0],emailAlerts:true})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.success||d.error==="An account with this email already exists."){
+      showToast("Subscribed! You will get weekly NZ job alerts.");
+      document.getElementById("alert-email").value="";
+    } else {
+      showToast(d.error||"Something went wrong.");
+    }
+  })
+  .catch(function(){showToast("Network error. Try again.");});
+}
+
+function showToast(msg){
+  var t=document.getElementById("toast");
+  t.textContent=msg;t.style.display="block";
+  setTimeout(function(){t.style.display="none";},3000);
+}
+</script>
+</body>
+</html>
