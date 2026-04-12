@@ -27,6 +27,22 @@ app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', version: '2.0.0' }));
 
-app.listen(env.port, () => console.log(`NearMissPro server on port ${env.port}`));
+const server = app.listen(env.port, () => console.log(`NearMissPro server on port ${env.port}`));
+
+function gracefulShutdown(signal: string) {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+  server.close(() => {
+    console.log('Server closed.');
+    process.exit(0);
+  });
+  // Force exit if server hasn't closed within 5 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout.');
+    process.exit(1);
+  }, 5000);
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 export default app;
