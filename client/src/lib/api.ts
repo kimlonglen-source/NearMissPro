@@ -2,6 +2,7 @@ const BASE = '/api';
 
 class Api {
   private token: string | null = null;
+  private redirecting = false;
 
   setToken(t: string | null) {
     this.token = t;
@@ -20,9 +21,12 @@ class Api {
 
     const res = await fetch(`${BASE}${path}`, { ...opts, headers });
     if (res.status === 401) {
-      this.setToken(null);
-      localStorage.removeItem('nmp_role');
-      window.location.href = '/login';
+      if (!this.redirecting) {
+        this.redirecting = true;
+        this.setToken(null);
+        ['nmp_role', 'nmp_pharmacy', 'nmp_pharmacy_id', 'nmp_pin_enabled'].forEach(k => localStorage.removeItem(k));
+        window.location.href = '/login';
+      }
       throw new Error('Session expired');
     }
     const data = await res.json();

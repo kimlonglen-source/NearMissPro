@@ -27,7 +27,11 @@ export default defineConfig({
           {
             urlPattern: /^https?:\/\/.*\/api\/.*/,
             handler: 'NetworkFirst',
-            options: { cacheName: 'api-cache', expiration: { maxAgeSeconds: 86400 } },
+            options: {
+              cacheName: 'api-cache',
+              expiration: { maxAgeSeconds: 86400 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
           },
         ],
       },
