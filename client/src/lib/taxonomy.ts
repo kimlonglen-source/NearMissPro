@@ -84,15 +84,6 @@ export const STAGES: Stage[] = [
     ],
   },
   {
-    label: 'Final check (pharmacist)',
-    subErrors: [
-      { label: 'Pharmacist missed an upstream error', common: true },
-      { label: 'Wrong item presented for check', common: true },
-      { label: 'Documentation incomplete', common: true },
-      { label: 'Check bypassed during peak', common: true },
-    ],
-  },
-  {
     label: 'Bagging / handed to patient',
     subErrors: [
       { label: 'Wrong patient given the bag', common: true },
@@ -146,7 +137,6 @@ export const CAUGHT_DEFAULT_BY_STAGE: Record<string, string> = {
   'Drug picked from shelf': 'Initial pharmacist check',
   'Counted / measured': 'Initial pharmacist check',
   'Labelling': 'Final pharmacist check',
-  'Final check (pharmacist)': 'Final pharmacist check',
   'Bagging / handed to patient': 'Patient at collection',
   'Controlled drug dispensing': 'Final pharmacist check',
   'Compliance pack packing': 'Final pharmacist check',

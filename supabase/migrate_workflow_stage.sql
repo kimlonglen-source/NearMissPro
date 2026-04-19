@@ -26,10 +26,9 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('error_step', NULL, 'Drug picked from shelf',         2),
   ('error_step', NULL, 'Counted / measured',             3),
   ('error_step', NULL, 'Labelling',                      4),
-  ('error_step', NULL, 'Final check (pharmacist)',       5),
-  ('error_step', NULL, 'Bagging / handed to patient',    6),
-  ('error_step', NULL, 'Controlled drug dispensing',     7),
-  ('error_step', NULL, 'Compliance pack packing',        8);
+  ('error_step', NULL, 'Bagging / handed to patient',    5),
+  ('error_step', NULL, 'Controlled drug dispensing',     6),
+  ('error_step', NULL, 'Compliance pack packing',        7);
 
 -- ── Layer 2: sub-error chips (grouped by Layer 1 step) ──────
 -- group_name = the Layer 1 step label.
@@ -100,13 +99,6 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('error_type', 'Labelling', 'Label on wrong item / wrong bottle',      3),
   ('error_type', 'Labelling', 'Missing label entirely',                  4),
   ('error_type', 'Labelling', 'Pharmacist initials missing',           100);
-
--- Final check (pharmacist)
-INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
-  ('error_type', 'Final check (pharmacist)', 'Pharmacist missed an upstream error', 1),
-  ('error_type', 'Final check (pharmacist)', 'Wrong item presented for check',      2),
-  ('error_type', 'Final check (pharmacist)', 'Documentation incomplete',            3),
-  ('error_type', 'Final check (pharmacist)', 'Check bypassed during peak',          4);
 
 -- Bagging / handed to patient
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES

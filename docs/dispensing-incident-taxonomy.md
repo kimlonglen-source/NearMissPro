@@ -14,7 +14,6 @@ Labels use plain bench English — no training needed to recognise any chip.
 | Drug picked from shelf | Selection of the medication from stock |
 | Counted / measured | Counting tablets or measuring a liquid |
 | Labelling | Truly label-specific issues (CAL, placement, missing) |
-| Final check (pharmacist) | Pharmacist's final verification step |
 | Bagging / handed to patient | Assembly and handover |
 | Controlled drug dispensing | CD-specific register / witness / safe issues |
 | Compliance pack packing | Weekly blister / sachet packing |
@@ -36,9 +35,6 @@ Wrong quantity counted · Wrong volume measured (liquid) · Mixed strengths in s
 Missing CAL (cautionary advisory label) · Wrong CAL applied · Label on wrong item / wrong bottle · Missing label entirely · Pharmacist initials missing
 
 *Note: Only truly label-specific issues. Data errors — wrong drug/strength/directions/quantity/frequency/route/patient, typos, auto-filled expiry, dispensed date — originate upstream (PMS entry or drug picking) and are logged there.*
-
-### Final check (pharmacist)
-Pharmacist missed an upstream error · Wrong item presented for check · Documentation incomplete · Check bypassed during peak
 
 ### Bagging / handed to patient
 Wrong patient given the bag · Bag mixed up between patients · Bag missing an item · Bag contains extra item · Counselling missed · Counselling incorrect · New-medicine counselling missed · Inhaler or device technique not shown · Driving or alcohol warning missed · ID not checked for CD pickup
