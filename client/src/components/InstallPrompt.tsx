@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { X, Download } from 'lucide-react';
 
 export function InstallPrompt() {
+  const loc = useLocation();
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+
+  // Don't compete for attention during a near-miss submission — the Record page
+  // has a sticky Submit at the same corner. Hiding here also prevents first-time
+  // users seeing an install prompt mid-flow.
+  const onRecord = loc.pathname === '/record';
 
   useEffect(() => {
     if (localStorage.getItem('nmp_install_dismissed')) return;
@@ -35,7 +42,7 @@ export function InstallPrompt() {
     localStorage.setItem('nmp_install_dismissed', '1');
   };
 
-  if (!show) return null;
+  if (!show || onRecord) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50 bg-white rounded-2xl shadow-xl border border-gray-200 p-4 max-w-xs no-print">

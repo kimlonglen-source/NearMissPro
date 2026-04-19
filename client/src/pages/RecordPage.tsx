@@ -72,7 +72,6 @@ export function RecordPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [incidentId, setIncidentId] = useState('');
   const [submittedAt, setSubmittedAt] = useState('');
   const [submitError, setSubmitError] = useState('');
 
@@ -236,8 +235,7 @@ export function RecordPage() {
     }));
     setSubmitted(true);
     try {
-      const incident = await api.createIncident(buildPayload(quick));
-      setIncidentId(incident.id as string);
+      await api.createIncident(buildPayload(quick));
       resetDraft();
     } catch (err) {
       setSubmitted(false);
