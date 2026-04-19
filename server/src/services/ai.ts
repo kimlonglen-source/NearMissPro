@@ -216,7 +216,7 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 300,
         system: NZ_SYSTEM_PROMPT,
         messages: [{
@@ -241,12 +241,16 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
       }),
     });
 
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Anthropic ${response.status} ${response.statusText}: ${body}`);
+    }
     const result = await response.json();
     const aiText = result.content?.[0]?.text || 'Unable to generate recommendation.';
     await saveRecommendation(incident.id, incident.pharmacy_id, aiText);
     return aiText;
   } catch (err) {
-    console.error('AI recommendation error:', err);
+    console.error('[ai] generateRecommendation failed:', err);
     const fallback = 'AI recommendation unavailable. Please review this incident manually.';
     await saveRecommendation(incident.id, incident.pharmacy_id, fallback);
     return fallback;
@@ -295,14 +299,21 @@ export async function detectPatterns(pharmacyId: string): Promise<string | null>
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514', max_tokens: 150,
+        model: 'claude-sonnet-4-6', max_tokens: 150,
         system: 'You are a NZ pharmacy safety advisor. Analyse these near miss patterns and identify the most significant finding in one plain-language sentence. Be specific and actionable.',
         messages: [{ role: 'user', content: JSON.stringify({ patterns: alerts, incident_count: incidents.length }) }],
       }),
     });
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Anthropic ${response.status} ${response.statusText}: ${body}`);
+    }
     const result = await response.json();
     return result.content?.[0]?.text || alerts.join('. ');
-  } catch { return alerts.join('. '); }
+  } catch (err) {
+    console.error('[ai] detectPatterns failed:', err);
+    return alerts.join('. ');
+  }
 }
 
 export async function generatePeriodSummary(pharmacyId: string, periodStart: string, periodEnd: string): Promise<{ summary: string; agenda: string[]; previousSummary?: string }> {
@@ -339,16 +350,23 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514', max_tokens: 500,
+        model: 'claude-sonnet-4-6', max_tokens: 500,
         system: 'You are a NZ pharmacy safety advisor writing a brief improvement summary for a pharmacy team meeting report. Write 3-5 sentences in plain language. Be specific about what happened and what needs to change. Reference NZ pharmacy practice standards where relevant.',
         messages: [{ role: 'user', content: JSON.stringify({ incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })), previous_period_summary: lastReport?.period_summary }) }],
       }),
     });
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Anthropic ${response.status} ${response.statusText}: ${body}`);
+    }
     const result = await response.json();
     return {
       summary: result.content?.[0]?.text || stub.summary,
       agenda: stub.agenda,
       previousSummary: lastReport ? (result.content?.[0]?.text || stub.previousSummary) : undefined,
     };
-  } catch { return stub; }
+  } catch (err) {
+    console.error('[ai] generatePeriodSummary failed:', err);
+    return stub;
+  }
 }
