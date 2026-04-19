@@ -91,22 +91,18 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('error_type', 'Counted / measured', 'Wrong concentration in compound',         103);
 
 -- Label generated
+-- Only label-printing-specific errors live here. Data errors (wrong drug,
+-- strength, directions, etc.) are captured under "Script entered into PMS"
+-- where they originate, so there's no duplication.
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
-  ('error_type', 'Label generated', 'Wrong patient on label',                       1),
-  ('error_type', 'Label generated', 'Wrong drug on label',                          2),
-  ('error_type', 'Label generated', 'Wrong strength on label',                      3),
-  ('error_type', 'Label generated', 'Wrong directions / SIG on label',              4),
-  ('error_type', 'Label generated', 'Typo on label',                                5),
-  ('error_type', 'Label generated', 'Wrong quantity on label',                      6),
-  ('error_type', 'Label generated', 'Missing CAL (cautionary advisory label)',      7),
-  ('error_type', 'Label generated', 'Wrong CAL applied',                            8),
-  ('error_type', 'Label generated', 'Label on wrong item / wrong bottle',         100),
-  ('error_type', 'Label generated', 'Missing label entirely',                     101),
-  ('error_type', 'Label generated', 'Wrong frequency on label',                   102),
-  ('error_type', 'Label generated', 'Wrong route on label',                       103),
-  ('error_type', 'Label generated', 'Wrong dispensed date',                       104),
-  ('error_type', 'Label generated', 'Wrong expiry on label',                      105),
-  ('error_type', 'Label generated', 'Pharmacist initials missing',                106);
+  ('error_type', 'Label generated', 'Typo on label',                                1),
+  ('error_type', 'Label generated', 'Missing CAL (cautionary advisory label)',      2),
+  ('error_type', 'Label generated', 'Wrong CAL applied',                            3),
+  ('error_type', 'Label generated', 'Label on wrong item / wrong bottle',           4),
+  ('error_type', 'Label generated', 'Missing label entirely',                     100),
+  ('error_type', 'Label generated', 'Wrong dispensed date',                       101),
+  ('error_type', 'Label generated', 'Wrong expiry on label',                      102),
+  ('error_type', 'Label generated', 'Pharmacist initials missing',                103);
 
 -- Final check (pharmacist)
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES

@@ -33,7 +33,9 @@ Wrong drug — look-alike packaging · Wrong drug — sound-alike name · Wrong 
 Wrong quantity counted · Wrong volume measured (liquid) · Mixed strengths in same container · Tablet-splitting error · Cross-contamination during counting · Compounding calculation error · Wrong diluent or base in compound · Wrong concentration in compound
 
 ### Label generated
-Wrong patient on label · Wrong drug on label · Wrong strength on label · Wrong directions / SIG on label · Typo on label · Wrong quantity on label · Missing CAL (cautionary advisory label) · Wrong CAL applied · Label on wrong item / wrong bottle · Missing label entirely · Wrong frequency on label · Wrong route on label · Wrong dispensed date · Wrong expiry on label · Pharmacist initials missing
+Typo on label · Missing CAL (cautionary advisory label) · Wrong CAL applied · Label on wrong item / wrong bottle · Missing label entirely · Wrong dispensed date · Wrong expiry on label · Pharmacist initials missing
+
+*Note: Data errors that originated in PMS entry (wrong drug/strength/directions/quantity/frequency/route/patient) are logged under "Script entered into PMS" where they originated, not here — avoids duplication.*
 
 ### Final check (pharmacist)
 Pharmacist missed an upstream error · Wrong item presented for check · Documentation incomplete · Check bypassed during peak
