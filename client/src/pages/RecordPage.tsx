@@ -320,7 +320,7 @@ export function RecordPage() {
   const hasFactor = draft.factors.length > 0;
 
   const summaryTags: { label: string; color: string }[] = [];
-  if (draft.errorStep) summaryTags.push({ label: draft.errorStep, color: 'chip-green' });
+  if (draft.errorStep) summaryTags.push({ label: draft.errorStep, color: 'chip-teal' });
   draft.errorTypes.forEach(e => summaryTags.push({ label: e, color: subColor(e, true) }));
   if (draft.drugName && draft.dispensedDrug) summaryTags.push({ label: `${draft.drugName} → ${draft.dispensedDrug}`, color: 'chip-coral' });
   if (draft.prescribedStrength && draft.dispensedStrength) summaryTags.push({ label: `${draft.prescribedStrength} → ${draft.dispensedStrength}`, color: 'chip-amber' });
@@ -366,7 +366,7 @@ export function RecordPage() {
                   <button
                     key={s.label}
                     onClick={() => onStageTap(s.label)}
-                    className={`chip justify-center text-center text-base font-bold leading-tight py-4 ${draft.errorStep === s.label ? 'chip-green' : 'chip-off'}`}
+                    className={`chip justify-center text-center text-base font-bold leading-tight py-4 ${draft.errorStep === s.label ? 'chip-teal' : 'chip-off'}`}
                   >
                     {s.label}
                   </button>
