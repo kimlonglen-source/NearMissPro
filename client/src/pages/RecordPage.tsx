@@ -414,8 +414,9 @@ export function RecordPage() {
           {DRUG_SUGGESTIONS.map(d => <option key={d} value={d} />)}
         </datalist>
 
-        {/* ── Where caught ── */}
-        {draft.errorTypes.length > 0 && (
+        {/* ── Where caught ── visible as soon as a stage is picked so the
+            pre-selected chip is visible. Distinct from the origin stage. */}
+        {draft.errorStep && (
           <section ref={caughtRef}>
             <h2 className="text-lg font-bold text-gray-900 mb-2">Where was it caught?</h2>
             <div className="flex flex-wrap gap-1.5">
@@ -432,8 +433,8 @@ export function RecordPage() {
           </section>
         )}
 
-        {/* ── Factors ── */}
-        {draft.whereCaught && (
+        {/* ── Factors ── only after both a sub-error and where-caught are set. */}
+        {draft.errorTypes.length > 0 && draft.whereCaught && (
           <section ref={factorsRef}>
             <h2 className="text-lg font-bold text-gray-900 mb-2">What was happening at the time?</h2>
             <div className="flex flex-wrap gap-1.5">
