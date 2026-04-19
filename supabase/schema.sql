@@ -24,6 +24,7 @@ CREATE TABLE pharmacies (
 CREATE TABLE incidents (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   pharmacy_id UUID NOT NULL REFERENCES pharmacies(id) ON DELETE CASCADE,
+  error_step TEXT,
   error_types TEXT[] NOT NULL DEFAULT '{}',
   drug_name TEXT,
   dispensed_drug TEXT,
@@ -31,6 +32,8 @@ CREATE TABLE incidents (
   dispensed_strength TEXT,
   correct_formulation TEXT,
   dispensed_formulation TEXT,
+  prescribed_quantity NUMERIC,
+  dispensed_quantity NUMERIC,
   where_caught TEXT,
   time_of_day TEXT,
   factors TEXT[] DEFAULT '{}',
@@ -110,6 +113,7 @@ CREATE TABLE audit_log (
 -- ============================================================
 
 CREATE INDEX idx_incidents_pharmacy ON incidents(pharmacy_id, submitted_at DESC);
+CREATE INDEX idx_incidents_step ON incidents(pharmacy_id, error_step) WHERE error_step IS NOT NULL;
 CREATE INDEX idx_recommendations_incident ON recommendations(incident_id);
 CREATE INDEX idx_reports_pharmacy ON reports(pharmacy_id, period_start);
 CREATE INDEX idx_other_entries_outcome ON other_entries(review_outcome);
@@ -154,17 +158,19 @@ CREATE POLICY checkbox_update ON checkbox_options FOR UPDATE USING (current_sett
 -- SEED DATA
 -- ============================================================
 
+-- Layer 1 workflow-stage chips (see migrate_workflow_stage.sql for full taxonomy).
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
-  ('error_type', 'Data entry', 'Wrong patient', 1),
-  ('error_type', 'Data entry', 'Repeat dispensed early', 2),
-  ('error_type', 'Dispensing', 'Wrong drug', 10),
-  ('error_type', 'Dispensing', 'Wrong dose', 11),
-  ('error_type', 'Dispensing', 'Wrong quantity', 12),
-  ('error_type', 'Dispensing', 'Wrong formulation', 13),
-  ('error_type', 'Dispensing', 'Expired medication', 14),
-  ('error_type', 'Labelling', 'Wrong directions on label', 20),
-  ('error_type', 'Labelling', 'CAL missing or incorrect', 22),
-  ('error_type', 'Labelling', 'Label on wrong item', 23);
+  ('error_step', NULL, 'Script entered into PMS',        1),
+  ('error_step', NULL, 'Drug picked from shelf',         2),
+  ('error_step', NULL, 'Counted / measured',             3),
+  ('error_step', NULL, 'Label generated',                4),
+  ('error_step', NULL, 'Final check (pharmacist)',       5),
+  ('error_step', NULL, 'Bagging / handed to patient',    6),
+  ('error_step', NULL, 'Controlled drug dispensing',     7),
+  ('error_step', NULL, 'Compliance pack packing',        8);
+
+-- Layer 2 sub-error chips are seeded by migrate_workflow_stage.sql to keep this
+-- file readable. Run that migration after creating this schema on a fresh install.
 
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('where_caught', NULL, 'Data entry check', 1),

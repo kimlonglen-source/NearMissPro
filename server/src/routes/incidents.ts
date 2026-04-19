@@ -2,12 +2,14 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
+import { scanFields } from '../lib/phi.js';
 
 const router = Router();
 router.use(authenticate);
 
 // ── Create incident ─────────────────────────────────────────
 const createSchema = z.object({
+  errorStep: z.string().min(1),
   errorTypes: z.array(z.string()).min(1),
   drugName: z.string().optional(),
   dispensedDrug: z.string().optional(),
@@ -15,20 +17,34 @@ const createSchema = z.object({
   dispensedStrength: z.string().optional(),
   correctFormulation: z.string().optional(),
   dispensedFormulation: z.string().optional(),
+  prescribedQuantity: z.number().finite().nonnegative().optional(),
+  dispensedQuantity: z.number().finite().nonnegative().optional(),
   whereCaught: z.string().optional(),
-  timeOfDay: z.string().optional(),
   factors: z.array(z.string()).default([]),
-  otherEntries: z.array(z.object({ category: z.string(), text: z.string() })).default([]),
   notes: z.string().optional(),
 });
+
+// Derive "morning" / "lunch" / "afternoon" / "evening" from a Date in NZ local time.
+// Uses the server clock — acceptable for a NZ-hosted deployment; for multi-region
+// we'd pass an IANA zone from the client and use Intl.DateTimeFormat.
+function bucketTimeOfDay(d: Date): string {
+  const h = d.getHours();
+  if (h >= 5 && h < 11) return 'Morning 8\u201312pm';
+  if (h >= 11 && h < 14) return 'Lunch 12\u20132pm';
+  if (h >= 14 && h < 18) return 'Afternoon 2\u20136pm';
+  return 'Evening 6pm+';
+}
 
 router.post('/', async (req: Request, res: Response) => {
   try {
     const d = createSchema.parse(req.body);
     if (req.auth!.role === 'founder') { res.status(403).json({ error: 'Founders cannot submit incidents' }); return; }
 
+    const timeOfDay = bucketTimeOfDay(new Date());
+
     const { data: incident, error } = await supabase.from('incidents').insert({
       pharmacy_id: req.auth!.pharmacyId,
+      error_step: d.errorStep,
       error_types: d.errorTypes,
       drug_name: d.drugName || null,
       dispensed_drug: d.dispensedDrug || null,
@@ -36,30 +52,38 @@ router.post('/', async (req: Request, res: Response) => {
       dispensed_strength: d.dispensedStrength || null,
       correct_formulation: d.correctFormulation || null,
       dispensed_formulation: d.dispensedFormulation || null,
+      prescribed_quantity: d.prescribedQuantity ?? null,
+      dispensed_quantity: d.dispensedQuantity ?? null,
       where_caught: d.whereCaught || null,
-      time_of_day: d.timeOfDay || null,
+      time_of_day: timeOfDay,
       factors: d.factors,
-      other_entries: d.otherEntries,
       notes: d.notes || null,
     }).select().single();
 
     if (error) throw error;
+
+    // Defence-in-depth: server-side PHI scan. We still save the record — losing the
+    // report is worse than logging the potential leak — but write an audit row so
+    // the founder can review and prune if needed.
+    const phi = scanFields({
+      notes: d.notes,
+      drug_name: d.drugName,
+      dispensed_drug: d.dispensedDrug,
+    });
+    if (phi.anyHit && incident) {
+      await supabase.from('audit_log').insert({
+        pharmacy_id: req.auth!.pharmacyId,
+        action: 'phi_suspected',
+        performed_by: 'system',
+        details: { incident_id: incident.id, fields: phi.perField },
+      });
+    }
 
     // Trigger AI recommendation asynchronously
     if (incident) {
       import('../services/ai.js').then(({ generateRecommendation }) => {
         generateRecommendation(incident as any).catch(console.error);
       });
-    }
-
-    // Save other entries to dedicated table for founder review
-    if (d.otherEntries.length > 0 && incident) {
-      await supabase.from('other_entries').insert(
-        d.otherEntries.map(e => ({
-          pharmacy_id: req.auth!.pharmacyId, incident_id: incident.id,
-          category: e.category, text: e.text,
-        }))
-      );
     }
 
     res.status(201).json(incident);
