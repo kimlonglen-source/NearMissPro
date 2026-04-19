@@ -6,7 +6,7 @@ import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, Mess
 
 interface Rec { id: string; ai_text: string; manager_outcome: string | null; manager_text?: string; private_note?: string; }
 interface Incident {
-  id: string; error_types: string[]; drug_name: string; dispensed_drug?: string;
+  id: string; error_types: string[]; error_step?: string; drug_name: string; dispensed_drug?: string;
   prescribed_strength?: string; dispensed_strength?: string; correct_formulation?: string;
   dispensed_formulation?: string; where_caught: string; time_of_day: string;
   factors: string[]; notes?: string; submitted_at: string; occurred_at?: string; status: string;
@@ -264,23 +264,16 @@ export function DashboardPage() {
 
               {isOpen && (
                 <div className="border-t px-4 py-4 space-y-4" onClick={e => e.stopPropagation()}>
-                  {/* Details */}
-                  {(inc.dispensed_drug || inc.dispensed_strength || inc.dispensed_formulation || inc.factors.length > 0 || inc.notes) && (
-                    <div className="text-sm space-y-1">
-                      {inc.dispensed_drug && <p><span className="text-gray-500">Drug swap:</span> <span className="font-medium">{inc.drug_name} \u2192 {inc.dispensed_drug}</span></p>}
-                      {inc.dispensed_strength && <p><span className="text-gray-500">Strength:</span> <span className="font-medium">{inc.prescribed_strength} \u2192 {inc.dispensed_strength}</span></p>}
-                      {inc.dispensed_formulation && <p><span className="text-gray-500">Formulation:</span> <span className="font-medium">{inc.correct_formulation} \u2192 {inc.dispensed_formulation}</span></p>}
-                      {inc.time_of_day && <p><span className="text-gray-500">Time:</span> <span className="font-medium">{inc.time_of_day}</span></p>}
-                      {inc.occurred_at && (
-                        <p className="text-xs text-gray-400">
-                          Happened {new Date(inc.occurred_at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                          {' · '}
-                          Logged {new Date(inc.submitted_at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      )}
-                      {inc.factors.length > 0 && <p><span className="text-gray-500">Factors:</span> <span className="font-medium">{inc.factors.join(', ')}</span></p>}
-                      {inc.notes && <p className="text-gray-500 text-xs italic">{inc.notes}</p>}
-                    </div>
+                  {/* One-sentence summary — composes the story from all fields
+                      so the manager can read a queue of 20 incidents quickly. */}
+                  <SummarySentence inc={inc} />
+                  {inc.notes && <p className="text-gray-500 text-xs italic">{inc.notes}</p>}
+                  {inc.occurred_at && (
+                    <p className="text-xs text-gray-400">
+                      Happened {new Date(inc.occurred_at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {' · '}
+                      Logged {new Date(inc.submitted_at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   )}
 
                   {/* AI Recommendation */}
@@ -446,5 +439,30 @@ export function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── One-sentence summary of an incident ─────────────────────────────
+// Composes a readable story from the structured fields so managers can
+// skim a queue of many incidents without parsing field labels.
+function SummarySentence({ inc }: { inc: Incident }) {
+  const when = new Date(inc.occurred_at || inc.submitted_at).toLocaleString('en-NZ', {
+    day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+  });
+  let swap: React.ReactNode = null;
+  if (inc.dispensed_drug) swap = <>{inc.drug_name || ''} → {inc.dispensed_drug}</>;
+  else if (inc.dispensed_strength) swap = <>{inc.prescribed_strength} → {inc.dispensed_strength}</>;
+  else if (inc.dispensed_formulation) swap = <>{inc.correct_formulation} → {inc.dispensed_formulation}</>;
+  return (
+    <p className="text-sm leading-relaxed text-gray-800">
+      <span className="font-semibold">{when}</span>
+      {inc.error_step && <> ({inc.error_step})</>}
+      {' — '}
+      <span className="font-semibold">{inc.error_types.join(', ')}</span>
+      {swap && <>: <span className="font-medium">{swap}</span></>}
+      {'.'}
+      {inc.where_caught && <> Caught at <span className="font-semibold">{inc.where_caught}</span>.</>}
+      {inc.factors.length > 0 && <> Factor{inc.factors.length > 1 ? 's' : ''}: <span className="font-medium">{inc.factors.join(', ')}</span>.</>}
+    </p>
   );
 }
