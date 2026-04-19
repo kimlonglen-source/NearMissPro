@@ -25,7 +25,7 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('error_step', NULL, 'Script entered into PMS',        1),
   ('error_step', NULL, 'Drug picked from shelf',         2),
   ('error_step', NULL, 'Counted / measured',             3),
-  ('error_step', NULL, 'Label generated',                4),
+  ('error_step', NULL, 'Labelling',                      4),
   ('error_step', NULL, 'Final check (pharmacist)',       5),
   ('error_step', NULL, 'Bagging / handed to patient',    6),
   ('error_step', NULL, 'Controlled drug dispensing',     7),
@@ -90,19 +90,16 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('error_type', 'Counted / measured', 'Wrong diluent or base in compound',       102),
   ('error_type', 'Counted / measured', 'Wrong concentration in compound',         103);
 
--- Label generated
--- Only label-printing-specific errors live here. Data errors (wrong drug,
--- strength, directions, etc.) are captured under "Script entered into PMS"
--- where they originate, so there's no duplication.
+-- Labelling
+-- Truly label-specific errors only. Data errors (wrong drug, typo in directions,
+-- wrong expiry auto-filled from stock, etc.) originate upstream — log those
+-- under "Script entered into PMS" or "Drug picked from shelf".
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
-  ('error_type', 'Label generated', 'Typo on label',                                1),
-  ('error_type', 'Label generated', 'Missing CAL (cautionary advisory label)',      2),
-  ('error_type', 'Label generated', 'Wrong CAL applied',                            3),
-  ('error_type', 'Label generated', 'Label on wrong item / wrong bottle',           4),
-  ('error_type', 'Label generated', 'Missing label entirely',                     100),
-  ('error_type', 'Label generated', 'Wrong dispensed date',                       101),
-  ('error_type', 'Label generated', 'Wrong expiry on label',                      102),
-  ('error_type', 'Label generated', 'Pharmacist initials missing',                103);
+  ('error_type', 'Labelling', 'Missing CAL (cautionary advisory label)', 1),
+  ('error_type', 'Labelling', 'Wrong CAL applied',                       2),
+  ('error_type', 'Labelling', 'Label on wrong item / wrong bottle',      3),
+  ('error_type', 'Labelling', 'Missing label entirely',                  4),
+  ('error_type', 'Labelling', 'Pharmacist initials missing',           100);
 
 -- Final check (pharmacist)
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES

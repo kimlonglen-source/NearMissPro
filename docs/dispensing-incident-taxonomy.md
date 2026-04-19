@@ -13,7 +13,7 @@ Labels use plain bench English — no training needed to recognise any chip.
 | Script entered into PMS | Data entry of a prescription into the dispensing software |
 | Drug picked from shelf | Selection of the medication from stock |
 | Counted / measured | Counting tablets or measuring a liquid |
-| Label generated | Any issue that originated at label-print stage |
+| Labelling | Truly label-specific issues (CAL, placement, missing) |
 | Final check (pharmacist) | Pharmacist's final verification step |
 | Bagging / handed to patient | Assembly and handover |
 | Controlled drug dispensing | CD-specific register / witness / safe issues |
@@ -32,10 +32,10 @@ Wrong drug — look-alike packaging · Wrong drug — sound-alike name · Wrong 
 ### Counted / measured
 Wrong quantity counted · Wrong volume measured (liquid) · Mixed strengths in same container · Tablet-splitting error · Cross-contamination during counting · Compounding calculation error · Wrong diluent or base in compound · Wrong concentration in compound
 
-### Label generated
-Typo on label · Missing CAL (cautionary advisory label) · Wrong CAL applied · Label on wrong item / wrong bottle · Missing label entirely · Wrong dispensed date · Wrong expiry on label · Pharmacist initials missing
+### Labelling
+Missing CAL (cautionary advisory label) · Wrong CAL applied · Label on wrong item / wrong bottle · Missing label entirely · Pharmacist initials missing
 
-*Note: Data errors that originated in PMS entry (wrong drug/strength/directions/quantity/frequency/route/patient) are logged under "Script entered into PMS" where they originated, not here — avoids duplication.*
+*Note: Only truly label-specific issues. Data errors — wrong drug/strength/directions/quantity/frequency/route/patient, typos, auto-filled expiry, dispensed date — originate upstream (PMS entry or drug picking) and are logged there.*
 
 ### Final check (pharmacist)
 Pharmacist missed an upstream error · Wrong item presented for check · Documentation incomplete · Check bypassed during peak
