@@ -259,7 +259,7 @@ export function RecordPage() {
     if (!draft.errorStep) return 'Tap where it happened';
     if (draft.errorTypes.length === 0) return 'Tap what went wrong';
     if (!draft.whereCaught) return 'Tap where it was caught';
-    if (draft.factors.length === 0) return 'Tap what could help prevent this';
+    if (draft.factors.length === 0) return 'Tap what was happening at the time';
     return 'Submit near miss ✓';
   })();
   const canSubmit =
@@ -417,7 +417,7 @@ export function RecordPage() {
         {/* ── Factors ── */}
         {draft.whereCaught && (
           <section ref={factorsRef}>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">What could help prevent this?</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-2">What was happening at the time?</h2>
             <div className="flex flex-wrap gap-1.5">
               {visibleFactors.map(f => (
                 <button
