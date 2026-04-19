@@ -82,7 +82,7 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 300,
         system: NZ_SYSTEM_PROMPT,
         messages: [{
@@ -161,7 +161,7 @@ export async function detectPatterns(pharmacyId: string): Promise<string | null>
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514', max_tokens: 150,
+        model: 'claude-sonnet-4-6', max_tokens: 150,
         system: 'You are a NZ pharmacy safety advisor. Analyse these near miss patterns and identify the most significant finding in one plain-language sentence. Be specific and actionable.',
         messages: [{ role: 'user', content: JSON.stringify({ patterns: alerts, incident_count: incidents.length }) }],
       }),
@@ -205,7 +205,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514', max_tokens: 500,
+        model: 'claude-sonnet-4-6', max_tokens: 500,
         system: 'You are a NZ pharmacy safety advisor writing a brief improvement summary for a pharmacy team meeting report. Write 3-5 sentences in plain language. Be specific about what happened and what needs to change. Reference NZ pharmacy practice standards where relevant.',
         messages: [{ role: 'user', content: JSON.stringify({ incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })), previous_period_summary: lastReport?.period_summary }) }],
       }),
