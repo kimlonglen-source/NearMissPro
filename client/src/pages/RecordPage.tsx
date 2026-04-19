@@ -321,12 +321,15 @@ export function RecordPage() {
     catch { /* fire-and-forget; manager can still see the record */ }
   };
 
-  // Auto-redirect 8s after success — shorter than the old 30s.
+  // Auto-redirect after the success screen — long enough to read 4 buttons
+  // and decide. Pause entirely after the user taps "Oops" so the reassurance
+  // message stays put. Tapping Fix/Record-another flips submitted → false
+  // which cancels via the cleanup below.
   useEffect(() => {
-    if (!submitted) return;
-    const t = setTimeout(() => nav('/'), 8000);
+    if (!submitted || retracted) return;
+    const t = setTimeout(() => nav('/'), 30000);
     return () => clearTimeout(t);
-  }, [submitted, nav]);
+  }, [submitted, retracted, nav]);
 
   // ── Submit-button label ─────────────────────────────────────
   const submitLabel = (() => {
@@ -397,7 +400,7 @@ export function RecordPage() {
             )}
           </>
         )}
-        <p className="text-xs text-gray-300 mt-6">Returning home in 8s…</p>
+        {!retracted && <p className="text-xs text-gray-300 mt-6">Returning home in 30s…</p>}
       </div>
     );
   }
