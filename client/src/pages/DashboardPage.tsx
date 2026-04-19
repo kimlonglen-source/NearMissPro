@@ -99,7 +99,7 @@ export function DashboardPage() {
   const outcomeBadge = (outcome: string | null) => {
     if (!outcome) return <span className="bg-[#FAEEDA] text-[#633806] text-xs font-semibold px-2.5 py-1 rounded-full">Needs review</span>;
     const map: Record<string, string> = { accepted: 'bg-[#E1F5EE] text-[#085041]', modified: 'bg-[#EEEDFE] text-[#3C3489]', no_action: 'bg-gray-100 text-gray-600', voided: 'bg-[#FCEBEB] text-[#791F1F]' };
-    const labels: Record<string, string> = { accepted: '\u2713 Accepted', modified: '\u2713 Modified', no_action: '\u2713 No action', voided: 'Voided' };
+    const labels: Record<string, string> = { accepted: '\u2713 Accepted', modified: '\u2713 Modified', no_action: '\u2713 No change', voided: 'Voided' };
     return <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${map[outcome] || ''}`}>{labels[outcome] || outcome}</span>;
   };
 
@@ -311,7 +311,7 @@ export function DashboardPage() {
                           <Edit3 size={14} /> Modify
                         </button>
                         <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          disabled={busy} onClick={() => doAction(rec, 'no_action')}>No action needed</button>
+                          disabled={busy} onClick={() => doAction(rec, 'no_action')} title="No workflow change needed for this one">No change needed</button>
                       </div>
                       <div className="flex gap-2 pt-1">
                         <button className="flex-1 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 border border-gray-200 flex items-center justify-center gap-1"

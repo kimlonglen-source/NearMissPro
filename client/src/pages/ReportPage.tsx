@@ -216,7 +216,7 @@ export function ReportPage() {
                   {rec && (
                     <div className="bg-gray-50 rounded-lg p-3 mt-2">
                       <div className="text-xs font-semibold text-gray-600 mb-1">
-                        {outcome === 'modified' ? 'Recommendation \u2014 modified by pharmacist-in-charge' : outcome === 'accepted' ? 'Recommendation accepted' : outcome === 'no_action' ? 'No action needed' : 'Recommendation'}
+                        {outcome === 'modified' ? 'Recommendation \u2014 modified by pharmacist-in-charge' : outcome === 'accepted' ? 'Recommendation accepted' : outcome === 'no_action' ? 'No change needed' : 'Recommendation'}
                       </div>
                       {outcome === 'modified' && rec.manager_text ? (
                         <>
