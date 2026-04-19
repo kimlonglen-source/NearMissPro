@@ -36,6 +36,7 @@ CREATE TABLE incidents (
   dispensed_quantity NUMERIC,
   where_caught TEXT,
   time_of_day TEXT,
+  occurred_at TIMESTAMPTZ,
   factors TEXT[] DEFAULT '{}',
   other_entries JSONB DEFAULT '[]',
   notes TEXT,
@@ -114,6 +115,7 @@ CREATE TABLE audit_log (
 
 CREATE INDEX idx_incidents_pharmacy ON incidents(pharmacy_id, submitted_at DESC);
 CREATE INDEX idx_incidents_step ON incidents(pharmacy_id, error_step) WHERE error_step IS NOT NULL;
+CREATE INDEX idx_incidents_occurred ON incidents(pharmacy_id, occurred_at DESC) WHERE occurred_at IS NOT NULL;
 CREATE INDEX idx_recommendations_incident ON recommendations(incident_id);
 CREATE INDEX idx_reports_pharmacy ON reports(pharmacy_id, period_start);
 CREATE INDEX idx_other_entries_outcome ON other_entries(review_outcome);

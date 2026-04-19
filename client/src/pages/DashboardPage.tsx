@@ -9,7 +9,7 @@ interface Incident {
   id: string; error_types: string[]; drug_name: string; dispensed_drug?: string;
   prescribed_strength?: string; dispensed_strength?: string; correct_formulation?: string;
   dispensed_formulation?: string; where_caught: string; time_of_day: string;
-  factors: string[]; notes?: string; submitted_at: string; status: string;
+  factors: string[]; notes?: string; submitted_at: string; occurred_at?: string; status: string;
   flagged_by_staff: boolean; flag_note?: string; recommendations: Rec[];
 }
 
@@ -245,6 +245,13 @@ export function DashboardPage() {
                       {inc.dispensed_strength && <p><span className="text-gray-500">Strength:</span> <span className="font-medium">{inc.prescribed_strength} \u2192 {inc.dispensed_strength}</span></p>}
                       {inc.dispensed_formulation && <p><span className="text-gray-500">Formulation:</span> <span className="font-medium">{inc.correct_formulation} \u2192 {inc.dispensed_formulation}</span></p>}
                       {inc.time_of_day && <p><span className="text-gray-500">Time:</span> <span className="font-medium">{inc.time_of_day}</span></p>}
+                      {inc.occurred_at && (
+                        <p className="text-xs text-gray-400">
+                          Happened {new Date(inc.occurred_at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {' · '}
+                          Logged {new Date(inc.submitted_at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
                       {inc.factors.length > 0 && <p><span className="text-gray-500">Factors:</span> <span className="font-medium">{inc.factors.join(', ')}</span></p>}
                       {inc.notes && <p className="text-gray-500 text-xs italic">{inc.notes}</p>}
                     </div>

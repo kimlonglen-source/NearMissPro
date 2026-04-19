@@ -6,7 +6,7 @@ import {
   STAGES, WHERE_CAUGHT, CAUGHT_DEFAULT_BY_STAGE, FACTORS,
   FACTORS_DEFAULT_VISIBLE, FORMULATIONS, DRUG_SUGGESTIONS, triggersFor,
 } from '../lib/taxonomy';
-import { CheckCircle2, AlertTriangle, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 
 const SESSION_KEY = 'nmp_record_draft';
 const LAST_CAUGHT_KEY = 'nmp_last_where_caught';
@@ -16,6 +16,13 @@ function tap() {
   if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
     try { navigator.vibrate(10); } catch { /* noop */ }
   }
+}
+
+function todayYMD(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function nowHM(d: Date = new Date()): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 // Semantic colour for a sub-error chip based on its text. Matches the old style:
@@ -87,6 +94,10 @@ export function RecordPage() {
   const [submitError, setSubmitError] = useState('');
   const [lastDraft, setLastDraft] = useState<Draft | null>(null);
   const [openSection, setOpenSection] = useState<number>(1);
+  // "When did it happen?" — pre-filled with now. If staff adjust, we send
+  // occurredAt; the server validates and re-derives time_of_day from it.
+  const [occurredDate, setOccurredDate] = useState<string>(() => todayYMD());
+  const [occurredTime, setOccurredTime] = useState<string>(() => nowHM());
 
   const l2Ref = useRef<HTMLDivElement>(null);
   const caughtRef = useRef<HTMLDivElement>(null);
@@ -215,6 +226,12 @@ export function RecordPage() {
       const n = parseFloat(s);
       return Number.isFinite(n) && n >= 0 ? n : undefined;
     };
+    // Combine date + time into an ISO string; omit if invalid.
+    let occurredAt: string | undefined;
+    if (occurredDate && occurredTime) {
+      const d = new Date(`${occurredDate}T${occurredTime}`);
+      if (!Number.isNaN(d.getTime())) occurredAt = d.toISOString();
+    }
     return {
       errorStep: draft.errorStep,
       errorTypes: draft.errorTypes,
@@ -229,8 +246,9 @@ export function RecordPage() {
       whereCaught: draft.whereCaught || undefined,
       factors: draft.factors,
       notes: draft.notes.trim() || undefined,
+      occurredAt,
     };
-  }, [draft]);
+  }, [draft, occurredDate, occurredTime]);
 
   const doSubmit = async (quick: boolean) => {
     if (submitting) return;
@@ -356,6 +374,21 @@ export function RecordPage() {
               <AlertTriangle size={16} /> {submitError}
             </div>
           )}
+
+          {/* ─ When did it happen? — pre-filled, optional adjust ─ */}
+          <div className="bg-white rounded-xl border border-gray-200 p-3 flex items-center gap-2 flex-wrap">
+            <Clock size={14} className="text-gray-400" />
+            <span className="text-sm text-gray-600">Happened</span>
+            <input type="date" value={occurredDate}
+              max={todayYMD()}
+              onChange={e => setOccurredDate(e.target.value)}
+              className="text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-2 focus:ring-[#0F6E56] rounded px-1 py-0.5" />
+            <span className="text-sm text-gray-500">at</span>
+            <input type="time" value={occurredTime}
+              onChange={e => setOccurredTime(e.target.value)}
+              className="text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-2 focus:ring-[#0F6E56] rounded px-1 py-0.5" />
+            <span className="text-[11px] text-gray-400 ml-auto">Adjust only if logging later</span>
+          </div>
 
           {/* ═══ Section 1: Where did this happen? ═══ */}
           <SectionHeader num={1} title="Where did this happen?" subtitle="Pick the step where the error happened" done={hasStage} open={openSection === 1} onClick={() => toggleSection(1)} />

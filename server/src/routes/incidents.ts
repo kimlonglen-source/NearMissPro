@@ -22,6 +22,9 @@ const createSchema = z.object({
   whereCaught: z.string().optional(),
   factors: z.array(z.string()).default([]),
   notes: z.string().optional(),
+  // Actual time the incident happened, if different from submit time.
+  // Must be parseable and not in the future.
+  occurredAt: z.string().datetime({ offset: true }).optional(),
 });
 
 // Derive "morning" / "lunch" / "afternoon" / "evening" from a Date in NZ local time.
@@ -40,7 +43,21 @@ router.post('/', async (req: Request, res: Response) => {
     const d = createSchema.parse(req.body);
     if (req.auth!.role === 'founder') { res.status(403).json({ error: 'Founders cannot submit incidents' }); return; }
 
-    const timeOfDay = bucketTimeOfDay(new Date());
+    // Use the actual occurrence time when provided, else fall back to now.
+    // Reject future times — that's always an input mistake.
+    const now = new Date();
+    let occurredAt: Date | null = null;
+    if (d.occurredAt) {
+      const parsed = new Date(d.occurredAt);
+      if (Number.isNaN(parsed.getTime())) {
+        res.status(400).json({ error: 'Invalid occurredAt timestamp' }); return;
+      }
+      if (parsed.getTime() > now.getTime() + 60_000) { // allow 1min clock skew
+        res.status(400).json({ error: 'occurredAt cannot be in the future' }); return;
+      }
+      occurredAt = parsed;
+    }
+    const timeOfDay = bucketTimeOfDay(occurredAt ?? now);
 
     const { data: incident, error } = await supabase.from('incidents').insert({
       pharmacy_id: req.auth!.pharmacyId,
@@ -56,6 +73,7 @@ router.post('/', async (req: Request, res: Response) => {
       dispensed_quantity: d.dispensedQuantity ?? null,
       where_caught: d.whereCaught || null,
       time_of_day: timeOfDay,
+      occurred_at: occurredAt ? occurredAt.toISOString() : null,
       factors: d.factors,
       notes: d.notes || null,
     }).select().single();

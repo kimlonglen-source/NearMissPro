@@ -8,7 +8,8 @@ import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw 
 interface Incident {
   id: string; error_types: string[]; drug_name?: string; dispensed_drug?: string;
   prescribed_strength?: string; dispensed_strength?: string; correct_formulation?: string; dispensed_formulation?: string;
-  where_caught?: string; time_of_day?: string; factors: string[]; notes?: string; submitted_at: string; status: string;
+  where_caught?: string; time_of_day?: string; factors: string[]; notes?: string;
+  submitted_at: string; occurred_at?: string; status: string;
   recommendations?: { ai_text: string; manager_outcome?: string; manager_text?: string; private_note?: string }[];
 }
 interface Report {
@@ -200,7 +201,7 @@ export function ReportPage() {
 
                   {/* Detail grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-500 mb-3">
-                    <div>Date: {fmtDate(inc.submitted_at)}</div>
+                    <div>Date: {fmtDate(inc.occurred_at || inc.submitted_at)}</div>
                     <div>Caught: {inc.where_caught || '-'}</div>
                     <div>Time: {inc.time_of_day || '-'}</div>
                     <div>Factors: {inc.factors.join(', ') || '-'}</div>
