@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from '../components/Logo';
-import { Printer, Mail, Edit3, Save, Plus, Loader2, ArrowLeft } from 'lucide-react';
+import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-react';
 
 interface Incident {
   id: string; error_types: string[]; drug_name?: string; dispensed_drug?: string;
@@ -61,6 +61,13 @@ export function ReportPage() {
     });
   };
 
+  const toggleCompleted = async () => {
+    if (!report) return;
+    const next = !report.locked;
+    await api.updateReport(report.id, { locked: next });
+    setReport({ ...report, locked: next });
+  };
+
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin text-[#0F6E56]" size={32} /></div>;
   if (!report) return <div className="text-center py-12 text-gray-500">Report not found</div>;
 
@@ -91,6 +98,19 @@ export function ReportPage() {
             <Save size={14} /> Save changes
           </button>
         )}
+        {report.locked ? (
+          <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
+            <CheckCircle2 size={12} /> Completed
+          </span>
+        ) : (
+          <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-[#FAEEDA] text-[#633806]">
+            Pending review
+          </span>
+        )}
+        <button onClick={toggleCompleted}
+          className={`btn text-sm ${report.locked ? 'bg-gray-50 text-gray-700 border border-gray-200' : 'bg-[#0F6E56] text-white'}`}>
+          {report.locked ? <><RotateCcw size={14} /> Re-open</> : <><CheckCircle2 size={14} /> Mark completed</>}
+        </button>
         <button onClick={() => { if (id) { api.emailReport(id); alert('Email logged to console'); } }}
           className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200"><Mail size={14} /> Email PDF</button>
         <button onClick={() => window.print()} className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200">

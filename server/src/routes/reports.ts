@@ -11,7 +11,7 @@ router.use(requireRole('manager', 'founder'));
 // ── Generate report ─────────────────────────────────────────
 router.post('/generate', async (req: Request, res: Response) => {
   try {
-    const { periodStart, periodEnd, generatedBy, isCustomRange } = z.object({
+    const { periodStart, periodEnd, generatedBy } = z.object({
       periodStart: z.string(), periodEnd: z.string(), generatedBy: z.string(),
       isCustomRange: z.boolean().optional(),
     }).parse(req.body);
@@ -21,14 +21,14 @@ router.post('/generate', async (req: Request, res: Response) => {
       req.auth!.pharmacyId, periodStart, periodEnd
     );
 
-    // Custom date range reports do NOT lock the period
-    const shouldLock = !isCustomRange;
-
+    // Every new report starts as "Pending review". The manager marks it
+    // "Completed" from the report screen once the team meeting has happened
+    // and actions have been agreed — `locked = true` carries that meaning.
     const { data: report, error } = await supabase.from('reports').insert({
       pharmacy_id: req.auth!.pharmacyId,
       period_start: periodStart, period_end: periodEnd,
       generated_by: generatedBy,
-      locked: shouldLock,
+      locked: false,
       period_summary: summary,
       previous_period_summary: previousSummary || null,
       agenda_items: agenda.map(text => ({ text, edited: false })),
@@ -38,7 +38,7 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     await supabase.from('audit_log').insert({
       pharmacy_id: req.auth!.pharmacyId, action: 'report_generated',
-      performed_by: generatedBy, details: { report_id: report.id, period: `${periodStart} to ${periodEnd}`, locked: shouldLock },
+      performed_by: generatedBy, details: { report_id: report.id, period: `${periodStart} to ${periodEnd}` },
     });
 
     res.status(201).json(report);
