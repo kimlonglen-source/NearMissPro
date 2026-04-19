@@ -169,9 +169,48 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // ── Edit incident (15-min window for staff, anytime for manager before lock) ─
+const editSchema = z.object({
+  errorStep: z.string().optional(),
+  errorTypes: z.array(z.string()).optional(),
+  drugName: z.string().nullable().optional(),
+  dispensedDrug: z.string().nullable().optional(),
+  prescribedStrength: z.string().nullable().optional(),
+  dispensedStrength: z.string().nullable().optional(),
+  correctFormulation: z.string().nullable().optional(),
+  dispensedFormulation: z.string().nullable().optional(),
+  prescribedQuantity: z.number().finite().nonnegative().nullable().optional(),
+  dispensedQuantity: z.number().finite().nonnegative().nullable().optional(),
+  whereCaught: z.string().nullable().optional(),
+  factors: z.array(z.string()).optional(),
+  notes: z.string().nullable().optional(),
+  occurredAt: z.string().datetime({ offset: true }).nullable().optional(),
+  // Manager-only fields
+  edit_reason: z.string().optional(),
+});
+
+function mapUpdates(d: z.infer<typeof editSchema>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (d.errorStep !== undefined) out.error_step = d.errorStep;
+  if (d.errorTypes !== undefined) out.error_types = d.errorTypes;
+  if (d.drugName !== undefined) out.drug_name = d.drugName || null;
+  if (d.dispensedDrug !== undefined) out.dispensed_drug = d.dispensedDrug || null;
+  if (d.prescribedStrength !== undefined) out.prescribed_strength = d.prescribedStrength || null;
+  if (d.dispensedStrength !== undefined) out.dispensed_strength = d.dispensedStrength || null;
+  if (d.correctFormulation !== undefined) out.correct_formulation = d.correctFormulation || null;
+  if (d.dispensedFormulation !== undefined) out.dispensed_formulation = d.dispensedFormulation || null;
+  if (d.prescribedQuantity !== undefined) out.prescribed_quantity = d.prescribedQuantity;
+  if (d.dispensedQuantity !== undefined) out.dispensed_quantity = d.dispensedQuantity;
+  if (d.whereCaught !== undefined) out.where_caught = d.whereCaught || null;
+  if (d.factors !== undefined) out.factors = d.factors;
+  if (d.notes !== undefined) out.notes = d.notes || null;
+  if (d.occurredAt !== undefined) out.occurred_at = d.occurredAt || null;
+  if (d.edit_reason !== undefined) out.edit_reason = d.edit_reason;
+  return out;
+}
+
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
-    const { data: incident } = await supabase.from('incidents').select('editable_until, pharmacy_id')
+    const { data: incident } = await supabase.from('incidents').select('editable_until, pharmacy_id, occurred_at, submitted_at')
       .eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId).single();
 
     if (!incident) { res.status(404).json({ error: 'Not found' }); return; }
@@ -180,8 +219,23 @@ router.patch('/:id', async (req: Request, res: Response) => {
       res.status(403).json({ error: 'Edit window has expired' }); return;
     }
 
-    const updates = req.body;
+    const parsed = editSchema.parse(req.body);
+
+    // Future-time guard on edited occurred_at
+    if (parsed.occurredAt) {
+      const t = new Date(parsed.occurredAt).getTime();
+      if (Number.isFinite(t) && t > Date.now() + 60_000) {
+        res.status(400).json({ error: 'occurredAt cannot be in the future' }); return;
+      }
+    }
+
+    const updates: Record<string, unknown> = mapUpdates(parsed);
     updates.edited_at = new Date().toISOString();
+
+    // Keep time_of_day bucket consistent when the time changes.
+    if (parsed.occurredAt !== undefined) {
+      updates.time_of_day = bucketTimeOfDay(parsed.occurredAt ? new Date(parsed.occurredAt) : new Date(incident.submitted_at));
+    }
 
     const { data, error } = await supabase.from('incidents').update(updates)
       .eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId).select().single();

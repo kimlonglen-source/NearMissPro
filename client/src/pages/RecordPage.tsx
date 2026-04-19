@@ -94,10 +94,20 @@ export function RecordPage() {
   const [submitError, setSubmitError] = useState('');
   const [lastDraft, setLastDraft] = useState<Draft | null>(null);
   const [openSection, setOpenSection] = useState<number>(1);
+  // Track the incident we just created so "Fix something" and "Oops" can act on it.
+  const [submittedIncidentId, setSubmittedIncidentId] = useState<string>('');
+  const [editableUntil, setEditableUntil] = useState<string>('');
+  // Non-null while the user is editing an existing incident (submit uses PATCH).
+  const [editingIncidentId, setEditingIncidentId] = useState<string>('');
+  // Set to true after the user taps "Oops" so the success screen shows
+  // reassurance text instead of secondary buttons.
+  const [retracted, setRetracted] = useState(false);
   // "When did it happen?" — pre-filled with now. If staff adjust, we send
   // occurredAt; the server validates and re-derives time_of_day from it.
   const [occurredDate, setOccurredDate] = useState<string>(() => todayYMD());
   const [occurredTime, setOccurredTime] = useState<string>(() => nowHM());
+  // Snapshot of the last-submitted time block, so "Fix something" can restore it.
+  const [lastOccurred, setLastOccurred] = useState<{ date: string; time: string } | null>(null);
 
   const l2Ref = useRef<HTMLDivElement>(null);
   const caughtRef = useRef<HTMLDivElement>(null);
@@ -255,23 +265,60 @@ export function RecordPage() {
     if (!quick && (!draft.errorStep || draft.errorTypes.length === 0 || !draft.whereCaught || draft.factors.length === 0 || anyPhi)) return;
     tap();
     setSubmitting(true); setSubmitError('');
-    // Snapshot what we're submitting so "Record another like this" can re-use it
-    // after resetDraft() clears the form.
+    // Snapshot what we're submitting so "Record another like this" and
+    // "Fix something" can re-use it after resetDraft() clears the form.
     setLastDraft(quick ? null : { ...draft });
-    // Optimistic — show the success screen immediately. POST in background.
+    setLastOccurred(quick ? null : { date: occurredDate, time: occurredTime });
+    // Optimistic — show the success screen immediately. POST/PATCH in background.
     setSubmittedAt(new Date().toLocaleString('en-NZ', {
       hour: '2-digit', minute: '2-digit', weekday: 'long', day: 'numeric', month: 'short',
     }));
     setSubmitted(true);
+    setRetracted(false);
     try {
-      await api.createIncident(buildPayload(quick));
+      const payload = buildPayload(quick);
+      if (editingIncidentId) {
+        // Save changes to an existing incident — keep the same id + edit window.
+        await api.editIncident(editingIncidentId, payload);
+      } else {
+        const incident = await api.createIncident(payload) as { id: string; editable_until: string };
+        setSubmittedIncidentId(incident.id);
+        setEditableUntil(incident.editable_until);
+      }
       resetDraft();
+      setEditingIncidentId('');
     } catch (err) {
       setSubmitted(false);
       setSubmitError(err instanceof Error ? err.message : 'Submission failed');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // "Fix something" — restore the just-submitted draft into the form and
+  // switch the next Submit to an edit (PATCH).
+  const fixSomething = () => {
+    if (!lastDraft || !submittedIncidentId) return;
+    tap();
+    setDraft(lastDraft);
+    if (lastOccurred) {
+      setOccurredDate(lastOccurred.date);
+      setOccurredTime(lastOccurred.time);
+    }
+    setEditingIncidentId(submittedIncidentId);
+    setSubmitted(false);
+    setSubmitError('');
+    setOpenSection(1);
+  };
+
+  // "Oops — this one wasn't a near-miss" — flag for manager review. Stays on
+  // the success screen but replaces the secondary buttons with a reassurance.
+  const oopsWasntNearMiss = async () => {
+    if (!submittedIncidentId || retracted) return;
+    tap();
+    setRetracted(true);
+    try { await api.flagIncident(submittedIncidentId, 'Submitted in error'); }
+    catch { /* fire-and-forget; manager can still see the record */ }
   };
 
   // Auto-redirect 8s after success — shorter than the old 30s.
@@ -283,13 +330,13 @@ export function RecordPage() {
 
   // ── Submit-button label ─────────────────────────────────────
   const submitLabel = (() => {
-    if (submitting) return 'Submitting…';
+    if (submitting) return editingIncidentId ? 'Saving…' : 'Submitting…';
     if (anyPhi) return 'Remove patient info first';
     if (!draft.errorStep) return 'Tap where it happened';
     if (draft.errorTypes.length === 0) return 'Tap what went wrong';
     if (!draft.whereCaught) return 'Tap where it was caught';
     if (draft.factors.length === 0) return 'Tap what was happening at the time';
-    return 'Submit near miss ✓';
+    return editingIncidentId ? 'Save changes' : 'Submit near miss ✓';
   })();
   const canSubmit =
     !!draft.errorStep &&
@@ -308,6 +355,10 @@ export function RecordPage() {
       setSubmitted(false);
       setSubmitError('');
     };
+    // Secondary options (edit / retract) available only while the edit
+    // window is open and only for real submissions (not "just log it").
+    const withinEditWindow = !!editableUntil && new Date(editableUntil) > new Date();
+    const canTidy = withinEditWindow && !!submittedIncidentId && !!lastDraft;
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-sm mx-auto">
         <div className="w-20 h-20 rounded-full bg-[#E1F5EE] flex items-center justify-center mb-4">
@@ -320,11 +371,31 @@ export function RecordPage() {
           className="w-full bg-[#0F6E56] text-white font-bold py-5 rounded-xl hover:bg-[#0B5A46] transition-colors text-base">
           Done
         </button>
-        {lastDraft && (
-          <button onClick={recordAnother}
-            className="w-full mt-3 bg-white text-[#0F6E56] border-2 border-[#0F6E56] font-semibold py-4 rounded-xl hover:bg-gray-50 transition-colors text-base">
-            Record another like this
-          </button>
+        {retracted ? (
+          <div className="w-full mt-3 bg-[#F0FAF5] border-2 border-[#C8E6D8] rounded-xl px-4 py-3 text-sm text-[#085041] leading-snug">
+            All good — your manager will tidy it up. Nothing else to do.
+          </div>
+        ) : (
+          <>
+            {lastDraft && (
+              <button onClick={recordAnother}
+                className="w-full mt-3 bg-white text-[#0F6E56] border-2 border-[#0F6E56] font-semibold py-4 rounded-xl hover:bg-gray-50 transition-colors text-base">
+                Record another like this
+              </button>
+            )}
+            {canTidy && (
+              <>
+                <button onClick={fixSomething}
+                  className="w-full mt-3 bg-white text-gray-700 border border-gray-300 font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                  Fix something
+                </button>
+                <button onClick={oopsWasntNearMiss}
+                  className="w-full mt-2 bg-white text-gray-500 border border-gray-200 font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                  Oops — this one wasn't a near-miss
+                </button>
+              </>
+            )}
+          </>
         )}
         <p className="text-xs text-gray-300 mt-6">Returning home in 8s…</p>
       </div>
@@ -372,6 +443,13 @@ export function RecordPage() {
           {submitError && (
             <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm flex items-center gap-2">
               <AlertTriangle size={16} /> {submitError}
+            </div>
+          )}
+
+          {editingIncidentId && (
+            <div className="p-3 bg-[#EEEDFE] border border-[#7F77DD] rounded-xl text-sm text-[#3C3489] flex items-center gap-2">
+              <span className="font-semibold">Editing your report</span>
+              <span>— change anything you need, then tap Save changes.</span>
             </div>
           )}
 
@@ -561,7 +639,8 @@ export function RecordPage() {
 
           {/* Mobile submit — sticky bottom, only on small screens */}
           <div className="lg:hidden mt-2">
-            <p className="text-[10px] text-gray-400 text-center mb-2">Anonymous — your manager sees what happened, not who submitted it.</p>
+            <p className="text-[10px] text-gray-400 text-center mb-1">Anonymous — your manager sees what happened, not who submitted it.</p>
+            <p className="text-[10px] text-gray-400 text-center mb-2">Submitted by mistake? You can tell your manager with one tap on the next screen — no blame.</p>
             <button
               onClick={() => doSubmit(false)}
               disabled={!canSubmit || submitting}
@@ -603,6 +682,7 @@ export function RecordPage() {
             </div>
 
             <p className="text-[10px] text-gray-400 text-center leading-tight">Anonymous — your manager sees what happened, not who submitted it.</p>
+            <p className="text-[10px] text-gray-400 text-center leading-tight">Submitted by mistake? You can tell your manager with one tap on the next screen — no blame.</p>
 
             <button
               onClick={() => doSubmit(false)}

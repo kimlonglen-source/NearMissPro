@@ -218,8 +218,34 @@ export function DashboardPage() {
           const rec = inc.recommendations?.[0];
           const pending = isPending(inc);
 
+          const retractedByStaff = inc.flagged_by_staff && inc.flag_note === 'Submitted in error';
+          const confirmAndRemove = async () => {
+            setBusy(true);
+            try { await api.voidIncident(inc.id, 'Not a near-miss — staff requested removal'); await load(); }
+            finally { setBusy(false); }
+          };
+          const keepItAnyway = async () => {
+            setBusy(true);
+            try { await api.flagIncident(inc.id, ''); await load(); }
+            finally { setBusy(false); }
+          };
+
           return (
-            <div key={inc.id} className={`bg-white rounded-xl border overflow-hidden transition-all ${pending ? 'border-l-4 border-l-[#BA7517] border-t border-r border-b border-t-gray-200 border-r-gray-200 border-b-gray-200' : 'border-gray-200'}`}>
+            <div key={inc.id} className={`bg-white rounded-xl border overflow-hidden transition-all ${retractedByStaff ? 'border-l-4 border-l-[#BA7517]' : pending ? 'border-l-4 border-l-[#BA7517] border-t border-r border-b border-t-gray-200 border-r-gray-200 border-b-gray-200' : 'border-gray-200'}`}>
+              {retractedByStaff && (
+                <div className="bg-[#FAEEDA] border-b border-[#BA7517] px-4 py-2.5 flex items-center gap-3 flex-wrap" onClick={e => e.stopPropagation()}>
+                  <AlertTriangle size={14} className="text-[#BA7517] flex-shrink-0" />
+                  <p className="text-xs text-[#633806] flex-1 min-w-[12rem]">Staff said this one wasn't a near-miss — please confirm.</p>
+                  <button onClick={confirmAndRemove} disabled={busy}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#BA7517] text-white hover:bg-[#9A6113] disabled:opacity-50">
+                    Confirm and remove
+                  </button>
+                  <button onClick={keepItAnyway} disabled={busy}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white text-[#633806] border border-[#BA7517] hover:bg-[#FDF5E4] disabled:opacity-50">
+                    Keep it anyway
+                  </button>
+                </div>
+              )}
               <button className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
                 onClick={() => { setActiveId(isOpen ? null : inc.id); setShowMod(false); setShowNote(false); }}>
                 <div className="flex-1 min-w-0">
