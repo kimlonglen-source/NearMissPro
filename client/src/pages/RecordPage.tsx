@@ -74,6 +74,7 @@ export function RecordPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submittedAt, setSubmittedAt] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [lastDraft, setLastDraft] = useState<Draft | null>(null);
 
   const l2Ref = useRef<HTMLElement>(null);
   const caughtRef = useRef<HTMLElement>(null);
@@ -229,6 +230,9 @@ export function RecordPage() {
     if (!quick && (!draft.errorStep || draft.errorTypes.length === 0 || !draft.whereCaught || draft.factors.length === 0 || anyPhi)) return;
     tap();
     setSubmitting(true); setSubmitError('');
+    // Snapshot what we're submitting so "Record another like this" can re-use it
+    // after resetDraft() clears the form.
+    setLastDraft(quick ? null : { ...draft });
     // Optimistic — show the success screen immediately. POST in background.
     setSubmittedAt(new Date().toLocaleString('en-NZ', {
       hour: '2-digit', minute: '2-digit', weekday: 'long', day: 'numeric', month: 'short',
@@ -271,6 +275,14 @@ export function RecordPage() {
 
   // ── Success screen ──────────────────────────────────────────
   if (submitted) {
+    const recordAnother = () => {
+      if (!lastDraft) return;
+      tap();
+      // Restore the just-submitted draft so staff can tweak and resubmit.
+      setDraft(lastDraft);
+      setSubmitted(false);
+      setSubmitError('');
+    };
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-sm mx-auto">
         <div className="w-20 h-20 rounded-full bg-[#E1F5EE] flex items-center justify-center mb-4">
@@ -280,9 +292,15 @@ export function RecordPage() {
         <p className="text-sm text-gray-500 mb-1">Logged at {submittedAt}</p>
         <p className="text-sm text-gray-500 mb-8">Thank you — your report helps keep patients safe.</p>
         <button onClick={() => nav('/')}
-          className="w-full bg-[#0F6E56] text-white font-semibold py-4 rounded-xl hover:bg-[#0B5A46] transition-colors">
+          className="w-full bg-[#0F6E56] text-white font-bold py-5 rounded-xl hover:bg-[#0B5A46] transition-colors text-base">
           Done
         </button>
+        {lastDraft && (
+          <button onClick={recordAnother}
+            className="w-full mt-3 bg-white text-[#0F6E56] border-2 border-[#0F6E56] font-semibold py-4 rounded-xl hover:bg-gray-50 transition-colors text-base">
+            Record another like this
+          </button>
+        )}
         <p className="text-xs text-gray-300 mt-6">Returning home in 8s…</p>
       </div>
     );
@@ -300,13 +318,13 @@ export function RecordPage() {
 
         {/* ── Layer 1: stage ── */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">Where did this happen?</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Where did this happen?</h2>
           <div className="grid grid-cols-2 gap-2">
             {STAGES.map(s => (
               <button
                 key={s.label}
                 onClick={() => onStageTap(s.label)}
-                className={`chip justify-center text-center text-[13px] leading-tight ${draft.errorStep === s.label ? 'chip-green' : 'chip-off'}`}
+                className={`chip justify-center text-center text-base font-bold leading-tight py-4 ${draft.errorStep === s.label ? 'chip-green' : 'chip-off'}`}
               >
                 {s.label}
               </button>
@@ -318,7 +336,7 @@ export function RecordPage() {
         {stage && (
           <section ref={l2Ref}>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-gray-900">What went wrong?</h2>
+              <h2 className="text-lg font-bold text-gray-900">What went wrong?</h2>
               <button
                 onClick={() => doSubmit(true)}
                 className="text-xs text-gray-500 underline hover:text-gray-700"
@@ -331,7 +349,7 @@ export function RecordPage() {
                 <button
                   key={s.label}
                   onClick={() => toggleSub(s.label)}
-                  className={`chip text-[13px] py-2 px-3 ${draft.errorTypes.includes(s.label) ? 'chip-coral' : s.recent ? 'chip-off border-[#1D9E75]' : 'chip-off'}`}
+                  className={`chip text-base font-semibold py-3 px-4 ${draft.errorTypes.includes(s.label) ? 'chip-coral' : s.recent ? 'chip-off border-[#1D9E75]' : 'chip-off'}`}
                 >
                   {s.recent && <span className="text-[10px] text-[#1D9E75] mr-1">recent</span>}
                   {s.label}
@@ -340,7 +358,7 @@ export function RecordPage() {
               {hasHiddenSubs && (
                 <button
                   onClick={() => { tap(); update({ showMoreSub: true }); }}
-                  className="chip text-[13px] chip-other"
+                  className="chip text-base font-semibold chip-other"
                 >
                   More…
                 </button>
@@ -399,13 +417,13 @@ export function RecordPage() {
         {/* ── Where caught ── */}
         {draft.errorTypes.length > 0 && (
           <section ref={caughtRef}>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">Where was it caught?</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Where was it caught?</h2>
             <div className="flex flex-wrap gap-1.5">
               {WHERE_CAUGHT.map(w => (
                 <button
                   key={w}
                   onClick={() => setWhereCaught(w)}
-                  className={`chip text-[13px] py-2 px-3 ${draft.whereCaught === w ? 'chip-blue' : 'chip-off'}`}
+                  className={`chip text-base font-semibold py-3 px-4 ${draft.whereCaught === w ? 'chip-blue' : 'chip-off'}`}
                 >
                   {w}
                 </button>
@@ -417,13 +435,13 @@ export function RecordPage() {
         {/* ── Factors ── */}
         {draft.whereCaught && (
           <section ref={factorsRef}>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">What was happening at the time?</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">What was happening at the time?</h2>
             <div className="flex flex-wrap gap-1.5">
               {visibleFactors.map(f => (
                 <button
                   key={f}
                   onClick={() => toggleFactor(f)}
-                  className={`chip text-[13px] py-2 px-3 ${draft.factors.includes(f) ? 'chip-amber' : 'chip-off'}`}
+                  className={`chip text-base font-semibold py-3 px-4 ${draft.factors.includes(f) ? 'chip-amber' : 'chip-off'}`}
                 >
                   {f}
                 </button>
@@ -431,7 +449,7 @@ export function RecordPage() {
               {!draft.showMoreFactors && FACTORS.length > FACTORS_DEFAULT_VISIBLE && (
                 <button
                   onClick={() => { tap(); update({ showMoreFactors: true }); }}
-                  className="chip text-[13px] chip-other"
+                  className="chip text-base font-semibold chip-other"
                 >
                   More factors…
                 </button>
@@ -479,7 +497,7 @@ export function RecordPage() {
           <button
             onClick={() => doSubmit(false)}
             disabled={!canSubmit || submitting}
-            className={`w-full py-4 rounded-xl font-semibold text-sm transition-colors ${canSubmit && !submitting ? 'bg-[#0F6E56] text-white active:bg-[#094A3A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+            className={`w-full py-5 rounded-xl font-bold text-base transition-colors ${canSubmit && !submitting ? 'bg-[#0F6E56] text-white active:bg-[#094A3A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
           >
             {submitLabel}
           </button>
