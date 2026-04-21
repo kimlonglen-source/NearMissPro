@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
-import { generatePeriodSummary } from '../services/ai.js';
+import { generatePeriodSummary, detectDrugErrorHotspots, getTrendSeries } from '../services/ai.js';
 
 const router = Router();
 router.use(authenticate);
@@ -16,10 +16,13 @@ router.post('/generate', async (req: Request, res: Response) => {
       isCustomRange: z.boolean().optional(),
     }).parse(req.body);
 
-    // Get AI summaries
-    const { summary, agenda, previousSummary } = await generatePeriodSummary(
-      req.auth!.pharmacyId, periodStart, periodEnd
-    );
+    // Run summary, hotspot detection, and trend series in parallel —
+    // they each hit the DB independently.
+    const [{ summary, agenda, previousSummary }, hotspots, trend] = await Promise.all([
+      generatePeriodSummary(req.auth!.pharmacyId, periodStart, periodEnd),
+      detectDrugErrorHotspots(req.auth!.pharmacyId, periodStart, periodEnd),
+      getTrendSeries(req.auth!.pharmacyId, periodStart, periodEnd),
+    ]);
 
     // Every new report starts as "Pending review". The manager marks it
     // "Completed" from the report screen once the team meeting has happened
@@ -32,6 +35,8 @@ router.post('/generate', async (req: Request, res: Response) => {
       period_summary: summary,
       previous_period_summary: previousSummary || null,
       agenda_items: agenda.map(text => ({ text, edited: false })),
+      pattern_alerts: hotspots,
+      trend_data: trend,
     }).select().single();
 
     if (error) throw error;

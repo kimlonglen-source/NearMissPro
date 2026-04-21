@@ -177,6 +177,26 @@ export function RecordPage() {
   }), [draft.notes, draft.drugName, draft.dispensedDrug]);
   const anyPhi = phi.notes.hit || phi.drugName.hit || phi.dispensedDrug.hit;
 
+  // Drug + error-type hotspot: is the same (drug, primary error) pair already
+  // 2+ in the last 30 days? Debounced 500ms so we don't hammer the endpoint
+  // while the user is still typing the drug name.
+  const [hotspot, setHotspot] = useState<{ count: number; days: number; drug: string; errorType: string } | null>(null);
+  useEffect(() => {
+    const drug = draft.drugName.trim();
+    const primary = draft.errorTypes[0];
+    if (drug.length < 3 || !primary) { setHotspot(null); return; }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      api.checkHotspot(drug, primary)
+        .then(r => {
+          if (cancelled) return;
+          setHotspot(r.isHotspot ? { count: r.count, days: r.days, drug, errorType: primary } : null);
+        })
+        .catch(() => { if (!cancelled) setHotspot(null); });
+    }, 500);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [draft.drugName, draft.errorTypes]);
+
   // ── Handlers ────────────────────────────────────────────────
   const onStageTap = (label: string) => {
     tap();
@@ -554,6 +574,15 @@ export function RecordPage() {
                     />
                   )}
                   <p className="text-[11px] text-gray-400 italic">Optional — you can submit without filling these.</p>
+                </div>
+              )}
+
+              {hotspot && (
+                <div className="bg-[#FAEEDA] border border-[#BA7517] rounded-xl px-3 py-2.5 flex items-start gap-2">
+                  <AlertTriangle size={14} className="text-[#BA7517] mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-[#633806] leading-snug">
+                    <span className="font-semibold">Repeat pattern —</span> {hotspot.drug} with "{hotspot.errorType}" has come up {hotspot.count} times in the last {hotspot.days} days. Your manager will see this trend and may want a specific prevention action (shelf sticker, alert flag, shelf separation).
+                  </p>
                 </div>
               )}
 

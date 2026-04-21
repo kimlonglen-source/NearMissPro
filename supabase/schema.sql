@@ -75,6 +75,8 @@ CREATE TABLE reports (
   previous_period_summary TEXT,
   period_summary TEXT,
   agenda_items JSONB DEFAULT '[]',
+  pattern_alerts JSONB DEFAULT '[]',
+  trend_data JSONB DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

@@ -316,6 +316,78 @@ export async function detectPatterns(pharmacyId: string): Promise<string | null>
   }
 }
 
+// Drug + error-type hotspots. A hotspot is a (drug_name, error_type) pair
+// that has appeared `minCount` or more times in the window. Used by the
+// period-summary section of the monthly report.
+export interface DrugErrorHotspot { drug: string; errorType: string; count: number; }
+export async function detectDrugErrorHotspots(
+  pharmacyId: string,
+  since: string,
+  until?: string,
+  minCount = 2,
+): Promise<DrugErrorHotspot[]> {
+  let q = supabase.from('incidents').select('drug_name, error_types')
+    .eq('pharmacy_id', pharmacyId).eq('status', 'active').gte('submitted_at', since);
+  if (until) q = q.lte('submitted_at', until);
+  const { data, error } = await q;
+  if (error) { console.error('[ai] detectDrugErrorHotspots failed:', error); return []; }
+  const counts: Record<string, number> = {};
+  for (const row of data || []) {
+    const drug = (row as { drug_name?: string }).drug_name?.trim();
+    if (!drug) continue;
+    const key = drug.toLowerCase();
+    for (const et of (row as { error_types?: string[] }).error_types || []) {
+      const k = `${key}|||${et}`;
+      counts[k] = (counts[k] || 0) + 1;
+    }
+  }
+  return Object.entries(counts)
+    .filter(([, c]) => c >= minCount)
+    .map(([k, count]) => {
+      const [drugLower, errorType] = k.split('|||');
+      // Recover a pretty drug label — use the first incident's casing.
+      const drug = (data || []).find(r => (r as { drug_name?: string }).drug_name?.trim().toLowerCase() === drugLower)
+        ?.drug_name?.trim() || drugLower;
+      return { drug, errorType, count };
+    })
+    .sort((a, b) => b.count - a.count || a.drug.localeCompare(b.drug));
+}
+
+// Weekly trend series for a pharmacy over the given window. Used by the
+// report's trend chart. Empty weeks come back as count 0.
+export interface TrendPoint { weekStart: string; count: number; }
+export async function getTrendSeries(pharmacyId: string, since: string, until?: string): Promise<TrendPoint[]> {
+  const startOfWeekKey = (d: Date): string => {
+    const nd = new Date(d); nd.setHours(0, 0, 0, 0);
+    const day = nd.getDay() || 7;
+    nd.setDate(nd.getDate() - day + 1);
+    return nd.toISOString().slice(0, 10);
+  };
+  let q = supabase.from('incidents').select('submitted_at, occurred_at')
+    .eq('pharmacy_id', pharmacyId).eq('status', 'active').gte('submitted_at', since);
+  if (until) q = q.lte('submitted_at', until);
+  const { data, error } = await q;
+  if (error) { console.error('[ai] getTrendSeries failed:', error); return []; }
+  // Build bucket keys covering [since, until].
+  const start = new Date(since);
+  const end = until ? new Date(until) : new Date();
+  const keys: string[] = [];
+  const firstKey = startOfWeekKey(start);
+  let cursor = new Date(firstKey);
+  const endKey = startOfWeekKey(end);
+  while (cursor.toISOString().slice(0, 10) <= endKey) {
+    keys.push(cursor.toISOString().slice(0, 10));
+    cursor.setDate(cursor.getDate() + 7);
+  }
+  const counts: Record<string, number> = Object.fromEntries(keys.map(k => [k, 0]));
+  for (const row of data || []) {
+    const when = new Date((row as { occurred_at?: string; submitted_at: string }).occurred_at || (row as { submitted_at: string }).submitted_at);
+    const key = startOfWeekKey(when);
+    if (key in counts) counts[key] += 1;
+  }
+  return keys.map(k => ({ weekStart: k, count: counts[k] }));
+}
+
 export async function generatePeriodSummary(pharmacyId: string, periodStart: string, periodEnd: string): Promise<{ summary: string; agenda: string[]; previousSummary?: string }> {
   const { data: incidents } = await supabase.from('incidents')
     .select('*, recommendations(*)').eq('pharmacy_id', pharmacyId)

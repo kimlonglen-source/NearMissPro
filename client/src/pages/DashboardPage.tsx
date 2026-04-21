@@ -35,6 +35,19 @@ export function DashboardPage() {
   const [dateTo, setDateTo] = useState(now.toISOString().slice(0, 10));
   const [periodSet, setPeriodSet] = useState(false);
 
+  // Trend strip — independent of review period, always "last N weeks"
+  // relative to today. Range chips: 4w / 8w / 12w / 6m.
+  type TrendRange = '4w' | '8w' | '12w' | '6m';
+  const [trendRange, setTrendRange] = useState<TrendRange>('8w');
+  const [trend, setTrend] = useState<{ weekStart: string; count: number }[]>([]);
+  useEffect(() => {
+    if (!periodSet) return;
+    const weeks = trendRange === '4w' ? 4 : trendRange === '8w' ? 8 : trendRange === '12w' ? 12 : 26;
+    let cancelled = false;
+    api.getTrend(weeks).then(r => { if (!cancelled) setTrend(r.weeks); }).catch(() => { if (!cancelled) setTrend([]); });
+    return () => { cancelled = true; };
+  }, [trendRange, periodSet]);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -185,6 +198,9 @@ export function DashboardPage() {
           <p className="text-sm text-[#633806]">{patternAlert}</p>
         </div>
       )}
+
+      {/* Trend strip */}
+      <TrendStrip data={trend} range={trendRange} onRangeChange={setTrendRange} />
 
       {/* Progress */}
       {activeIncidents.length > 0 && (
@@ -436,6 +452,58 @@ export function DashboardPage() {
               <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700" disabled={busy || !voidReason.trim()} onClick={doVoid}>Void incident</button>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Trend strip — weekly incident counts over N weeks ───────────────
+// Hand-rolled CSS bars (no chart library). Empty weeks render as a thin
+// grey tick so the axis stays consistent.
+type TrendRange = '4w' | '8w' | '12w' | '6m';
+function TrendStrip({ data, range, onRangeChange }: {
+  data: { weekStart: string; count: number }[];
+  range: TrendRange;
+  onRangeChange: (r: TrendRange) => void;
+}) {
+  const max = Math.max(1, ...data.map(d => d.count));
+  const total = data.reduce((a, b) => a + b.count, 0);
+  const chips: { key: TrendRange; label: string }[] = [
+    { key: '4w', label: '4w' }, { key: '8w', label: '8w' },
+    { key: '12w', label: '12w' }, { key: '6m', label: '6m' },
+  ];
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-3 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs font-medium text-gray-600">
+          Trend — last {range === '6m' ? '6 months' : range}{' '}
+          <span className="text-gray-400">({total} total)</span>
+        </div>
+        <div className="flex gap-1">
+          {chips.map(c => (
+            <button key={c.key} onClick={() => onRangeChange(c.key)}
+              className={`text-[11px] px-2 py-0.5 rounded-full font-medium transition-colors ${range === c.key ? 'bg-[#0F6E56] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {data.length === 0 ? (
+        <div className="h-10 flex items-center justify-center text-[11px] text-gray-300">No data in range</div>
+      ) : (
+        <div className="flex items-end gap-[2px] h-10">
+          {data.map(pt => {
+            const h = pt.count === 0 ? 2 : Math.max(4, (pt.count / max) * 36);
+            const weekLabel = new Date(pt.weekStart).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+            return (
+              <div key={pt.weekStart}
+                className={`flex-1 rounded-sm ${pt.count > 0 ? 'bg-[#0F6E56]' : 'bg-gray-100'}`}
+                style={{ height: `${h}px` }}
+                title={`Week of ${weekLabel}: ${pt.count} incident${pt.count === 1 ? '' : 's'}`}
+              />
+            );
+          })}
         </div>
       )}
     </div>

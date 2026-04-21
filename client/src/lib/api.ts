@@ -99,6 +99,13 @@ class Api {
 
   // Pattern detection
   getPatternAlert() { return this.req<{ alert: string | null }>('/incidents/pattern-alert'); }
+  checkHotspot(drug: string, errorType: string) {
+    const q = new URLSearchParams({ drug, errorType }).toString();
+    return this.req<{ isHotspot: boolean; count: number; days: number }>(`/incidents/hotspot-check?${q}`);
+  }
+  getTrend(weeks: number) {
+    return this.req<{ weeks: { weekStart: string; count: number }[] }>(`/incidents/stats/trend?weeks=${weeks}`);
+  }
 }
 
 export const api = new Api();

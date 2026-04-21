@@ -15,6 +15,8 @@ interface Incident {
 interface Report {
   id: string; period_start: string; period_end: string; generated_by: string; generated_at: string; locked: boolean;
   previous_period_summary?: string; period_summary?: string; agenda_items: { text: string; edited: boolean }[];
+  pattern_alerts?: { drug: string; errorType: string; count: number }[];
+  trend_data?: { weekStart: string; count: number }[];
 }
 interface AckRow { name: string; role: string; initials: string; date: string; }
 
@@ -154,6 +156,30 @@ export function ReportPage() {
             </div>
           ))}
         </div>
+
+        {/* 2b. Pattern alerts — drug + error-type hotspots in this period */}
+        {report.pattern_alerts && report.pattern_alerts.length > 0 && (
+          <div className="rounded-xl p-4 mb-6 border-2 border-[#BA7517]" style={{ background: '#FDF8EB' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-[#BA7517]" />
+              <span className="text-xs font-semibold uppercase text-gray-600">Pattern alerts</span>
+            </div>
+            <ul className="space-y-1.5">
+              {report.pattern_alerts.map((p, i) => (
+                <li key={i} className="text-sm text-[#633806] leading-snug">
+                  <span className="font-semibold">{p.drug}</span> with "<span className="italic">{p.errorType}</span>" —{' '}
+                  <span className="font-semibold">{p.count} incidents</span> this period.
+                </li>
+              ))}
+            </ul>
+            <p className="text-[11px] text-[#633806]/70 mt-2">Discuss a specific prevention action for each at the team meeting.</p>
+          </div>
+        )}
+
+        {/* 2c. Trend chart — weekly incidents over the reporting period */}
+        {report.trend_data && report.trend_data.length > 0 && (
+          <ReportTrendChart data={report.trend_data} />
+        )}
 
         {/* 3. Previous period improvements */}
         {prevSummary && (
@@ -318,6 +344,40 @@ export function ReportPage() {
           NearMiss Pro \u00B7 {pharmacyName} \u00B7 {fmtDate(report.period_start)} \u2014 {fmtDate(report.period_end)}
           <br />AI recommendations are advisory only. The pharmacist-in-charge is responsible for all professional decisions.
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Report trend chart — prints cleanly to B&W on paper too ─────────
+function ReportTrendChart({ data }: { data: { weekStart: string; count: number }[] }) {
+  const max = Math.max(1, ...data.map(d => d.count));
+  const total = data.reduce((a, b) => a + b.count, 0);
+  const fmt = (s: string) => new Date(s).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+  return (
+    <div className="rounded-xl p-4 mb-6 border border-gray-200 bg-white">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-semibold uppercase text-gray-600">Weekly trend</span>
+        <span className="text-[11px] text-gray-400">{total} incidents over {data.length} weeks</span>
+      </div>
+      <div className="flex items-end gap-1 h-16">
+        {data.map(pt => {
+          const h = pt.count === 0 ? 2 : Math.max(6, (pt.count / max) * 56);
+          return (
+            <div key={pt.weekStart} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+              <div
+                className={`w-full rounded-sm ${pt.count > 0 ? 'bg-[#0F6E56] print:bg-gray-800' : 'bg-gray-200'}`}
+                style={{ height: `${h}px` }}
+                title={`Week of ${fmt(pt.weekStart)}: ${pt.count}`}
+              />
+              {pt.count > 0 && <span className="text-[9px] text-gray-500 leading-none">{pt.count}</span>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between mt-2 text-[9px] text-gray-400">
+        <span>{data.length > 0 ? fmt(data[0].weekStart) : ''}</span>
+        <span>{data.length > 0 ? fmt(data[data.length - 1].weekStart) : ''}</span>
       </div>
     </div>
   );

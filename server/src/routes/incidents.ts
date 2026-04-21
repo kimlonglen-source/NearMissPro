@@ -143,6 +143,70 @@ router.get('/pattern-alert', requireRole('manager', 'founder'), async (req: Requ
   } catch { res.json({ alert: null }); }
 });
 
+// ── Drug+error-type hotspot check (Record-form live warning) ─
+// Returns whether this exact (drug_name, error_type) pair has appeared
+// 2+ times in the last 30 days — i.e. whether the incident being logged
+// would be the 3rd+ repeat. Any staff role can call it; it only sees
+// counts from their own pharmacy.
+router.get('/hotspot-check', async (req: Request, res: Response) => {
+  try {
+    const { drug, errorType } = req.query;
+    if (typeof drug !== 'string' || typeof errorType !== 'string' || !drug.trim() || !errorType.trim()) {
+      res.json({ isHotspot: false, count: 0, days: 30 }); return;
+    }
+    // Escape ILIKE wildcards so a name containing % or _ matches literally.
+    const needle = drug.trim().replace(/[%_\\]/g, '\\$&');
+    const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+    const { count } = await supabase.from('incidents')
+      .select('id', { count: 'exact', head: true })
+      .eq('pharmacy_id', req.auth!.pharmacyId)
+      .eq('status', 'active')
+      .gte('submitted_at', since)
+      .ilike('drug_name', needle)
+      .contains('error_types', [errorType]);
+    const c = count || 0;
+    res.json({ isHotspot: c >= 2, count: c, days: 30 });
+  } catch { res.json({ isHotspot: false, count: 0, days: 30 }); }
+});
+
+// ── Weekly incident trend (dashboard trend strip) ───────────
+// Returns one bucket per ISO-week (Mon–Sun), oldest first, for the
+// last N weeks. Empty weeks come back as count 0 so the chart has
+// a consistent x-axis.
+router.get('/stats/trend', async (req: Request, res: Response) => {
+  try {
+    const weeks = Math.max(1, Math.min(52, parseInt(String(req.query.weeks || '8'), 10) || 8));
+    const now = new Date();
+    const startOfWeekKey = (d: Date): string => {
+      const nd = new Date(d);
+      nd.setHours(0, 0, 0, 0);
+      const day = nd.getDay() || 7; // Sunday = 7
+      nd.setDate(nd.getDate() - day + 1);
+      return nd.toISOString().slice(0, 10);
+    };
+    // Build the key list oldest → newest so the chart renders left-to-right.
+    const keys: string[] = [];
+    for (let i = weeks - 1; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i * 7);
+      keys.push(startOfWeekKey(d));
+    }
+    const earliest = keys[0];
+    const { data, error } = await supabase.from('incidents')
+      .select('submitted_at, occurred_at')
+      .eq('pharmacy_id', req.auth!.pharmacyId)
+      .eq('status', 'active')
+      .gte('submitted_at', earliest);
+    if (error) throw error;
+    const counts: Record<string, number> = Object.fromEntries(keys.map(k => [k, 0]));
+    for (const row of data || []) {
+      const when = new Date((row as { occurred_at?: string; submitted_at: string }).occurred_at || (row as { submitted_at: string }).submitted_at);
+      const key = startOfWeekKey(when);
+      if (key in counts) counts[key] += 1;
+    }
+    res.json({ weeks: keys.map(k => ({ weekStart: k, count: counts[k] })) });
+  } catch (err) { console.error('[incidents] trend failed:', err); res.status(500).json({ error: 'Failed' }); }
+});
+
 // ── Monthly incident count (must be before /:id) ────────────
 router.get('/stats/monthly-count', async (req: Request, res: Response) => {
   try {
