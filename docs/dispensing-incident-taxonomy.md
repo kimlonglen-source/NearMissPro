@@ -10,7 +10,7 @@ Labels use plain bench English — no training needed to recognise any chip.
 
 | Stage | Used when |
 |---|---|
-| Script entered into PMS | Data entry of a prescription into the dispensing software |
+| Script entered into dispensary software | Data entry of a prescription into the dispensing software |
 | Drug picked from shelf | Selection of the medication from stock |
 | Counted / measured | Counting tablets or measuring a liquid |
 | Labelling | Truly label-specific issues (CAL, placement, missing) |
@@ -22,7 +22,7 @@ Labels use plain bench English — no training needed to recognise any chip.
 
 Top 6–8 per stage are default-visible. Rarer items reveal under "More…".
 
-### Script entered into PMS
+### Script entered into dispensary software
 Wrong patient · Wrong drug entered · Wrong strength entered · Wrong directions · Wrong quantity entered · Repeat dispensed too early · Allergy missed or overridden · Interaction missed · Wrong frequency · Wrong route · Repeat overdue (continuity gap) · Duplicate therapy missed · Renal or hepatic dose adjustment missed · Paediatric dose error · Geriatric dose error · Pregnancy or breastfeeding category missed · Pharmac Special Authority not checked · Wrong Pharmac brand supplied · NHI / HPI mismatch · Wrong subsidy code · PSO treated as patient script · NZePS prescription not actioned · Out-of-date prescription (>6 months) · Forged or altered prescription accepted · Verbal or phone order misheard · Faxed prescription misread · Hospital discharge misinterpreted
 
 ### Drug picked from shelf
@@ -34,7 +34,7 @@ Wrong quantity counted · Wrong volume measured (liquid) · Mixed strengths in s
 ### Labelling
 Missing CAL (cautionary advisory label) · Wrong CAL applied · Label on wrong item / wrong bottle · Missing label entirely · Pharmacist initials missing
 
-*Note: Only truly label-specific issues. Data errors — wrong drug/strength/directions/quantity/frequency/route/patient, typos, auto-filled expiry, dispensed date — originate upstream (PMS entry or drug picking) and are logged there.*
+*Note: Only truly label-specific issues. Data errors — wrong drug/strength/directions/quantity/frequency/route/patient, typos, auto-filled expiry, dispensed date — originate upstream (dispensary software entry or drug picking) and are logged there.*
 
 ### Bagging / handed to patient
 Wrong patient given the bag · Bag mixed up between patients · Bag missing an item · Bag contains extra item · Counselling missed · Counselling incorrect · New-medicine counselling missed · Inhaler or device technique not shown · Driving or alcohol warning missed · ID not checked for CD pickup

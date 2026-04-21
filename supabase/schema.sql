@@ -162,7 +162,7 @@ CREATE POLICY checkbox_update ON checkbox_options FOR UPDATE USING (current_sett
 
 -- Layer 1 workflow-stage chips (see migrate_workflow_stage.sql for full taxonomy).
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
-  ('error_step', NULL, 'Script entered into PMS',        1),
+  ('error_step', NULL, 'Script entered into dispensary software',        1),
   ('error_step', NULL, 'Drug picked from shelf',         2),
   ('error_step', NULL, 'Counted / measured',             3),
   ('error_step', NULL, 'Label generated',                4),

@@ -22,7 +22,7 @@ DELETE FROM checkbox_options WHERE category = 'error_step';
 
 -- ── Layer 1: workflow stage chips ──────────────────────────
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
-  ('error_step', NULL, 'Script entered into PMS',        1),
+  ('error_step', NULL, 'Script entered into dispensary software',        1),
   ('error_step', NULL, 'Drug picked from shelf',         2),
   ('error_step', NULL, 'Counted / measured',             3),
   ('error_step', NULL, 'Labelling',                      4),
@@ -35,35 +35,35 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
 -- sort_order < 100 = default-visible (top ~8 per stage).
 -- sort_order ≥ 100 = revealed via "More…".
 
--- Script entered into PMS
+-- Script entered into dispensary software
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
-  ('error_type', 'Script entered into PMS', 'Wrong patient',                         1),
-  ('error_type', 'Script entered into PMS', 'Wrong drug entered',                    2),
-  ('error_type', 'Script entered into PMS', 'Wrong strength entered',                3),
-  ('error_type', 'Script entered into PMS', 'Wrong directions',                      4),
-  ('error_type', 'Script entered into PMS', 'Wrong quantity entered',                5),
-  ('error_type', 'Script entered into PMS', 'Repeat dispensed too early',            6),
-  ('error_type', 'Script entered into PMS', 'Allergy missed or overridden',          7),
-  ('error_type', 'Script entered into PMS', 'Interaction missed',                    8),
-  ('error_type', 'Script entered into PMS', 'Wrong frequency',                     100),
-  ('error_type', 'Script entered into PMS', 'Wrong route',                         101),
-  ('error_type', 'Script entered into PMS', 'Repeat overdue (continuity gap)',     102),
-  ('error_type', 'Script entered into PMS', 'Duplicate therapy missed',            103),
-  ('error_type', 'Script entered into PMS', 'Renal or hepatic dose adjustment missed', 104),
-  ('error_type', 'Script entered into PMS', 'Paediatric dose error',               105),
-  ('error_type', 'Script entered into PMS', 'Geriatric dose error',                106),
-  ('error_type', 'Script entered into PMS', 'Pregnancy or breastfeeding category missed', 107),
-  ('error_type', 'Script entered into PMS', 'Pharmac Special Authority not checked', 108),
-  ('error_type', 'Script entered into PMS', 'Wrong Pharmac brand supplied',        109),
-  ('error_type', 'Script entered into PMS', 'NHI / HPI mismatch',                  110),
-  ('error_type', 'Script entered into PMS', 'Wrong subsidy code',                  111),
-  ('error_type', 'Script entered into PMS', 'PSO treated as patient script',      112),
-  ('error_type', 'Script entered into PMS', 'NZePS prescription not actioned',    113),
-  ('error_type', 'Script entered into PMS', 'Out-of-date prescription (>6 months)', 114),
-  ('error_type', 'Script entered into PMS', 'Forged or altered prescription accepted', 115),
-  ('error_type', 'Script entered into PMS', 'Verbal or phone order misheard',     116),
-  ('error_type', 'Script entered into PMS', 'Faxed prescription misread',         117),
-  ('error_type', 'Script entered into PMS', 'Hospital discharge misinterpreted',  118);
+  ('error_type', 'Script entered into dispensary software', 'Wrong patient',                         1),
+  ('error_type', 'Script entered into dispensary software', 'Wrong drug entered',                    2),
+  ('error_type', 'Script entered into dispensary software', 'Wrong strength entered',                3),
+  ('error_type', 'Script entered into dispensary software', 'Wrong directions',                      4),
+  ('error_type', 'Script entered into dispensary software', 'Wrong quantity entered',                5),
+  ('error_type', 'Script entered into dispensary software', 'Repeat dispensed too early',            6),
+  ('error_type', 'Script entered into dispensary software', 'Allergy missed or overridden',          7),
+  ('error_type', 'Script entered into dispensary software', 'Interaction missed',                    8),
+  ('error_type', 'Script entered into dispensary software', 'Wrong frequency',                     100),
+  ('error_type', 'Script entered into dispensary software', 'Wrong route',                         101),
+  ('error_type', 'Script entered into dispensary software', 'Repeat overdue (continuity gap)',     102),
+  ('error_type', 'Script entered into dispensary software', 'Duplicate therapy missed',            103),
+  ('error_type', 'Script entered into dispensary software', 'Renal or hepatic dose adjustment missed', 104),
+  ('error_type', 'Script entered into dispensary software', 'Paediatric dose error',               105),
+  ('error_type', 'Script entered into dispensary software', 'Geriatric dose error',                106),
+  ('error_type', 'Script entered into dispensary software', 'Pregnancy or breastfeeding category missed', 107),
+  ('error_type', 'Script entered into dispensary software', 'Pharmac Special Authority not checked', 108),
+  ('error_type', 'Script entered into dispensary software', 'Wrong Pharmac brand supplied',        109),
+  ('error_type', 'Script entered into dispensary software', 'NHI / HPI mismatch',                  110),
+  ('error_type', 'Script entered into dispensary software', 'Wrong subsidy code',                  111),
+  ('error_type', 'Script entered into dispensary software', 'PSO treated as patient script',      112),
+  ('error_type', 'Script entered into dispensary software', 'NZePS prescription not actioned',    113),
+  ('error_type', 'Script entered into dispensary software', 'Out-of-date prescription (>6 months)', 114),
+  ('error_type', 'Script entered into dispensary software', 'Forged or altered prescription accepted', 115),
+  ('error_type', 'Script entered into dispensary software', 'Verbal or phone order misheard',     116),
+  ('error_type', 'Script entered into dispensary software', 'Faxed prescription misread',         117),
+  ('error_type', 'Script entered into dispensary software', 'Hospital discharge misinterpreted',  118);
 
 -- Drug picked from shelf
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
@@ -92,7 +92,7 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
 -- Labelling
 -- Truly label-specific errors only. Data errors (wrong drug, typo in directions,
 -- wrong expiry auto-filled from stock, etc.) originate upstream — log those
--- under "Script entered into PMS" or "Drug picked from shelf".
+-- under "Script entered into dispensary software" or "Drug picked from shelf".
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('error_type', 'Labelling', 'Missing CAL (cautionary advisory label)', 1),
   ('error_type', 'Labelling', 'Wrong CAL applied',                       2),

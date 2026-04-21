@@ -54,7 +54,7 @@ function nzStubRecommendation(incident: IncidentData): string {
     return `Separate${drugRef} from similar-looking items on the dispensing shelf. Apply tallman lettering per Medsafe LASA guidance, add a high-contrast alert sticker, and require a second-check at picking. Review the NZULM entry for known look-alike pairs.${factorNote}`;
   }
   if (hasAny(['sound-alike'])) {
-    return `Add a read-back confirmation at data entry${drugRef}. Flag known sound-alike pairs in your PMS (Medsafe publishes an NZ SALAD list). If phoned-in, require written confirmation before dispensing.${factorNote}`;
+    return `Add a read-back confirmation at data entry${drugRef}. Flag known sound-alike pairs in your dispensary software (Medsafe publishes an NZ SALAD list). If phoned-in, require written confirmation before dispensing.${factorNote}`;
   }
 
   // Strength / dose
@@ -69,17 +69,17 @@ function nzStubRecommendation(incident: IncidentData): string {
 
   // Wrong patient (data entry, bag, label) — NZ NHI guidance
   if (hasAny(['wrong patient'])) {
-    return `Confirm patient identity using NHI + date of birth at every handoff (data entry, final check, handout). For same-name patients, add a PMS flag. Pharmacy Council NZ practice standards require two identifiers at handout.${factorNote}`;
+    return `Confirm patient identity using NHI + date of birth at every handoff (data entry, final check, handout). For same-name patients, add a dispensary software flag. Pharmacy Council NZ practice standards require two identifiers at handout.${factorNote}`;
   }
 
   // Allergy / interaction / duplicate therapy — clinical decision support
   if (hasAny(['allergy', 'interaction', 'duplicate therapy'])) {
-    return `Review PMS override policy: allergy/interaction/duplicate-therapy alerts should require a documented reason, not a single-tap dismissal. Pharmacist-in-charge audits the override log weekly. Pharmacy Council NZ standard 1.8 applies.${factorNote}`;
+    return `Review dispensary software override policy: allergy/interaction/duplicate-therapy alerts should require a documented reason, not a single-tap dismissal. Pharmacist-in-charge audits the override log weekly. Pharmacy Council NZ standard 1.8 applies.${factorNote}`;
   }
 
   // Renal / hepatic / paediatric / geriatric / pregnancy dose
   if (hasAny(['renal', 'hepatic', 'paediatric', 'geriatric', 'pregnancy', 'breastfeeding'])) {
-    return `Cross-check${drugRef} against NZ Formulary special-population dosing. PMS alert required for high-risk populations. Consider a pharmacist clinical review step before dispensing for these groups.${factorNote}`;
+    return `Cross-check${drugRef} against NZ Formulary special-population dosing. A dispensary software alert is required for high-risk populations. Consider a pharmacist clinical review step before dispensing for these groups.${factorNote}`;
   }
 
   // Pharmac funding / Special Authority / brand
@@ -87,7 +87,7 @@ function nzStubRecommendation(incident: IncidentData): string {
     return `Verify Pharmac Schedule Section B funding rules and Special Authority number before dispensing. Check expiry of SA. Pharmac Schedule updates monthly — subscribe to notifications.${factorNote}`;
   }
   if (hasAny(['brand'])) {
-    return `${drug || 'This drug'} is bioequivalence-sensitive on brand swap (Medsafe alert list). Counsel the patient verbally on any brand change and document it. Flag in PMS to prevent silent substitution.${factorNote}`;
+    return `${drug || 'This drug'} is bioequivalence-sensitive on brand swap (Medsafe alert list). Counsel the patient verbally on any brand change and document it. Flag in dispensary software to prevent silent substitution.${factorNote}`;
   }
 
   // NHI/HPI, NZePS, PSO
@@ -95,7 +95,7 @@ function nzStubRecommendation(incident: IncidentData): string {
     return `Verify NHI at data entry against the patient's ID document. Pharmacy Procedures Manual (Te Whatu Ora) section on patient identification applies.${factorNote}`;
   }
   if (hasAny(['nzeps'])) {
-    return `Check the NZePS reject reason in the PMS log. If re-submission is needed, confirm with the prescriber. Do not manually override a rejected electronic prescription.${factorNote}`;
+    return `Check the NZePS reject reason in the dispensary software log. If re-submission is needed, confirm with the prescriber. Do not manually override a rejected electronic prescription.${factorNote}`;
   }
   if (hasAny(['pso'])) {
     return `Practitioner's Supply Orders follow a separate funding and labelling path from patient scripts. Review the Pharmacy Procedures Manual (Te Whatu Ora) PSO section and retrain the team on recognising PSO forms.${factorNote}`;
@@ -113,16 +113,16 @@ function nzStubRecommendation(incident: IncidentData): string {
 
   // Label typo / directions / CAL
   if (hasAny(['typo', 'directions', 'sig'])) {
-    return `Read labels word-for-word against the prescription at final check. Pharmacist-in-charge reviews dispensing label templates quarterly. If PMS shortens directions, consider manual override per NZULM.${factorNote}`;
+    return `Read labels word-for-word against the prescription at final check. Pharmacist-in-charge reviews dispensing label templates quarterly. If dispensary software shortens directions, consider manual override per NZULM.${factorNote}`;
   }
   if (hasAny(['cal'])) {
-    return `Check NZ CAL requirements for ${drug || 'this medication'} (NZULM or the NZ Formulary). Ensure PMS CAL prompts are not being dismissed without review. Print CAL labels on a high-contrast background.${factorNote}`;
+    return `Check NZ CAL requirements for ${drug || 'this medication'} (NZULM or the NZ Formulary). Ensure dispensary software CAL prompts are not being dismissed without review. Print CAL labels on a high-contrast background.${factorNote}`;
   }
   if (hasAny(['label on wrong item', 'missing label'])) {
     return `Enforce one-label-one-item workflow — never batch-label. Match label to item immediately after print. Pharmacist-in-charge final check must verify label is on the correct pack.${factorNote}`;
   }
   if (hasAny(['pharmacist initials'])) {
-    return `Pharmacist initials/signature on the dispensing label is required under Pharmacy Council NZ standard. Embed in the PMS template. Do not dispense without.${factorNote}`;
+    return `Pharmacist initials/signature on the dispensing label is required under Pharmacy Council NZ standard. Embed in the dispensary software template. Do not dispense without.${factorNote}`;
   }
 
   // Stock / expiry / recall / damaged / pack size / Section 29
@@ -136,7 +136,7 @@ function nzStubRecommendation(incident: IncidentData): string {
     return `Inspect packs at receipt and at picking. Damaged tablets/strips must not be dispensed — return to supplier with credit note. Document the batch.${factorNote}`;
   }
   if (hasAny(['pack size'])) {
-    return `Verify pack size matches the prescribed quantity at picking. PMS should warn on a mismatch. For non-matching packs, use original-pack dispensing where possible.${factorNote}`;
+    return `Verify pack size matches the prescribed quantity at picking. The dispensary software should warn on a mismatch. For non-matching packs, use original-pack dispensing where possible.${factorNote}`;
   }
   if (hasAny(['section 29'])) {
     return `Section 29 (unapproved medicines) requires specific documentation: prescriber acknowledgement of unapproved status and retention for 10 years. Review Medsafe Section 29 guidance.${factorNote}`;
@@ -144,7 +144,7 @@ function nzStubRecommendation(incident: IncidentData): string {
 
   // Repeat / continuity
   if (hasAny(['repeat'])) {
-    return `Check dispensing history${drugRef} before processing repeats. PMS alert on minimum repeat interval. Confirm with patient when they last collected.${factorNote}`;
+    return `Check dispensing history${drugRef} before processing repeats. Set a dispensary software alert on minimum repeat interval. Confirm with patient when they last collected.${factorNote}`;
   }
 
   // Compliance pack
@@ -159,12 +159,12 @@ function nzStubRecommendation(incident: IncidentData): string {
 
   // Formulation swap
   if (hasAny(['formulation'])) {
-    return `Separate formulations (tab/cap/liquid/IR/SR)${drugRef} on the shelf. Confirm formulation verbally at handout. PMS should warn on formulation swap for the same drug.${factorNote}`;
+    return `Separate formulations (tab/cap/liquid/IR/SR)${drugRef} on the shelf. Confirm formulation verbally at handout. The dispensary software should warn on formulation swap for the same drug.${factorNote}`;
   }
 
   // Counselling / handout
   if (hasAny(['counselling', 'inhaler', 'driving', 'alcohol'])) {
-    return `Pharmacy Council NZ requires counselling for all new medicines. Demonstrate device technique in-store (inhalers, injectables). Document the counselling event in the PMS.${factorNote}`;
+    return `Pharmacy Council NZ requires counselling for all new medicines. Demonstrate device technique in-store (inhalers, injectables). Document the counselling event in the dispensary software.${factorNote}`;
   }
 
   // Bag mix-up

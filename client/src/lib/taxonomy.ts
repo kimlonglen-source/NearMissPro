@@ -14,7 +14,7 @@ export interface Stage {
 
 export const STAGES: Stage[] = [
   {
-    label: 'Script entered into PMS',
+    label: 'Script entered into dispensary software',
     subErrors: [
       { label: 'Wrong patient', common: true },
       { label: 'Wrong drug entered', common: true },
@@ -133,7 +133,7 @@ export const WHERE_CAUGHT = [
 
 // Default "where caught" to pre-select based on Layer 1 stage. One tap to change.
 export const CAUGHT_DEFAULT_BY_STAGE: Record<string, string> = {
-  'Script entered into PMS': 'Data entry check',
+  'Script entered into dispensary software': 'Data entry check',
   'Drug picked from shelf': 'Initial pharmacist check',
   'Counted / measured': 'Initial pharmacist check',
   'Labelling': 'Final pharmacist check',
