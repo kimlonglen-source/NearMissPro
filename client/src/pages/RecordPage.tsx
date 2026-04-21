@@ -200,7 +200,22 @@ export function RecordPage() {
   // ── Handlers ────────────────────────────────────────────────
   const onStageTap = (label: string) => {
     tap();
-    // Changing stage clears L2/L3 because sub-errors are stage-specific.
+    // Tapping the already-selected stage deselects everything and returns
+    // to Section 1. Tapping a different stage switches to it and wipes
+    // L2/L3 because sub-errors are stage-specific.
+    if (draft.errorStep === label) {
+      update({
+        errorStep: '', errorTypes: [],
+        drugName: '', dispensedDrug: '',
+        prescribedStrength: '', dispensedStrength: '',
+        correctFormulation: '', dispensedFormulation: '',
+        prescribedQuantity: '', dispensedQuantity: '',
+        whereCaught: '', factors: [],
+        showMoreSub: false,
+      });
+      setOpenSection(1);
+      return;
+    }
     const last = (() => { try { return localStorage.getItem(LAST_CAUGHT_KEY) || ''; } catch { return ''; } })();
     update({
       errorStep: label,
@@ -227,6 +242,11 @@ export function RecordPage() {
 
   const setWhereCaught = (w: string) => {
     tap();
+    // Tapping the currently-selected chip deselects it (stays on Section 3).
+    if (draft.whereCaught === w) {
+      update({ whereCaught: '' });
+      return;
+    }
     update({ whereCaught: w });
     try { localStorage.setItem(LAST_CAUGHT_KEY, w); } catch { /* noop */ }
     setOpenSection(4);
@@ -578,12 +598,12 @@ export function RecordPage() {
               )}
 
               {hotspot && (
-                <div className="bg-[#FAEEDA] border border-[#BA7517] rounded-xl px-3 py-2.5 flex items-start gap-2">
-                  <AlertTriangle size={14} className="text-[#BA7517] mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-[#633806] leading-snug">
-                    <span className="font-semibold">Repeat pattern —</span> {hotspot.drug} with "{hotspot.errorType}" has come up {hotspot.count} times in the last {hotspot.days} days. Your manager will see this trend and may want a specific prevention action (shelf sticker, alert flag, shelf separation).
-                  </p>
-                </div>
+                <HotspotPanel
+                  drug={hotspot.drug}
+                  errorType={hotspot.errorType}
+                  count={hotspot.count}
+                  days={hotspot.days}
+                />
               )}
 
               {hasSub && (
@@ -815,6 +835,91 @@ function IntendedGivenSelect(props: {
           <option value="">Choose…</option>
           {props.options.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
+      </div>
+    </div>
+  );
+}
+
+// ── Hotspot panel — shared intervention log per (drug, error_type) ──
+// Shown on the Record form when the drug+error pair has 2+ priors.
+// Staff see what's already been tried and can add a new intervention.
+// Saves to pattern_interventions independently of the incident submit,
+// so an intervention is captured even if the incident isn't submitted.
+function HotspotPanel({ drug, errorType, count, days }: {
+  drug: string; errorType: string; count: number; days: number;
+}) {
+  interface Intervention { id: string; note: string; created_at: string; }
+  const [interventions, setInterventions] = useState<Intervention[]>([]);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.listInterventions(drug, errorType)
+      .then(r => { if (!cancelled) setInterventions(r.interventions); })
+      .catch(() => { /* ignore; empty list is fine */ });
+    return () => { cancelled = true; };
+  }, [drug, errorType]);
+
+  const add = async () => {
+    const text = note.trim();
+    if (!text || busy) return;
+    setBusy(true);
+    try {
+      const saved = await api.addIntervention(drug, errorType, text);
+      setInterventions(prev => [...prev, { id: saved.id, note: saved.note, created_at: saved.created_at }]);
+      setNote('');
+    } catch { /* silent — user can retry */ }
+    finally { setBusy(false); }
+  };
+
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+
+  return (
+    <div className="bg-[#FAEEDA] border border-[#BA7517] rounded-xl px-3 py-3 space-y-2.5">
+      <div className="flex items-start gap-2">
+        <AlertTriangle size={14} className="text-[#BA7517] mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-[#633806] leading-snug">
+          <span className="font-semibold">Repeat pattern —</span> {drug} with "{errorType}" has come up{' '}
+          <span className="font-semibold">{count} times</span> in the last {days} days.
+        </p>
+      </div>
+
+      {interventions.length > 0 && (
+        <div className="pl-6 text-xs text-[#633806]">
+          <p className="font-semibold mb-1">Actions tried so far:</p>
+          <ul className="space-y-0.5">
+            {interventions.map(iv => (
+              <li key={iv.id} className="leading-snug">
+                • <span className="text-[#633806]/70">{fmt(iv.created_at)} —</span> {iv.note}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="pl-6">
+        <p className="text-[11px] text-[#633806]/90 mb-1 font-medium">
+          What did you do this time? <span className="text-[#633806]/50 font-normal">(optional — helps the team)</span>
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+            placeholder="e.g. Added yellow sticker to shelf"
+            maxLength={500}
+            className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-[#BA7517]/40 bg-white focus:outline-none focus:ring-2 focus:ring-[#BA7517]"
+          />
+          <button
+            onClick={add}
+            disabled={!note.trim() || busy}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#BA7517] text-white hover:bg-[#9A6113] disabled:opacity-50"
+          >
+            {busy ? 'Saving…' : 'Add'}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -106,6 +106,17 @@ class Api {
   getTrend(weeks: number) {
     return this.req<{ weeks: { weekStart: string; count: number }[] }>(`/incidents/stats/trend?weeks=${weeks}`);
   }
+
+  // Pattern interventions (shared log per drug+error pair)
+  listInterventions(drug: string, errorType: string) {
+    const q = new URLSearchParams({ drug, errorType }).toString();
+    return this.req<{ interventions: { id: string; drug_label: string; error_type: string; note: string; created_at: string }[] }>(`/interventions?${q}`);
+  }
+  addIntervention(drug: string, errorType: string, note: string) {
+    return this.req<{ id: string; note: string; created_at: string }>('/interventions', {
+      method: 'POST', body: JSON.stringify({ drug, errorType, note }),
+    });
+  }
 }
 
 export const api = new Api();

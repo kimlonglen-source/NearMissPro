@@ -164,15 +164,12 @@ export function ReportPage() {
               <span className="w-2 h-2 rounded-full bg-[#BA7517]" />
               <span className="text-xs font-semibold uppercase text-gray-600">Pattern alerts</span>
             </div>
-            <ul className="space-y-1.5">
+            <ul className="space-y-3">
               {report.pattern_alerts.map((p, i) => (
-                <li key={i} className="text-sm text-[#633806] leading-snug">
-                  <span className="font-semibold">{p.drug}</span> with "<span className="italic">{p.errorType}</span>" —{' '}
-                  <span className="font-semibold">{p.count} incidents</span> this period.
-                </li>
+                <PatternAlertRow key={i} drug={p.drug} errorType={p.errorType} count={p.count} />
               ))}
             </ul>
-            <p className="text-[11px] text-[#633806]/70 mt-2">Discuss a specific prevention action for each at the team meeting.</p>
+            <p className="text-[11px] text-[#633806]/70 mt-3">Discuss a specific prevention action for each at the team meeting.</p>
           </div>
         )}
 
@@ -346,6 +343,47 @@ export function ReportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Pattern alert row — fetches its own intervention timeline ───────
+// Each hotspot has a shared intervention log (pattern_interventions table).
+// The row renders the list inline so the team sees "what we've tried" next
+// to "how often it's happening" when reviewing the report.
+function PatternAlertRow({ drug, errorType, count }: { drug: string; errorType: string; count: number }) {
+  interface Intervention { id: string; note: string; created_at: string; }
+  const [interventions, setInterventions] = useState<Intervention[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    api.listInterventions(drug, errorType)
+      .then(r => { if (!cancelled) setInterventions(r.interventions); })
+      .catch(() => { /* empty list is fine */ });
+    return () => { cancelled = true; };
+  }, [drug, errorType]);
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+  return (
+    <li className="text-sm text-[#633806] leading-snug">
+      <div>
+        <span className="font-semibold">{drug}</span> with "<span className="italic">{errorType}</span>" —{' '}
+        <span className="font-semibold">{count} incidents</span> this period.
+      </div>
+      <div className="mt-1 pl-4 text-xs">
+        {interventions.length > 0 ? (
+          <>
+            <p className="font-semibold mb-0.5">Actions tried:</p>
+            <ul className="space-y-0.5">
+              {interventions.map(iv => (
+                <li key={iv.id} className="leading-snug">
+                  • <span className="text-[#633806]/70">{fmt(iv.created_at)} —</span> {iv.note}
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="italic text-[#633806]/60">No actions logged yet.</p>
+        )}
+      </div>
+    </li>
   );
 }
 

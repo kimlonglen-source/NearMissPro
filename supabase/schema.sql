@@ -80,6 +80,18 @@ CREATE TABLE reports (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+CREATE TABLE pattern_interventions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  pharmacy_id UUID NOT NULL REFERENCES pharmacies(id) ON DELETE CASCADE,
+  drug_key TEXT NOT NULL,
+  drug_label TEXT NOT NULL,
+  error_type TEXT NOT NULL,
+  note TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_pattern_interventions_lookup
+  ON pattern_interventions(pharmacy_id, drug_key, error_type, created_at DESC);
+
 CREATE TABLE checkbox_options (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   category TEXT NOT NULL,

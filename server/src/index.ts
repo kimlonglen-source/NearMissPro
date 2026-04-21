@@ -9,6 +9,7 @@ import optionRoutes from './routes/options.js';
 import recommendationRoutes from './routes/recommendations.js';
 import reportRoutes from './routes/reports.js';
 import adminRoutes from './routes/admin.js';
+import interventionRoutes from './routes/interventions.js';
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use('/api/options', optionRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/interventions', interventionRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', version: '2.0.0' }));
 
