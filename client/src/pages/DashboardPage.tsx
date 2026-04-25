@@ -17,7 +17,6 @@ export function DashboardPage() {
   const { pharmacyName } = useAuth();
   const nav = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [patternAlert, setPatternAlert] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [modText, setModText] = useState('');
   const [showMod, setShowMod] = useState(false);
@@ -51,9 +50,8 @@ export function DashboardPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [res, pa, reports] = await Promise.all([
+      const [res, reports] = await Promise.all([
         api.getIncidents({ from: dateFrom, to: dateTo }),
-        api.getPatternAlert(dateFrom, dateTo).catch(() => ({ alert: null })),
         api.getReports(),
       ]);
       // Check if a report already exists for this date range
@@ -66,7 +64,6 @@ export function DashboardPage() {
         return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
       });
       setIncidents(list);
-      setPatternAlert(pa.alert);
     } finally { setLoading(false); }
   };
 
@@ -190,14 +187,6 @@ export function DashboardPage() {
           <div className="text-[11px] text-gray-500">Peak time</div>
         </div>
       </div>
-
-      {/* Pattern alert */}
-      {patternAlert && (
-        <div className="bg-[#FAEEDA] border border-[#BA7517] rounded-xl px-4 py-3 mb-4 flex items-start gap-2">
-          <AlertTriangle size={16} className="text-[#BA7517] mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-[#633806]">{patternAlert}</p>
-        </div>
-      )}
 
       {/* Trend strip */}
       <TrendStrip data={trend} range={trendRange} onRangeChange={setTrendRange} />
