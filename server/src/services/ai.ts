@@ -467,7 +467,11 @@ Skip preamble like "this period saw" or "it is recommended that". Don't restate 
     return {
       summary: result.content?.[0]?.text || stub.summary,
       agenda: stub.agenda,
-      previousSummary: lastReport ? (result.content?.[0]?.text || stub.previousSummary) : undefined,
+      // "Last period improvements" should carry forward what was written at
+      // the LAST team meeting, not a duplicate of this period's summary.
+      // Pull the previous report's saved text verbatim so the manager can
+      // see and review what they agreed last time.
+      previousSummary: lastReport?.period_summary || undefined,
     };
   } catch (err) {
     console.error('[ai] generatePeriodSummary failed:', err);
