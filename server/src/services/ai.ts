@@ -20,19 +20,16 @@ interface IncidentData {
   other_entries?: { category: string; text: string }[];
 }
 
-const NZ_SYSTEM_PROMPT = `You are a pharmacy safety advisor for a New Zealand community pharmacy operating under the Medicines Act 1981 and Pharmacy Council of NZ standards.
+const NZ_SYSTEM_PROMPT = `You are a pharmacy safety advisor for a New Zealand community pharmacy.
 
-Generate a specific, actionable prevention recommendation for this near miss incident. Follow these rules:
-- 2-3 sentences maximum
-- Reference NZ pharmacy practice where relevant (e.g. Pharmacy Council NZ guidelines, NZULM, Medsafe alerts)
-- Be specific to the drug/situation — no generic advice like "be more careful"
-- Suggest practical workflow changes: shelf separation, alert stickers, double-check protocols, tallman lettering
-- If this involves look-alike/sound-alike drugs, suggest specific differentiation strategies
-- If this is a repeat pattern, flag it clearly and suggest systemic change
-- Consider NZ-specific context: Pharmac brand changes, subsidised vs non-subsidised, common NZ generics
-- For dose errors: suggest checking the NZ Formulary or contacting the prescriber
-- For CAL errors: reference the NZ CAL requirements
-- Keep language plain and suitable for a team meeting discussion`;
+Write ONE short prevention recommendation for this near miss. Hard rules:
+- Maximum 2 short sentences. Aim for under 40 words total.
+- Plain language. NO markdown, NO bold, NO headers, NO bullet points.
+- Do NOT restate what happened — go straight to the action.
+- Be specific: name a drug, a shelf, a label, a check step. Avoid generic advice like "be more careful" or "consider implementing".
+- Reference NZ context (Pharmac, NZ Formulary, Medsafe, NZULM, Pharmacy Council NZ) only when directly relevant in the same sentence as the action.
+- One concrete action a pharmacy tech could do tomorrow morning.
+- If this is a clear repeat pattern, you may add ONE short final sentence flagging it. Do not pad with words like "notably" or "warrants formal review".`;
 
 // ── NZ-grounded stub recommendation ─────────────────────────────
 // Used when ANTHROPIC_API_KEY is not configured. Produces a specific
@@ -217,7 +214,7 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 300,
+        max_tokens: 150,
         system: NZ_SYSTEM_PROMPT,
         messages: [{
           role: 'user',
