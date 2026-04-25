@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from '../components/Logo';
-import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface Incident {
   id: string; error_types: string[]; drug_name?: string; dispensed_drug?: string;
@@ -55,13 +55,26 @@ export function ReportPage() {
     ]).finally(() => setLoading(false));
   }, [id]);
 
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveEdits = async () => {
-    if (!report) return;
-    await api.updateReport(report.id, {
-      previous_period_summary: prevSummary,
-      period_summary: periodSummary,
-      agenda_items: agenda,
-    });
+    if (!report || saveState === 'saving') return;
+    setSaveState('saving');
+    try {
+      await api.updateReport(report.id, {
+        previous_period_summary: prevSummary,
+        period_summary: periodSummary,
+        agenda_items: agenda,
+      });
+      // Clear the "edited" flags so the Save button disappears, and refresh
+      // local state so a second edit-then-save cycle starts clean.
+      setPrevEdited(false); setSummaryEdited(false); setAgendaEdited(false);
+      setReport({ ...report, previous_period_summary: prevSummary, period_summary: periodSummary, agenda_items: agenda });
+      setSaveState('saved');
+      setTimeout(() => setSaveState(s => (s === 'saved' ? 'idle' : s)), 2000);
+    } catch {
+      setSaveState('error');
+      setTimeout(() => setSaveState(s => (s === 'error' ? 'idle' : s)), 4000);
+    }
   };
 
   const toggleCompleted = async () => {
@@ -96,9 +109,15 @@ export function ReportPage() {
           <ArrowLeft size={14} /> Back
         </button>
         <div className="flex-1" />
-        {(prevEdited || summaryEdited || agendaEdited) && (
-          <button onClick={saveEdits} className="btn text-sm bg-[#0F6E56] text-white">
-            <Save size={14} /> Save changes
+        {((prevEdited || summaryEdited || agendaEdited) || saveState === 'saved' || saveState === 'error') && (
+          <button
+            onClick={saveEdits}
+            disabled={saveState === 'saving' || saveState === 'saved'}
+            className={`btn text-sm ${saveState === 'saved' ? 'bg-[#1D9E75] text-white' : saveState === 'error' ? 'bg-red-600 text-white' : 'bg-[#0F6E56] text-white'} disabled:opacity-90`}>
+            {saveState === 'saving' ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
+              : saveState === 'saved' ? <><CheckCircle2 size={14} /> Saved</>
+              : saveState === 'error' ? <><AlertTriangle size={14} /> Save failed — retry</>
+              : <><Save size={14} /> Save changes</>}
           </button>
         )}
         {report.locked ? (
