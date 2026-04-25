@@ -192,7 +192,8 @@ export function triggersFor(subLabel: string): {
       l.includes('sound-alike') ||
       l.includes('drug on label') ||
       l.includes('drug entered') ||
-      l.includes('drug in pack'),
+      l.includes('drug in pack') ||
+      l.includes('brand'),
     strength: l.includes('strength'),
     quantity:
       (l.includes('quantity') || l.includes('volume') || l.includes('dose')) &&
