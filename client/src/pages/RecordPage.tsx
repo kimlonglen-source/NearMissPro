@@ -30,7 +30,7 @@ function nowHM(d: Date = new Date()): string {
 function subColor(label: string, selected: boolean): string {
   if (!selected) return 'chip-off';
   const l = label.toLowerCase();
-  if (l.includes('wrong drug') || l.includes('look-alike') || l.includes('sound-alike') || l.includes('drug on label') || l.includes('drug entered')) return 'chip-coral';
+  if (l.includes('wrong drug') || l.includes('look-alike') || l.includes('sound-alike') || l.includes('drug on label') || l.includes('drug entered') || l.includes('brand')) return 'chip-coral';
   if (l.includes('strength') || l.includes('dose')) return 'chip-amber';
   if (l.includes('formulation')) return 'chip-purple';
   return 'chip-green';
