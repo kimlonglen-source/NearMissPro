@@ -43,7 +43,8 @@ router.post('/staff/login', async (req: Request, res: Response) => {
   } catch (err) {
     if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
     console.error('Staff login error:', err);
-    res.status(500).json({ error: 'Login failed' });
+    const detail = env.nodeEnv !== 'production' && err instanceof Error ? `: ${err.message}` : '';
+    res.status(500).json({ error: `Login failed${detail}` });
   }
 });
 

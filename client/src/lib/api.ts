@@ -25,8 +25,13 @@ class Api {
       window.location.href = '/login';
       throw new Error('Session expired');
     }
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+    const text = await res.text();
+    let data: any = {};
+    if (text) {
+      try { data = JSON.parse(text); }
+      catch { if (!res.ok) throw new Error(`Server ${res.status}: ${text.slice(0, 200)}`); }
+    }
+    if (!res.ok) throw new Error(data.error || `Server ${res.status}${text ? '' : ' (empty response)'}`);
     return data as T;
   }
 

@@ -10,6 +10,12 @@ import recommendationRoutes from './routes/recommendations.js';
 import reportRoutes from './routes/reports.js';
 import adminRoutes from './routes/admin.js';
 
+const missing = ['SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'JWT_SECRET'].filter(k => !process.env[k]);
+if (missing.length > 0) {
+  console.error(`\n[fatal] Missing required env vars in server/.env: ${missing.join(', ')}\nCopy server/.env.example to server/.env and fill in the values.\n`);
+  process.exit(1);
+}
+
 const app = express();
 
 app.use(helmet());
