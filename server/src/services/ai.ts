@@ -328,7 +328,10 @@ export async function detectDrugErrorHotspots(
 ): Promise<DrugErrorHotspot[]> {
   let q = supabase.from('incidents').select('drug_name, error_types')
     .eq('pharmacy_id', pharmacyId).eq('status', 'active').gte('submitted_at', since);
-  if (until) q = q.lte('submitted_at', until);
+  if (until) {
+    const u = /^\d{4}-\d{2}-\d{2}$/.test(until) ? `${until}T23:59:59.999Z` : until;
+    q = q.lte('submitted_at', u);
+  }
   const { data, error } = await q;
   if (error) { console.error('[ai] detectDrugErrorHotspots failed:', error); return []; }
   const counts: Record<string, number> = {};
@@ -365,7 +368,10 @@ export async function getTrendSeries(pharmacyId: string, since: string, until?: 
   };
   let q = supabase.from('incidents').select('submitted_at, occurred_at')
     .eq('pharmacy_id', pharmacyId).eq('status', 'active').gte('submitted_at', since);
-  if (until) q = q.lte('submitted_at', until);
+  if (until) {
+    const u = /^\d{4}-\d{2}-\d{2}$/.test(until) ? `${until}T23:59:59.999Z` : until;
+    q = q.lte('submitted_at', u);
+  }
   const { data, error } = await q;
   if (error) { console.error('[ai] getTrendSeries failed:', error); return []; }
   // Build bucket keys covering [since, until].

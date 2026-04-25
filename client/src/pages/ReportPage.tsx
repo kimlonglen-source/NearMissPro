@@ -250,9 +250,9 @@ export function ReportPage() {
                   </div>
 
                   {/* Swap details */}
-                  {inc.dispensed_drug && <p className="text-xs text-gray-600 mb-1">Drug swap: {inc.drug_name} \u2192 {inc.dispensed_drug}</p>}
-                  {inc.dispensed_strength && <p className="text-xs text-gray-600 mb-1">Strength: {inc.prescribed_strength} \u2192 {inc.dispensed_strength}</p>}
-                  {inc.dispensed_formulation && <p className="text-xs text-gray-600 mb-1">Formulation: {inc.correct_formulation} \u2192 {inc.dispensed_formulation}</p>}
+                  {inc.dispensed_drug && <p className="text-xs text-gray-600 mb-1">Drug swap: {inc.drug_name} → {inc.dispensed_drug}</p>}
+                  {inc.dispensed_strength && <p className="text-xs text-gray-600 mb-1">Strength: {inc.prescribed_strength} → {inc.dispensed_strength}</p>}
+                  {inc.dispensed_formulation && <p className="text-xs text-gray-600 mb-1">Formulation: {inc.correct_formulation} → {inc.dispensed_formulation}</p>}
 
                   {/* Recommendation */}
                   {rec && (
@@ -359,7 +359,7 @@ export function ReportPage() {
 
         {/* 9. Footer */}
         <div className="border-t pt-4 text-xs text-gray-400 text-center">
-          NearMiss Pro \u00B7 {pharmacyName} \u00B7 {fmtDate(report.period_start)} \u2014 {fmtDate(report.period_end)}
+          NearMiss Pro · {pharmacyName} · {fmtDate(report.period_start)} — {fmtDate(report.period_end)}
           <br />AI recommendations are advisory only. The pharmacist-in-charge is responsible for all professional decisions.
         </div>
       </div>

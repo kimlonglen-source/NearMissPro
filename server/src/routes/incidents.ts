@@ -122,7 +122,12 @@ router.get('/', async (req: Request, res: Response) => {
     if (req.auth!.role !== 'founder') query = query.eq('pharmacy_id', req.auth!.pharmacyId);
     if (status && typeof status === 'string') query = query.eq('status', status);
     if (from && typeof from === 'string') query = query.gte('submitted_at', from);
-    if (to && typeof to === 'string') query = query.lte('submitted_at', to);
+    if (to && typeof to === 'string') {
+      // YYYY-MM-DD coerces to midnight UTC, excluding anything later in the
+      // day. Bump to end-of-day so incidents submitted that day still match.
+      const toBound = /^\d{4}-\d{2}-\d{2}$/.test(to) ? `${to}T23:59:59.999Z` : to;
+      query = query.lte('submitted_at', toBound);
+    }
 
     const p = parseInt(page as string, 10);
     const l = parseInt(limit as string, 10);

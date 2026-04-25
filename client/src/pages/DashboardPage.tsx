@@ -166,7 +166,7 @@ export function DashboardPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Review incidents</h1>
-          <p className="text-xs text-gray-500">{fmtDate(dateFrom)} \u2014 {fmtDate(dateTo)}</p>
+          <p className="text-xs text-gray-500">{fmtDate(dateFrom)} — {fmtDate(dateTo)}</p>
         </div>
         <button onClick={() => setPeriodSet(false)} className="text-sm text-gray-500 hover:text-[#0F6E56]">Change dates</button>
       </div>
