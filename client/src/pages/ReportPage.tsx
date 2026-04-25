@@ -199,17 +199,17 @@ export function ReportPage() {
 
         {/* 3. Previous period improvements */}
         {prevSummary && (
-          <div className={`rounded-xl p-4 mb-6 ${true ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
+          <div className={`rounded-xl p-4 mb-6 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-[#1D9E75]" />
               <span className="text-xs font-semibold uppercase text-gray-600">Last period improvements</span>
               {prevEdited && <EditBadge />}
             </div>
-            {true ? (
+            {!report.locked ? (
               <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
                 rows={3} className="w-full p-2 rounded-lg border border-[#9FE1CB] text-sm bg-white" />
             ) : (
-              <p className="text-sm text-gray-700 leading-relaxed">{prevSummary}</p>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
             )}
           </div>
         )}
@@ -278,16 +278,16 @@ export function ReportPage() {
         )}
 
         {/* 5. Period summary */}
-        <div className={`rounded-xl p-4 mb-6 ${true ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
+        <div className={`rounded-xl p-4 mb-6 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-semibold uppercase text-gray-600">Period summary</span>
             {summaryEdited && <EditBadge />}
           </div>
-          {true ? (
+          {!report.locked ? (
             <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
               rows={4} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white" />
           ) : (
-            <p className="text-sm text-gray-700 leading-relaxed">{periodSummary || 'No summary generated.'}</p>
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
           )}
         </div>
 
@@ -299,7 +299,7 @@ export function ReportPage() {
         <ol className="list-decimal list-inside space-y-2 mb-6">
           {agenda.map((item, i) => (
             <li key={i} className="text-sm">
-              {true ? (
+              {!report.locked ? (
                 <input type="text" value={item.text} className="input-field inline-block w-[calc(100%-2rem)] text-sm"
                   onChange={e => {
                     const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
@@ -311,7 +311,7 @@ export function ReportPage() {
             </li>
           ))}
         </ol>
-        {true && (
+        {!report.locked && (
           <button onClick={() => { setAgenda([...agenda, { text: '', edited: true }]); setAgendaEdited(true); }}
             className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add item</button>
         )}
@@ -339,8 +339,10 @@ export function ReportPage() {
             ))}
           </tbody>
         </table>
-        <button onClick={() => setAckRows([...ackRows, { name: '', role: '', initials: '', date: '' }])}
-          className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add row</button>
+        {!report.locked && (
+          <button onClick={() => setAckRows([...ackRows, { name: '', role: '', initials: '', date: '' }])}
+            className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add row</button>
+        )}
 
         {/* 8. PIC Signature */}
         <div className="grid grid-cols-2 gap-12 mt-8 mb-8">
