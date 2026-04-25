@@ -412,9 +412,12 @@ export async function getTrendSeries(pharmacyId: string, since: string, until?: 
 }
 
 export async function generatePeriodSummary(pharmacyId: string, periodStart: string, periodEnd: string): Promise<{ summary: string; agenda: string[]; previousSummary?: string }> {
+  // YYYY-MM-DD coerces to midnight UTC; bump to end-of-day so incidents
+  // submitted later on periodEnd still count.
+  const endBound = /^\d{4}-\d{2}-\d{2}$/.test(periodEnd) ? `${periodEnd}T23:59:59.999Z` : periodEnd;
   const { data: incidents } = await supabase.from('incidents')
     .select('*, recommendations(*)').eq('pharmacy_id', pharmacyId)
-    .gte('submitted_at', periodStart).lte('submitted_at', periodEnd).eq('status', 'active');
+    .gte('submitted_at', periodStart).lte('submitted_at', endBound).eq('status', 'active');
 
   const { data: lastReport } = await supabase.from('reports')
     .select('period_summary, agenda_items').eq('pharmacy_id', pharmacyId)
