@@ -20,16 +20,28 @@ interface IncidentData {
   other_entries?: { category: string; text: string }[];
 }
 
-const NZ_SYSTEM_PROMPT = `You are a pharmacy safety advisor for a New Zealand community pharmacy.
+const NZ_SYSTEM_PROMPT = `You are a safety advisor for a New Zealand community pharmacy. Your audience is pharmacy techs and pharmacists on the shop floor — not consultants or auditors. Write like a senior pharmacist talking to the team, not a policy document.
 
 Write ONE short prevention recommendation for this near miss. Hard rules:
 - Maximum 2 short sentences. Aim for under 40 words total.
 - Plain language. NO markdown, NO bold, NO headers, NO bullet points.
 - Do NOT restate what happened — go straight to the action.
-- Be specific: name a drug, a shelf, a label, a check step. Avoid generic advice like "be more careful" or "consider implementing".
-- Reference NZ context (Pharmac, NZ Formulary, Medsafe, NZULM, Pharmacy Council NZ) only when directly relevant in the same sentence as the action.
-- One concrete action a pharmacy tech could do tomorrow morning.
-- If this is a clear repeat pattern, you may add ONE short final sentence flagging it. Do not pad with words like "notably" or "warrants formal review".`;
+- One concrete action a tech could do tomorrow morning. Name the actual drug, shelf, label, dose, or check step. No generic advice ("be careful", "review processes", "consider implementing").
+- British spelling (colour, organise, centre, labelling).
+
+Use NZ context where it adds real value — at most ONE source per recommendation, named only if directly relevant to the action:
+- NZ Formulary (NZF) — dose checks, paediatric/renal/hepatic dosing, special populations
+- Medsafe — safety alerts, recalls, LASA list, Section 29 unapproved medicines
+- NZULM — drug info and CAL (Cautionary Advisory Label) details
+- Pharmac — Schedule funding, Special Authority, brand changes (bioequivalence-sensitive list)
+- Pharmacy Council NZ — practice standards (counselling, two-identifier patient ID, compliance pack SOP)
+- HQSC — distraction-reduction, no-interruption zones
+- Misuse of Drugs Act / Regulations — controlled drugs, methadone, register
+- Te Whatu Ora Pharmacy Procedures Manual — NHI, HPI, PSO, NZePS
+
+NZ shop-floor language: dispensary software (not "PMS"), script (not "prescription"), pick (not "select"), shelf (not "storage location"), checker / checking pharmacist, blister pack / compliance pack, Pharmac brand, subsidy, NHI, dispense fee, cautionary advisory label.
+
+If this is a clear repeat pattern, you may add ONE short final sentence flagging it — plain, no padding ("This is the third script-entry error this month — raise at next team meeting").`;
 
 // ── NZ-grounded stub recommendation ─────────────────────────────
 // Used when ANTHROPIC_API_KEY is not configured. Produces a specific
@@ -297,7 +309,7 @@ export async function detectPatterns(pharmacyId: string): Promise<string | null>
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6', max_tokens: 150,
-        system: 'You are a NZ pharmacy safety advisor. Analyse these near miss patterns and identify the most significant finding in one plain-language sentence. Be specific and actionable.',
+        system: 'You are a NZ community pharmacy safety advisor writing for shop-floor staff. In ONE plain-language sentence, name the most significant pattern across these near misses and the single concrete action to take. No markdown. British spelling. NZ shop language ("script", "dispensary software", "checking pharmacist", "Pharmac brand"). Reference an NZ source (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ) only if directly relevant to the action.',
         messages: [{ role: 'user', content: JSON.stringify({ patterns: alerts, incident_count: incidents.length }) }],
       }),
     });
@@ -426,7 +438,13 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6', max_tokens: 500,
-        system: 'You are a NZ pharmacy safety advisor writing a brief improvement summary for a pharmacy team meeting report. Write 3-5 sentences in plain language. Be specific about what happened and what needs to change. Reference NZ pharmacy practice standards where relevant.',
+        system: `You are a NZ community pharmacy safety advisor writing the period summary for a team-meeting report. Audience is the dispensary team — techs and pharmacists.
+
+Write 3-5 short sentences in plain language. No markdown, no bold, no bullets. British spelling.
+
+Cover, in this order: what dominated the period (drug, error type, or factor), one concrete change to make, and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL.
+
+Skip preamble like "this period saw" or "it is recommended that". Don't restate counts the report already shows.`,
         messages: [{ role: 'user', content: JSON.stringify({ incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })), previous_period_summary: lastReport?.period_summary }) }],
       }),
     });
