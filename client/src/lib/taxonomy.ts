@@ -147,9 +147,11 @@ export const FACTORS = [
   'Interruption / distraction',
   'Similar packaging',
   'Similar drug names',
+  'Similar patient name',
   'Script not checked against original',
   'Understaffed',
   'System slow / down',
+  'Dispensary software issue',
   'Illegible prescription',
   'Unusual dose / strength',
   'New staff member',
@@ -157,7 +159,7 @@ export const FACTORS = [
   'Process not followed',
   'Communication gap',
 ];
-export const FACTORS_DEFAULT_VISIBLE = 6;
+export const FACTORS_DEFAULT_VISIBLE = 7;
 
 export const FORMULATIONS = [
   'Tablet', 'Capsule', 'Liquid', 'Cream', 'Ointment',
