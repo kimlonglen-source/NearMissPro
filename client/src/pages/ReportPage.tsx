@@ -434,9 +434,18 @@ function ReportTrendChart({ data }: { data: { weekStart: string; count: number }
           );
         })}
       </div>
-      <div className="flex justify-between mt-2 text-[9px] text-gray-400">
-        <span>{data.length > 0 ? fmt(data[0].weekStart) : ''}</span>
-        <span>{data.length > 0 ? fmt(data[data.length - 1].weekStart) : ''}</span>
+      {/* Month labels — only on the first bar of each new month */}
+      <div className="flex gap-1 mt-1">
+        {data.map((pt, i) => {
+          const d = new Date(pt.weekStart);
+          const prev = i > 0 ? new Date(data[i - 1].weekStart) : null;
+          const isNewMonth = !prev || d.getMonth() !== prev.getMonth();
+          return (
+            <div key={pt.weekStart} className="flex-1 text-[9px] text-gray-500 leading-none min-w-0">
+              {isNewMonth ? d.toLocaleDateString('en-NZ', { month: 'short' }) : ''}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

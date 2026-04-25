@@ -481,19 +481,34 @@ function TrendStrip({ data, range, onRangeChange }: {
       {data.length === 0 ? (
         <div className="h-10 flex items-center justify-center text-[11px] text-gray-300">No data in range</div>
       ) : (
-        <div className="flex items-end gap-[2px] h-10">
-          {data.map(pt => {
-            const h = pt.count === 0 ? 2 : Math.max(4, (pt.count / max) * 36);
-            const weekLabel = new Date(pt.weekStart).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
-            return (
-              <div key={pt.weekStart}
-                className={`flex-1 rounded-sm ${pt.count > 0 ? 'bg-[#0F6E56]' : 'bg-gray-100'}`}
-                style={{ height: `${h}px` }}
-                title={`Week of ${weekLabel}: ${pt.count} incident${pt.count === 1 ? '' : 's'}`}
-              />
-            );
-          })}
-        </div>
+        <>
+          <div className="flex items-end gap-[2px] h-10">
+            {data.map(pt => {
+              const h = pt.count === 0 ? 2 : Math.max(4, (pt.count / max) * 36);
+              const weekLabel = new Date(pt.weekStart).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+              return (
+                <div key={pt.weekStart}
+                  className={`flex-1 rounded-sm ${pt.count > 0 ? 'bg-[#0F6E56]' : 'bg-gray-100'}`}
+                  style={{ height: `${h}px` }}
+                  title={`Week of ${weekLabel}: ${pt.count} incident${pt.count === 1 ? '' : 's'}`}
+                />
+              );
+            })}
+          </div>
+          {/* Month labels — shown only on the first bar of each new month */}
+          <div className="flex gap-[2px] mt-1">
+            {data.map((pt, i) => {
+              const d = new Date(pt.weekStart);
+              const prev = i > 0 ? new Date(data[i - 1].weekStart) : null;
+              const isNewMonth = !prev || d.getMonth() !== prev.getMonth();
+              return (
+                <div key={pt.weekStart} className="flex-1 text-[9px] text-gray-400 leading-none">
+                  {isNewMonth ? d.toLocaleDateString('en-NZ', { month: 'short' }) : ''}
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
