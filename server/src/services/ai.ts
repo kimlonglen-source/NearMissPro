@@ -177,12 +177,25 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     .gte('submitted_at', periodStart).lte('submitted_at', periodEnd).eq('status', 'active');
 
   const { data: lastReport } = await supabase.from('reports')
-    .select('period_summary, agenda_items').eq('pharmacy_id', pharmacyId)
+    .select('period_start, period_end, period_summary, agenda_items').eq('pharmacy_id', pharmacyId)
     .lt('period_end', periodStart).order('period_end', { ascending: false }).limit(1).single();
+
+  const { data: prevIncidents } = lastReport
+    ? await supabase.from('incidents').select('error_types').eq('pharmacy_id', pharmacyId)
+        .gte('submitted_at', lastReport.period_start).lte('submitted_at', lastReport.period_end).eq('status', 'active')
+    : { data: null };
 
   const incidentCount = incidents?.length || 0;
   const errorSummary = incidents?.flatMap(i => i.error_types).reduce<Record<string, number>>((acc, e) => { acc[e] = (acc[e] || 0) + 1; return acc; }, {}) || {};
   const topErrors = Object.entries(errorSummary).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  const prevIncidentCount = prevIncidents?.length || 0;
+  const prevErrorSummary = prevIncidents?.flatMap(i => i.error_types).reduce<Record<string, number>>((acc, e) => { acc[e] = (acc[e] || 0) + 1; return acc; }, {}) || {};
+  const prevTopErrors = Object.entries(prevErrorSummary).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  const comparisonStub = lastReport
+    ? `Last review: ${prevIncidentCount} near miss${prevIncidentCount === 1 ? '' : 'es'}${prevTopErrors.length > 0 ? ` (${prevTopErrors.map(([e, c]) => `${e} ${c}`).join(', ')})` : ''}. This review: ${incidentCount} near miss${incidentCount === 1 ? '' : 'es'}${topErrors.length > 0 ? ` (${topErrors.map(([e, c]) => `${e} ${c}`).join(', ')})` : ''}. Compare against the actions agreed at the last meeting and discuss whether they have reduced incidents.`
+    : undefined;
 
   const stub = {
     summary: incidentCount === 0
@@ -195,26 +208,47 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
       'Identify any training needs or workflow changes required.',
       'Confirm the date of the next review meeting.',
     ],
-    previousSummary: lastReport ? 'Review the actions agreed at the last meeting and assess whether they have reduced incidents.' : undefined,
+    previousSummary: comparisonStub,
   };
 
   if (!env.anthropicApiKey || incidentCount === 0) return stub;
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514', max_tokens: 500,
-        system: 'You are a NZ pharmacy safety advisor writing a brief improvement summary for a pharmacy team meeting report. Write 3-5 sentences in plain language. Be specific about what happened and what needs to change. Reference NZ pharmacy practice standards where relevant.',
-        messages: [{ role: 'user', content: JSON.stringify({ incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })), previous_period_summary: lastReport?.period_summary }) }],
-      }),
-    });
-    const result = await response.json();
-    return {
-      summary: result.content?.[0]?.text || stub.summary,
-      agenda: stub.agenda,
-      previousSummary: lastReport ? (result.content?.[0]?.text || stub.previousSummary) : undefined,
-    };
-  } catch { return stub; }
+  const callAi = async (system: string, user: unknown, maxTokens: number): Promise<string | undefined> => {
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6-20250514', max_tokens: maxTokens, system,
+          messages: [{ role: 'user', content: JSON.stringify(user) }],
+        }),
+      });
+      const j = await r.json();
+      return j.content?.[0]?.text;
+    } catch { return undefined; }
+  };
+
+  const [summaryText, comparisonText] = await Promise.all([
+    callAi(
+      'You are a NZ pharmacy safety advisor writing a brief improvement summary for a pharmacy team meeting report. Write 3-5 sentences in plain language. Be specific about what happened and what needs to change. Reference NZ pharmacy practice standards where relevant.',
+      { incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })) },
+      500,
+    ),
+    lastReport
+      ? callAi(
+          'You are a NZ pharmacy safety advisor. Write a brief 2-4 sentence comparison between the previous review period and the current one for a pharmacy team meeting report. State the change in incident count and error mix with specific numbers, then comment on whether the actions agreed at the last meeting (the previous agenda) appear to have reduced the patterns they targeted. Be plain and specific — no generic platitudes.',
+          {
+            previous_period: { start: lastReport.period_start, end: lastReport.period_end, incident_count: prevIncidentCount, error_breakdown: prevErrorSummary, agenda_from_last_meeting: lastReport.agenda_items, previous_summary: lastReport.period_summary },
+            current_period: { start: periodStart, end: periodEnd, incident_count: incidentCount, error_breakdown: errorSummary },
+          },
+          300,
+        )
+      : Promise.resolve(undefined),
+  ]);
+
+  return {
+    summary: summaryText || stub.summary,
+    agenda: stub.agenda,
+    previousSummary: comparisonText || comparisonStub,
+  };
 }
