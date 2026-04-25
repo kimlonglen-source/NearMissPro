@@ -53,7 +53,7 @@ export function DashboardPage() {
     try {
       const [res, pa, reports] = await Promise.all([
         api.getIncidents({ from: dateFrom, to: dateTo }),
-        api.getPatternAlert().catch(() => ({ alert: null })),
+        api.getPatternAlert(dateFrom, dateTo).catch(() => ({ alert: null })),
         api.getReports(),
       ]);
       // Check if a report already exists for this date range

@@ -142,8 +142,10 @@ router.get('/', async (req: Request, res: Response) => {
 // ── Pattern alert (must be before /:id) ─────────────────────
 router.get('/pattern-alert', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
   try {
+    const from = typeof req.query.from === 'string' ? req.query.from : undefined;
+    const to = typeof req.query.to === 'string' ? req.query.to : undefined;
     const { detectPatterns } = await import('../services/ai.js');
-    const alert = await detectPatterns(req.auth!.pharmacyId);
+    const alert = await detectPatterns(req.auth!.pharmacyId, from, to);
     res.json({ alert });
   } catch { res.json({ alert: null }); }
 });

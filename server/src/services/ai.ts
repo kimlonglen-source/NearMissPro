@@ -272,13 +272,21 @@ async function saveRecommendation(incidentId: string, pharmacyId: string, aiText
   });
 }
 
-export async function detectPatterns(pharmacyId: string): Promise<string | null> {
-  const now = new Date();
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+export async function detectPatterns(pharmacyId: string, since?: string, until?: string): Promise<string | null> {
+  // Default window: start of current month → now. Callers (the dashboard)
+  // pass the manager's selected range so the alert matches the visible
+  // incident list — otherwise "16 near misses" can show next to a stat
+  // card that says 5.
+  const periodStart = since || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
-  const { data: incidents } = await supabase.from('incidents')
+  let q = supabase.from('incidents')
     .select('error_types, drug_name, factors, time_of_day')
     .eq('pharmacy_id', pharmacyId).gte('submitted_at', periodStart).eq('status', 'active');
+  if (until) {
+    const u = /^\d{4}-\d{2}-\d{2}$/.test(until) ? `${until}T23:59:59.999Z` : until;
+    q = q.lte('submitted_at', u);
+  }
+  const { data: incidents } = await q;
 
   if (!incidents || incidents.length < 3) return null;
 

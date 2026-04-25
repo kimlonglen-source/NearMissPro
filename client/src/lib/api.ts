@@ -98,7 +98,13 @@ class Api {
   getPharmacyStats() { return this.req<Record<string, unknown>[]>('/admin/pharmacy-stats'); }
 
   // Pattern detection
-  getPatternAlert() { return this.req<{ alert: string | null }>('/incidents/pattern-alert'); }
+  getPatternAlert(from?: string, to?: string) {
+    const q = new URLSearchParams();
+    if (from) q.set('from', from);
+    if (to) q.set('to', to);
+    const qs = q.toString();
+    return this.req<{ alert: string | null }>(`/incidents/pattern-alert${qs ? '?' + qs : ''}`);
+  }
   checkHotspot(drug: string, errorType: string) {
     const q = new URLSearchParams({ drug, errorType }).toString();
     return this.req<{ isHotspot: boolean; count: number; days: number }>(`/incidents/hotspot-check?${q}`);
