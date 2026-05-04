@@ -109,6 +109,29 @@ export function RecordPage() {
   // Snapshot of the last-submitted time block, so "Fix something" can restore it.
   const [lastOccurred, setLastOccurred] = useState<{ date: string; time: string } | null>(null);
 
+  // Patient-reached gate — the form's opening question. A near miss is by
+  // definition caught BEFORE the medication reaches the patient. If it
+  // reached them, this is a dispensing error and belongs in a different
+  // process. We don't capture it here.
+  //   null   → not yet answered (gate is showing)
+  //   'yes'  → caught before patient (continue logging as near miss)
+  //   'no'   → reached patient (show redirect, don't continue)
+  // Stored in sessionStorage alongside the draft so a navigate-and-back
+  // resumes the session. Skipped entirely when editing an existing incident.
+  const GATE_KEY = 'nmp_record_gate';
+  const [gate, setGate] = useState<'yes' | 'no' | null>(() => {
+    try {
+      const v = sessionStorage.getItem(GATE_KEY);
+      return v === 'yes' || v === 'no' ? v : null;
+    } catch { return null; }
+  });
+  useEffect(() => {
+    try {
+      if (gate) sessionStorage.setItem(GATE_KEY, gate);
+      else sessionStorage.removeItem(GATE_KEY);
+    } catch { /* noop */ }
+  }, [gate]);
+
   const l2Ref = useRef<HTMLDivElement>(null);
   const caughtRef = useRef<HTMLDivElement>(null);
   const factorsRef = useRef<HTMLDivElement>(null);
@@ -261,7 +284,11 @@ export function RecordPage() {
 
   const resetDraft = useCallback(() => {
     setDraft(EMPTY);
-    try { sessionStorage.removeItem(SESSION_KEY); } catch { /* noop */ }
+    setGate(null); // re-prompt the patient-reached gate for the next incident
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(GATE_KEY);
+    } catch { /* noop */ }
   }, []);
 
   const buildPayload = useCallback((quick: boolean) => {
@@ -394,7 +421,9 @@ export function RecordPage() {
       if (!lastDraft) return;
       tap();
       // Restore the just-submitted draft so staff can tweak and resubmit.
+      // They've already passed the patient-reached gate for this flow.
       setDraft(lastDraft);
+      setGate('yes');
       setSubmitted(false);
       setSubmitError('');
     };
@@ -441,6 +470,70 @@ export function RecordPage() {
           </>
         )}
         {!retracted && <p className="text-xs text-gray-300 mt-6">Returning home in 30s…</p>}
+      </div>
+    );
+  }
+
+  // ── Patient-reached gate ────────────────────────────────────
+  // A near miss is, by definition, caught before the medication reaches
+  // the patient. If it reached them, this is a dispensing error and needs
+  // a different process (Pharmacy Council notification, CARM via Medsafe,
+  // possible HDC if harm). We never silently capture it as a near miss.
+  // Skipped when editing an existing incident (already past the gate).
+  if (!editingIncidentId && gate === null) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-12">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h1 className="text-lg font-bold text-gray-900 mb-1">Before you log this</h1>
+          <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+            Was the error caught <span className="font-semibold">before</span> the medication was handed to the patient?
+          </p>
+          <div className="space-y-2">
+            <button onClick={() => { tap(); setGate('yes'); }}
+              className="w-full py-4 px-4 rounded-xl bg-[#0F6E56] text-white text-base font-semibold hover:bg-[#0B5A46] flex items-center justify-center gap-2">
+              <CheckCircle2 size={18} /> Yes — caught in time
+            </button>
+            <button onClick={() => { tap(); setGate('no'); }}
+              className="w-full py-4 px-4 rounded-xl bg-white text-[#791F1F] text-base font-semibold border-2 border-[#C84B4B] hover:bg-[#FCEBEB] flex items-center justify-center gap-2">
+              <AlertTriangle size={18} /> No — the patient received it
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-4 leading-snug text-center">
+            NearMissPro is for events caught before they reached the patient. Anything that reached the patient is a dispensing error and needs a different process.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (!editingIncidentId && gate === 'no') {
+    return (
+      <div className="max-w-md mx-auto px-4 py-8">
+        <div className="bg-white rounded-2xl border-2 border-[#C84B4B] p-6">
+          <div className="flex items-start gap-3 mb-4">
+            <AlertTriangle size={24} className="text-[#C84B4B] flex-shrink-0 mt-0.5" />
+            <div>
+              <h1 className="text-lg font-bold text-[#791F1F]">This is a dispensing error</h1>
+              <p className="text-sm text-gray-700 mt-1 leading-relaxed">
+                NearMissPro doesn't capture events that reached the patient. Use your pharmacy's incident process.
+              </p>
+            </div>
+          </div>
+          <div className="bg-[#FCEBEB] rounded-xl p-4 text-sm text-[#791F1F] leading-relaxed mb-4">
+            <p className="font-semibold mb-2">Speak to the Pharmacist-in-Charge now.</p>
+            <p className="text-xs text-gray-700">Depending on what happened, this may also require:</p>
+            <ul className="text-xs text-gray-700 mt-1.5 space-y-0.5 list-disc pl-5">
+              <li>CARM report (Medsafe)</li>
+              <li>Pharmacy Council NZ notification</li>
+              <li>Patient disclosure (Code of Health and Disability Services Consumers' Rights)</li>
+              <li>HDC notification if harm occurred</li>
+              <li>Your indemnity insurer</li>
+            </ul>
+          </div>
+          <button onClick={() => { tap(); setGate(null); }}
+            className="w-full py-3 px-4 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200">
+            Back — actually it was caught in time
+          </button>
+        </div>
       </div>
     );
   }

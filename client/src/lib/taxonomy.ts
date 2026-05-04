@@ -123,12 +123,15 @@ export const STAGES: Stage[] = [
   },
 ];
 
+// "Where caught" — every option is BEFORE the medication leaves the dispensary.
+// If the medication has reached the patient, the form's opening gate stops the
+// staff member and redirects to the pharmacy's dispensing-error process — that's
+// no longer a near miss.
 export const WHERE_CAUGHT = [
   'Data entry check',
   'Initial pharmacist check',
   'Final pharmacist check',
   'Technician query',
-  'Patient at collection',
 ];
 
 // Default "where caught" to pre-select based on Layer 1 stage. One tap to change.
@@ -137,7 +140,7 @@ export const CAUGHT_DEFAULT_BY_STAGE: Record<string, string> = {
   'Drug picked from shelf': 'Initial pharmacist check',
   'Counted / measured': 'Initial pharmacist check',
   'Labelling': 'Final pharmacist check',
-  'Bagging / handed to patient': 'Patient at collection',
+  'Bagging / handed to patient': 'Final pharmacist check',
   'Controlled drug dispensing': 'Final pharmacist check',
   'Compliance pack packing': 'Final pharmacist check',
 };

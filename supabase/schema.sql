@@ -188,12 +188,15 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
 -- Layer 2 sub-error chips are seeded by migrate_workflow_stage.sql to keep this
 -- file readable. Run that migration after creating this schema on a fresh install.
 
+-- "Where caught" options — every option is BEFORE the medication is handed to
+-- the patient. If a near-miss reached the patient it's a dispensing error and
+-- belongs in a different process (Pharmacy Council notification, CARM, HDC).
+-- The Record form's opening gate enforces this so the data stays clean.
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('where_caught', NULL, 'Data entry check', 1),
   ('where_caught', NULL, 'Initial pharmacist check', 2),
   ('where_caught', NULL, 'Final pharmacist check', 3),
-  ('where_caught', NULL, 'Technician query', 4),
-  ('where_caught', NULL, 'Patient at collection', 5);
+  ('where_caught', NULL, 'Technician query', 4);
 
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
   ('factor', 'Workload', 'High volume period', 1),
