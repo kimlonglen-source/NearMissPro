@@ -2,6 +2,7 @@ import { env } from '../config/env.js';
 import { supabase } from '../config/supabase.js';
 import { normalizeDrugName } from '../lib/normalize.js';
 import { highRiskCategoryFor } from '../lib/highRiskDrugs.js';
+import { inlineFixFor } from '../lib/factorSuggestions.js';
 
 interface IncidentData {
   id: string;
@@ -556,30 +557,46 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     highRiskIncidents.map(i => highRiskCategoryFor(i.drug_name) || highRiskCategoryFor(i.dispensed_drug)).filter((c): c is string => !!c)
   )];
 
-  // Period summary — short, plain English. Each piece only appears when
-  // there's something specific to say. The factor breakdown sits below
-  // the summary text, so we don't repeat it here.
+  // Period summary — a single flowing paragraph that weaves together the
+  // headline number, the most-affected pattern (if any), the top
+  // contributing factors WITH their fixes inline, and any high-risk
+  // callouts. Reads as one cohesive story rather than a series of
+  // bulleted facts followed by a separate factor panel.
   const summaryParts: string[] = [];
+
+  // Opener: count + trend + top pattern (when there's a real pattern).
   if (comparisonNarrative) {
     summaryParts.push(comparisonNarrative);
   } else if (incidentCount > 0) {
     let line = `${incidentCount} near miss${incidentCount > 1 ? 'es' : ''} this period.`;
-    // Only call out a "top pattern" when there's actually a pattern (count >= 2).
     if (topPairLabel && topPairCount >= 2) {
       line += ` ${topPairLabel.charAt(0).toUpperCase() + topPairLabel.slice(1)} happened ${topPairCount} times.`;
     }
     summaryParts.push(line);
   }
-  // Top contributing factor in plain English.
-  if (topFactors.length > 0 && topFactors[0][1] >= 2 && incidentCount > 0) {
-    summaryParts.push(`Most common cause: ${topFactors[0][0].toLowerCase()} (in ${topFactors[0][1]} of ${incidentCount} incidents).`);
+
+  // Factor + fix inline — up to the top 3, woven into the paragraph.
+  // First factor uses "The biggest cause was X (N of M) — <fix>." The
+  // second and beyond use "X also came up N times — <fix>." This reads
+  // as a continuous narrative instead of a bulleted list.
+  const meaningfulFactors = topFactors.filter(([, count]) => count >= 2).slice(0, 3);
+  if (meaningfulFactors.length > 0 && incidentCount > 0) {
+    const [firstName, firstCount] = meaningfulFactors[0];
+    summaryParts.push(`The biggest cause was ${firstName.toLowerCase()} (${firstCount} of ${incidentCount}) — ${inlineFixFor(firstName)}.`);
+    for (let i = 1; i < meaningfulFactors.length; i++) {
+      const [name, count] = meaningfulFactors[i];
+      summaryParts.push(`${name.charAt(0).toUpperCase() + name.slice(1).toLowerCase()} also came up ${count} time${count > 1 ? 's' : ''} — ${inlineFixFor(name)}.`);
+    }
   }
-  // High-risk drug callout.
+
+  // High-risk drug callout — separate sentence so it stands out.
   if (highRiskLine) summaryParts.push(highRiskLine);
-  // Specific meeting focus when there's a clear top factor.
-  if (incidentCount > 0 && topFactors.length > 0 && topFactors[0][1] >= 2) {
-    summaryParts.push(`At the meeting, focus on reducing ${topFactors[0][0].toLowerCase()}.`);
+
+  // Closing meeting-focus pointer when there's a clear top factor to address.
+  if (incidentCount > 0 && meaningfulFactors.length > 0) {
+    summaryParts.push(`At the meeting, focus on reducing ${meaningfulFactors[0][0].toLowerCase()}.`);
   }
+
   const stubSummaryText = incidentCount === 0
     ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
     : summaryParts.join(' ').replace(/\s+/g, ' ').trim();

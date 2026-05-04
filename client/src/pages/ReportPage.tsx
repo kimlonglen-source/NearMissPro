@@ -196,9 +196,12 @@ export function ReportPage() {
             agreed at the last meeting actually reduced what they were meant to. */}
         <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
 
-        {/* Period summary — narrative of this period + factor breakdown.
-            The factor breakdown sits inside the same visual block so it
-            reads as part of the period summary, not a separate panel. */}
+        {/* Period summary — single flowing paragraph that contains the
+            count, top patterns, top contributing factors WITH their fixes
+            inline, and the meeting focus. The separate factor breakdown
+            panel that used to live below has been folded into this text
+            so the report has one single source of truth for "what happened
+            and what we should do about it". */}
         <div className={`rounded-xl p-4 mb-4 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-semibold uppercase text-gray-600">This period</span>
@@ -206,17 +209,10 @@ export function ReportPage() {
           </div>
           {!report.locked ? (
             <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
-              rows={4} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white" />
+              rows={8} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white leading-relaxed" />
           ) : (
             <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
           )}
-
-          {/* Why errors happened — factor breakdown lives inside the
-              period summary block so the manager doesn't see it as a
-              second, redundant section further down the report. */}
-          <div className="mt-4 pt-4 border-t border-[#C8E6D8]">
-            <FactorPanel from={report.period_start} to={report.period_end} maxRows={20} embedded />
-          </div>
         </div>
 
         {/* Last period improvements — what came out of the last meeting */}

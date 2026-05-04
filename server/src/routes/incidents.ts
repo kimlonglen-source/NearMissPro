@@ -4,6 +4,7 @@ import { supabase } from '../config/supabase.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { scanFields } from '../lib/phi.js';
 import { normalizeDrugName } from '../lib/normalize.js';
+import { FACTOR_SUGGESTIONS } from '../lib/factorSuggestions.js';
 
 const router = Router();
 router.use(authenticate);
@@ -345,24 +346,9 @@ router.get('/stats/period-comparison', requireRole('manager', 'founder'), async 
 // etc.) count occurrences this period, the previous same-length period, and
 // pair with one NZ-grounded suggestion the manager can act on. Surfaces
 // SYSTEM-level causes — the lever for actually reducing near misses, not
-// per-incident fixes.
-const FACTOR_SUGGESTIONS: Record<string, string> = {
-  'High volume period': 'Check whether errors happen more on certain days or times. Adjust the roster, or change how you manage queues at peak times.',
-  'Interruption / distraction': 'Set up a no-interruption zone for the most error-prone steps. The dispensing pharmacist can wear a tabard or display a "do not disturb" sign so the team knows not to interrupt (HQSC distraction-reduction guidance).',
-  'Similar packaging': 'Move the look-alike products apart on the shelf. Use TALLman lettering — write the unique letters BIG, e.g. amLODipine vs amIOdarone. Add a bright warning sticker on each (Medsafe LASA guidance).',
-  'Similar drug names': 'Use TALLman lettering on the bin label (e.g. cefaLEXin vs cefacLOR). Set up a popup warning in your dispensary software when these drugs are picked (NZ SALAD list / Medsafe LASA).',
-  'Similar patient name': 'Set up a flag in your dispensary software for patients with similar names. At every step, check both the NHI and date of birth (Pharmacy Council NZ two-identifier standard).',
-  'Script not checked against original': 'Keep the original prescription visible at every check (data entry, picking, final check). The pharmacist-in-charge audits weekly to make sure it\'s happening.',
-  'Understaffed': 'Compare your roster against when you actually get busy. Have a backup pharmacist on call for unexpectedly busy periods.',
-  'System slow / down': 'Tell your dispensary-software vendor about the slowness. Write down a paper-based backup process so you can keep dispensing safely if the system goes down.',
-  'Dispensary software issue': 'Record the specific software issue with your vendor. Review your override policy — alerts should not be dismissable with one tap (Pharmacy Council NZ standard 1.8).',
-  'Illegible prescription': 'Use a standard "please clarify" callback message to the prescriber. Never dispense from an unclear prescription — Medicines Regulations 1984 require it to be legible.',
-  'Unusual dose / strength': 'Look up unusual doses in the NZ Formulary. Flag them at data entry. Require an explicit confirmation step before dispensing.',
-  'New staff member': 'Create an onboarding checklist (with a sign-off step). Have new staff supervised in their first few weeks. Show them recent near-miss patterns when they start.',
-  'Unfamiliar drug': 'Pause and look up the drug in NZULM or the NZ Formulary before dispensing. This may also be a sign that the team needs more training on this drug class.',
-  'Process not followed': 'Run an SOP refresher with a sign-off log. Add visual workflow reminders at each work station.',
-  'Communication gap': 'Use a standard handover phrase. Write down what was passed on at each handoff (Te Whatu Ora Pharmacy Procedures Manual).',
-};
+// per-incident fixes. The fix-text dictionary lives in lib/factorSuggestions.ts
+// because the period-summary generator weaves the same fixes into its
+// paragraph so the report has one consistent voice.
 
 router.get('/stats/factor-analysis', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
   try {
