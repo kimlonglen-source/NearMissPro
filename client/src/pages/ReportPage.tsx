@@ -6,6 +6,7 @@ import { ShieldIcon } from '../components/Logo';
 import { PeriodComparison } from '../components/PeriodComparison';
 import { FactorPanel } from '../components/FactorPanel';
 import { summarizeIncident } from '../lib/incidentSummary';
+import { checkHighRisk } from '../lib/highRiskDrugs';
 import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface Incident {
@@ -234,12 +235,19 @@ export function ReportPage() {
               const rec = inc.recommendations?.[0];
               const outcome = rec?.manager_outcome;
               return (
-                <div key={inc.id} className="border border-gray-200 rounded-xl p-4">
+                <div key={inc.id} className={`border rounded-xl p-4 ${checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug) ? 'border-l-4 border-l-[#C84B4B] border-t-gray-200 border-r-gray-200 border-b-gray-200' : 'border-gray-200'}`}>
                   {/* Outcome badge — top right, doesn't compete with the headline */}
                   {outcome && (
                     <span className={`float-right text-xs font-semibold px-2 py-0.5 rounded-full ${outcome === 'accepted' ? 'bg-[#E1F5EE] text-[#085041]' : outcome === 'modified' ? 'bg-[#EEEDFE] text-[#3C3489]' : 'bg-gray-100 text-gray-600'}`}>
                     {outcome === 'accepted' ? '\u2713 Accepted' : outcome === 'modified' ? '\u2713 Modified' : '\u2713 No action'}
                   </span>
+                  )}
+
+                  {/* High-risk drug class chip \u2014 Medsafe-aligned */}
+                  {(checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug)) && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F] mb-1.5">
+                      \u26a0 High-risk \u00b7 {(checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug))!.category}
+                    </span>
                   )}
 
                   {/* Plain-English headline \u2014 what happened, in one line */}

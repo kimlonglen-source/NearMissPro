@@ -1,6 +1,7 @@
 import { env } from '../config/env.js';
 import { supabase } from '../config/supabase.js';
 import { normalizeDrugName } from '../lib/normalize.js';
+import { highRiskCategoryFor } from '../lib/highRiskDrugs.js';
 
 interface IncidentData {
   id: string;
@@ -447,6 +448,15 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     ? `Top contributing factor: ${topFactors[0][0]} (${topFactors[0][1]} incidents).`
     : '';
 
+  // High-risk-drug incidents (Medsafe-aligned categories) — surface separately
+  // because these warrant heightened vigilance regardless of overall trend.
+  const highRiskIncidents = (incidents || []).filter(i =>
+    !!highRiskCategoryFor(i.drug_name) || !!highRiskCategoryFor(i.dispensed_drug)
+  );
+  const highRiskLine = highRiskIncidents.length > 0
+    ? `${highRiskIncidents.length} of these involved a high-risk drug (e.g. anticoagulant, opioid, insulin) — review with extra care.`
+    : '';
+
   // Compute the previous-period comparison so we can seed the editable
   // "Last period improvements" section with the actually meaningful
   // narrative ("Atorvastatin wrong-strength: 5 → 1, action working")
@@ -520,7 +530,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const stub = {
     summary: incidentCount === 0
       ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
-      : `This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : ''} ${topFactorLine} Review the incident log below and agree one system-level change at the team meeting.`.replace(/\s+/g, ' ').trim(),
+      : `This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : ''} ${topFactorLine} ${highRiskLine} Review the incident log below and agree one system-level change at the team meeting.`.replace(/\s+/g, ' ').trim(),
     agenda: [
       'Acknowledge the team for continuing to report near misses — this culture of openness keeps patients safe.',
       ...(topErrors.length > 0 ? [`Discuss the ${topErrors[0][1]} ${topErrors[0][0]} incident${topErrors[0][1] > 1 ? 's' : ''} and agree on a specific prevention action.`] : []),

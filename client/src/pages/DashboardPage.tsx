@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { PeriodComparison } from '../components/PeriodComparison';
 import { FactorPanel } from '../components/FactorPanel';
 import { summarizeIncident } from '../lib/incidentSummary';
+import { checkHighRisk } from '../lib/highRiskDrugs';
 import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar } from 'lucide-react';
 
 interface Rec { id: string; ai_text: string; manager_outcome: string | null; manager_text?: string; private_note?: string; }
@@ -266,6 +267,11 @@ export function DashboardPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-gray-900">{inc.error_types.join(', ')}</span>
                     {inc.drug_name && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{drugLabel(inc)}</span>}
+                    {(checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug)) && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F]">
+                        ⚠ High-risk
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {new Date(inc.submitted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}

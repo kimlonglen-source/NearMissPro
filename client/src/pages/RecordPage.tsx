@@ -7,6 +7,7 @@ import {
   FACTORS_DEFAULT_VISIBLE, FORMULATIONS, triggersFor,
 } from '../lib/taxonomy';
 import { NZ_DRUG_LIST, isKnownNzDrug, readDrugHistory, recordDrugInHistory } from '../lib/nzDrugList';
+import { checkHighRisk } from '../lib/highRiskDrugs';
 import { CheckCircle2, AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 
 const SESSION_KEY = 'nmp_record_draft';
@@ -213,6 +214,12 @@ export function RecordPage() {
     const history = readDrugHistory();
     return !history.some(s => s.toLowerCase() === v.toLowerCase());
   }, [draft.drugName]);
+
+  // High-risk drug detection — Medsafe-aligned. If either field matches a
+  // high-risk class, the form shows the relevant guidance so staff know
+  // to apply extra caution while logging.
+  const highRisk = useMemo(() => checkHighRisk(draft.drugName) || checkHighRisk(draft.dispensedDrug),
+    [draft.drugName, draft.dispensedDrug]);
 
   const visibleFactors = useMemo(
     () => draft.showMoreFactors ? FACTORS : FACTORS.slice(0, FACTORS_DEFAULT_VISIBLE),
@@ -684,6 +691,14 @@ export function RecordPage() {
               {/* Layer 3 — intended → given, inline when triggered */}
               {(triggers.drug || triggers.strength || triggers.quantity || triggers.formulation) && (
                 <div className="space-y-3 pt-2 border-t border-gray-100">
+                  {highRisk && (
+                    <div className="rounded-xl border-2 border-[#C84B4B] bg-[#FCEBEB] p-3">
+                      <p className="text-xs font-bold text-[#791F1F] flex items-center gap-1.5">
+                        <AlertTriangle size={14} /> High-risk drug — {highRisk.category}
+                      </p>
+                      <p className="text-[11px] text-[#791F1F] mt-1 leading-snug">{highRisk.guidance}</p>
+                    </div>
+                  )}
                   {/* Single drug-name field for cases where the error doesn't
                       involve a wrong drug (wrong strength / quantity /
                       formulation of the right drug). The "wrong drug" path
