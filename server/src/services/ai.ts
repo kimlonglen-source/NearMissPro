@@ -550,72 +550,114 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     highRiskIncidents.map(i => highRiskCategoryFor(i.drug_name) || highRiskCategoryFor(i.dispensed_drug)).filter((c): c is string => !!c)
   )];
 
-  // Build a multi-sentence summary that leads with what changed (the
-  // comparison) — falls back to a count-and-class summary on the very
-  // first review when there's no previous period to compare to.
+  // Period summary — covers what regulators expect a CQI review to address:
+  // trend (vs last period), most-affected pattern, top contributing factor,
+  // high-risk class involvement, and a clear pointer at root-cause analysis
+  // and SOP review at the meeting.
   const summaryParts: string[] = [];
   if (comparisonNarrative) {
     summaryParts.push(comparisonNarrative);
   } else if (incidentCount > 0) {
-    const errorList = topPairLabel
-      ? `Most affected: ${topPairLabel} (${topPairCount}).`
+    const detail = topPairLabel
+      ? `Most affected: ${topPairLabel} (${topPairCount} time${topPairCount > 1 ? 's' : ''}).`
       : (topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : '');
-    summaryParts.push(`This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${errorList}`.trim());
+    summaryParts.push(`This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${detail}`.trim());
   }
   if (topFactorLine) summaryParts.push(topFactorLine);
   if (highRiskLine) summaryParts.push(highRiskLine);
-  if (incidentCount > 0 && summaryParts.length < 3) {
-    summaryParts.push('Review the incident log below and agree one system-level change at the team meeting.');
+  if (incidentCount > 0) {
+    summaryParts.push('At the meeting: walk through the chain of events, check whether SOPs were followed and need updating, and agree one specific system-level change.');
   }
   const stubSummaryText = incidentCount === 0
     ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
     : summaryParts.join(' ').replace(/\s+/g, ' ').trim();
 
-  // Build an agenda where every item points at a specific decision the
-  // team can make, not generic placeholders. Items are conditional on
-  // the actual data — only items with content survive.
+  // Agenda — structured to satisfy NZ CQI / regulatory expectations. Each
+  // item maps to one of the standard pillars of a near-miss review:
+  //
+  //   no-blame culture (Pharmacy Council NZ practice standards),
+  //   monitoring effectiveness (HQSC closed-loop QI),
+  //   identifying trends (HQSC),
+  //   root-cause analysis (HQSC, Pharmacy Council standard 1.8),
+  //   evaluating processes / SOP review,
+  //   identifying contributing factors,
+  //   implementing changes,
+  //   staff education and sharing of learnings.
+  //
+  // Conditional items only appear when the period has data for them — a
+  // quiet review (no incidents, no high-risk, no recurring concerns)
+  // produces a shorter agenda but the structural pillars (no-blame
+  // framing, education, next-meeting date) always survive.
   const agendaItems: string[] = [];
 
-  // 1. Close the loop on last meeting (only if there was a last meeting)
+  // No-blame culture (always first — sets the tone for every meeting)
+  agendaItems.push('We use anonymised data here — the goal is learning, not blame.');
+
+  // Monitoring effectiveness of last period's actions
   if (lastReport) {
-    agendaItems.push('Open: review what was agreed at the last meeting and confirm whether the related patterns have reduced this period.');
+    agendaItems.push('Did the changes we agreed at the last meeting reduce the patterns we targeted?');
   }
 
-  // 2. Most-affected drug+error pair — named, so the discussion is concrete
-  if (topPairLabel && topPairCount >= 1) {
-    agendaItems.push(`Discuss the ${topPairCount} ${topPairLabel} incident${topPairCount > 1 ? 's' : ''} — agree one specific shelf, labelling, or check change.`);
-  } else if (topErrors.length > 0) {
-    agendaItems.push(`Discuss the ${topErrors[0][1]} ${topErrors[0][0]} incident${topErrors[0][1] > 1 ? 's' : ''} — agree one specific prevention action.`);
+  // Identifying trends — headline of this period
+  if (incidentCount > 0) {
+    let headline = `This period: ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}`;
+    if (prevIncidents) {
+      const netDelta = incidentCount - prevIncidents.length;
+      if (netDelta < 0) headline += ` (down ${Math.abs(netDelta)} from last period)`;
+      else if (netDelta > 0) headline += ` (up ${netDelta} from last period)`;
+    }
+    if (topPairLabel) {
+      headline += `. Most affected: ${topPairLabel} (${topPairCount} time${topPairCount > 1 ? 's' : ''})`;
+    }
+    agendaItems.push(headline + '.');
   }
 
-  // 3. Top system factor — explicitly framed as a workspace/process change
+  // Root cause analysis — walk through the chain of events for the top pattern
+  if (topPairLabel) {
+    agendaItems.push(`Walk through how the ${topPairLabel} ${topPairCount === 1 ? 'incident' : 'incidents'} happened — what was the chain of events?`);
+  }
+
+  // Evaluating processes — SOP review
+  if (incidentCount > 0) {
+    agendaItems.push('Were the relevant SOPs followed? Do any need updating?');
+  }
+
+  // Identifying contributing factors — top factor with change prompt
   if (topFactors.length > 0 && topFactors[0][1] >= 2) {
-    agendaItems.push(`System factor: ${topFactors[0][0]} appeared in ${topFactors[0][1]} incident${topFactors[0][1] > 1 ? 's' : ''}. Agree one workspace or process change targeting this (the "What's behind these errors?" panel suggests a starting point).`);
+    agendaItems.push(`Top contributing factor: ${topFactors[0][0]} in ${topFactors[0][1]} of ${incidentCount} incidents. What workspace or process change targets this?`);
   }
 
-  // 4. High-risk drug class — Medsafe-aligned attention
+  // High-risk drug class — Medsafe-aligned vigilance refresh
   if (highRiskClasses.length > 0) {
-    agendaItems.push(`High-risk drug${highRiskClasses.length > 1 ? 's' : ''} this period: ${highRiskClasses.join(', ')}. Confirm the dispensing-software alerts and double-check protocol for this class are in place.`);
+    const word = highRiskClasses.length === 1 ? 'class' : 'classes';
+    agendaItems.push(`${highRiskClasses.join(', ')} ${word} involved this period — refresh the safety check protocol for these.`);
   }
 
-  // 5. Recurring concerns (last period's action wasn't enough)
+  // Recurring concerns — last period's action wasn't enough
   if (concerns.length > 0) {
-    agendaItems.push(`Revisit ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last period's action hasn't been enough yet — decide on a stronger change.`);
+    agendaItems.push(`${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last meeting's action hasn't been enough — decide a stronger change.`);
   }
 
-  // 6. Wins to celebrate (motivates continued reporting)
+  // Wins to celebrate — encourages continued reporting and acknowledges good work
   if (wins.length > 0) {
-    agendaItems.push(`Acknowledge: actions on ${wins.length} previous pattern${wins.length > 1 ? 's' : ''} have worked — those issues haven't recurred this period.`);
+    agendaItems.push(`${wins.length} previous pattern${wins.length > 1 ? 's' : ''} have been resolved by the actions we took — worth acknowledging.`);
   }
 
-  // 7. If the period was clean (no incidents at all) the agenda still has
-  //    one item so the meeting isn't empty.
+  // Implementing changes — force a single specific decision
+  if (incidentCount > 0) {
+    agendaItems.push('Pick one specific change to make this month: SOP update, layout change, additional check step, or software alert.');
+  }
+
+  // Staff education + sharing learnings
+  agendaItems.push('Does anyone need extra training on what we discussed? Share the key learning with the wider team.');
+
+  // Quiet period note (only when no incidents at all)
   if (incidentCount === 0) {
-    agendaItems.push('No near misses this period. Encourage staff to keep reporting — under-reporting is the bigger risk than the count itself.');
+    agendaItems.push('No near misses this period — encourage staff to keep reporting. Under-reporting is the bigger risk than a quiet log.');
   }
 
-  // 8. Always end with the next meeting date
-  agendaItems.push('Confirm the date of the next review meeting.');
+  // Always last — captures the documentation requirement (decisions agreed, next date)
+  agendaItems.push('Confirm the changes we agreed today, and set the date for the next review meeting.');
 
   const stub = {
     summary: stubSummaryText,
