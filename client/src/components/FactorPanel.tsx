@@ -55,9 +55,7 @@ export function FactorPanel({ from, to, data: preFetched, maxRows = 5 }: Props) 
           What&rsquo;s behind these errors?
         </h3>
         <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-          {showComparison
-            ? 'Aggregated across every incident this period (vs last period). Fix one factor and the whole class of errors gets less likely — that\'s the leverage point per-incident fixes can\'t reach.'
-            : 'Aggregated across every incident this period. Fix one factor and the whole class of errors gets less likely — that\'s the leverage point per-incident fixes can\'t reach.'}
+          The most common reasons errors happened this period. Fix one of these and many future errors are prevented.
         </p>
       </div>
 
