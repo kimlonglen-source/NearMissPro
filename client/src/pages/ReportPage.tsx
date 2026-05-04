@@ -196,15 +196,14 @@ export function ReportPage() {
             agreed at the last meeting actually reduced what they were meant to. */}
         <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
 
-        {/* Period summary — single flowing paragraph that contains the
-            count, top patterns, top contributing factors WITH their fixes
-            inline, and the meeting focus. The separate factor breakdown
-            panel that used to live below has been folded into this text
-            so the report has one single source of truth for "what happened
-            and what we should do about it". */}
+        {/* Summary — single flowing paragraph that contains the count,
+            top patterns, top contributing factors WITH their fixes
+            inline, and the meeting focus. (The inner label was 'This
+            period' which collided with the section header above; renamed
+            to 'Summary' so the hierarchy reads cleanly.) */}
         <div className={`rounded-xl p-4 mb-4 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold uppercase text-gray-600">This period</span>
+            <span className="text-xs font-semibold uppercase text-gray-600">Summary</span>
             {summaryEdited && <EditBadge />}
           </div>
           {!report.locked ? (
