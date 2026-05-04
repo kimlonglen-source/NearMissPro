@@ -378,16 +378,18 @@ router.get('/stats/factor-analysis', requireRole('manager', 'founder'), async (r
     const prevToIso = new Date(new Date(fromIso).getTime() - 1).toISOString();
     const prevFromIso = new Date(new Date(fromIso).getTime() - periodMs - 1).toISOString();
 
-    const fetchFactors = async (a: string, b: string): Promise<Record<string, number>> => {
+    const fetchFactors = async (a: string, b: string): Promise<{ counts: Record<string, number>; total: number }> => {
       const { data, error } = await supabase.from('incidents').select('factors')
         .eq('pharmacy_id', req.auth!.pharmacyId).eq('status', 'active')
         .gte('submitted_at', a).lte('submitted_at', b);
       if (error) throw error;
       const counts: Record<string, number> = {};
+      let total = 0;
       for (const row of (data || []) as { factors: string[] | null }[]) {
+        total += 1;
         for (const f of row.factors || []) counts[f] = (counts[f] || 0) + 1;
       }
-      return counts;
+      return { counts, total };
     };
 
     const [current, previous] = await Promise.all([
@@ -395,11 +397,11 @@ router.get('/stats/factor-analysis', requireRole('manager', 'founder'), async (r
       fetchFactors(prevFromIso, prevToIso),
     ]);
 
-    const allFactors = new Set<string>([...Object.keys(current), ...Object.keys(previous)]);
+    const allFactors = new Set<string>([...Object.keys(current.counts), ...Object.keys(previous.counts)]);
     type Direction = 'new' | 'up' | 'down' | 'same' | 'gone';
     const factors = Array.from(allFactors).map(name => {
-      const cur = current[name] || 0;
-      const prev = previous[name] || 0;
+      const cur = current.counts[name] || 0;
+      const prev = previous.counts[name] || 0;
       let direction: Direction;
       if (prev === 0 && cur > 0) direction = 'new';
       else if (prev > 0 && cur === 0) direction = 'gone';
@@ -422,8 +424,8 @@ router.get('/stats/factor-analysis', requireRole('manager', 'founder'), async (r
     const meaningful = factors.filter(f => f.currentCount >= 2 || (f.previousCount > 0 && f.currentCount === 0));
 
     res.json({
-      currentPeriod: { from: fromStr, to: toStr },
-      previousPeriod: { from: prevFromIso.slice(0, 10), to: prevToIso.slice(0, 10) },
+      currentPeriod: { from: fromStr, to: toStr, totalIncidents: current.total },
+      previousPeriod: { from: prevFromIso.slice(0, 10), to: prevToIso.slice(0, 10), totalIncidents: previous.total },
       factors: meaningful,
     });
   } catch (err) {

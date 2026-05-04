@@ -24,8 +24,8 @@ export interface FactorRow {
   suggestion: string;
 }
 export interface FactorAnalysisData {
-  currentPeriod: { from: string; to: string };
-  previousPeriod: { from: string; to: string };
+  currentPeriod: { from: string; to: string; totalIncidents: number };
+  previousPeriod: { from: string; to: string; totalIncidents: number };
   factors: FactorRow[];
 }
 
