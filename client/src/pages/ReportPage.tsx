@@ -4,11 +4,13 @@ import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from '../components/Logo';
 import { PeriodComparison } from '../components/PeriodComparison';
+import { summarizeIncident } from '../lib/incidentSummary';
 import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface Incident {
   id: string; error_types: string[]; drug_name?: string; dispensed_drug?: string;
   prescribed_strength?: string; dispensed_strength?: string; correct_formulation?: string; dispensed_formulation?: string;
+  prescribed_quantity?: number; dispensed_quantity?: number;
   where_caught?: string; time_of_day?: string; factors: string[]; notes?: string;
   submitted_at: string; occurred_at?: string; status: string;
   recommendations?: { ai_text: string; manager_outcome?: string; manager_text?: string; private_note?: string }[];
@@ -229,34 +231,29 @@ export function ReportPage() {
               const outcome = rec?.manager_outcome;
               return (
                 <div key={inc.id} className="border border-gray-200 rounded-xl p-4">
-                  {/* Header */}
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    {inc.error_types.map(e => (
-                      <span key={e} className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{e}</span>
-                    ))}
-                    {inc.drug_name && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{inc.drug_name}</span>
-                    )}
-                    {/* Tick for reviewed */}
-                    {outcome && (
-                      <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${outcome === 'accepted' ? 'bg-[#E1F5EE] text-[#085041]' : outcome === 'modified' ? 'bg-[#EEEDFE] text-[#3C3489]' : 'bg-gray-100 text-gray-600'}`}>
-                        {outcome === 'accepted' ? '\u2713 Accepted' : outcome === 'modified' ? '\u2713 Modified' : '\u2713 No action'}
-                      </span>
-                    )}
-                  </div>
+                  {/* Outcome badge — top right, doesn't compete with the headline */}
+                  {outcome && (
+                    <span className={`float-right text-xs font-semibold px-2 py-0.5 rounded-full ${outcome === 'accepted' ? 'bg-[#E1F5EE] text-[#085041]' : outcome === 'modified' ? 'bg-[#EEEDFE] text-[#3C3489]' : 'bg-gray-100 text-gray-600'}`}>
+                    {outcome === 'accepted' ? '\u2713 Accepted' : outcome === 'modified' ? '\u2713 Modified' : '\u2713 No action'}
+                  </span>
+                  )}
 
-                  {/* Detail grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-500 mb-3">
-                    <div>Date: {fmtDate(inc.occurred_at || inc.submitted_at)}</div>
-                    <div>Caught: {inc.where_caught || '-'}</div>
-                    <div>Time: {inc.time_of_day || '-'}</div>
-                    <div>Factors: {inc.factors.join(', ') || '-'}</div>
-                  </div>
+                  {/* Plain-English headline \u2014 what happened, in one line */}
+                  <p className="text-sm font-semibold text-gray-900 leading-snug mb-1.5 pr-24">
+                    {summarizeIncident(inc)}
+                  </p>
 
-                  {/* Swap details */}
-                  {inc.dispensed_drug && <p className="text-xs text-gray-600 mb-1">Drug swap: {inc.drug_name} → {inc.dispensed_drug}</p>}
-                  {inc.dispensed_strength && <p className="text-xs text-gray-600 mb-1">Strength: {inc.prescribed_strength} → {inc.dispensed_strength}</p>}
-                  {inc.dispensed_formulation && <p className="text-xs text-gray-600 mb-1">Formulation: {inc.correct_formulation} → {inc.dispensed_formulation}</p>}
+                  {/* Compact metadata line — date, where caught, time, factors all on one row */}
+                  <p className="text-xs text-gray-500 leading-snug mb-3">
+                    {fmtDate(inc.occurred_at || inc.submitted_at)}
+                    {inc.where_caught && <> · Caught at {inc.where_caught}</>}
+                    {inc.time_of_day && <> · {inc.time_of_day}</>}
+                    {inc.factors.length > 0 && <> · Factors: {inc.factors.join(', ')}</>}
+                  </p>
+
+                  {inc.notes && (
+                    <p className="text-xs text-gray-500 italic mb-3 pl-2 border-l-2 border-gray-200">"{inc.notes}"</p>
+                  )}
 
                   {/* Recommendation */}
                   {rec && (

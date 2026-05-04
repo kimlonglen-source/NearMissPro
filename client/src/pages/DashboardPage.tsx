@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { PeriodComparison } from '../components/PeriodComparison';
+import { summarizeIncident } from '../lib/incidentSummary';
 import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar } from 'lucide-react';
 
 interface Rec { id: string; ai_text: string; manager_outcome: string | null; manager_text?: string; private_note?: string; }
@@ -519,26 +520,20 @@ function TrendStrip({ data, range, onRangeChange }: {
 }
 
 // ── One-sentence summary of an incident ─────────────────────────────
-// Composes a readable story from the structured fields so managers can
-// skim a queue of many incidents without parsing field labels.
+// Single readable sentence built from structured fields so the manager
+// can scan a queue of many incidents without parsing field labels.
+// Same helper drives the printed report so the two views stay in sync.
 function SummarySentence({ inc }: { inc: Incident }) {
   const when = new Date(inc.occurred_at || inc.submitted_at).toLocaleString('en-NZ', {
     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
   });
-  let swap: React.ReactNode = null;
-  if (inc.dispensed_drug) swap = <>{inc.drug_name || ''} → {inc.dispensed_drug}</>;
-  else if (inc.dispensed_strength) swap = <>{inc.prescribed_strength} → {inc.dispensed_strength}</>;
-  else if (inc.dispensed_formulation) swap = <>{inc.correct_formulation} → {inc.dispensed_formulation}</>;
   return (
     <p className="text-sm leading-relaxed text-gray-800">
-      <span className="font-semibold">{when}</span>
-      {inc.error_step && <> ({inc.error_step})</>}
-      {' — '}
-      <span className="font-semibold">{inc.error_types.join(', ')}</span>
-      {swap && <>: <span className="font-medium">{swap}</span></>}
-      {'.'}
-      {inc.where_caught && <> Caught at <span className="font-semibold">{inc.where_caught}</span>.</>}
-      {inc.factors.length > 0 && <> Factor{inc.factors.length > 1 ? 's' : ''}: <span className="font-medium">{inc.factors.join(', ')}</span>.</>}
+      <span className="font-semibold">{summarizeIncident(inc)}</span>
+      {inc.error_step && <span className="text-gray-500"> · {inc.error_step}</span>}
+      <span className="text-gray-500"> · {when}</span>
+      {inc.where_caught && <span className="text-gray-500"> · Caught at {inc.where_caught}</span>}
+      {inc.factors.length > 0 && <span className="text-gray-500"> · Factor{inc.factors.length > 1 ? 's' : ''}: {inc.factors.join(', ')}</span>}
     </p>
   );
 }
