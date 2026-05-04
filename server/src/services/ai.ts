@@ -554,19 +554,33 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // trend (vs last period), most-affected pattern, top contributing factor,
   // high-risk class involvement, and a clear pointer at root-cause analysis
   // and SOP review at the meeting.
+  //
+  // We drop weak claims like "Most affected: X (1 time)" — calling something
+  // "most affected" when it's only one incident overstates the signal and
+  // confuses managers. Only surface a top pattern when count >= 2.
   const summaryParts: string[] = [];
   if (comparisonNarrative) {
     summaryParts.push(comparisonNarrative);
   } else if (incidentCount > 0) {
-    const detail = topPairLabel
-      ? `Most affected: ${topPairLabel} (${topPairCount} time${topPairCount > 1 ? 's' : ''}).`
-      : (topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : '');
-    summaryParts.push(`This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${detail}`.trim());
+    let line = `${incidentCount} near miss${incidentCount > 1 ? 'es' : ''} this period.`;
+    if (topPairLabel && topPairCount >= 2) {
+      line += ` Most affected pattern: ${topPairLabel} (${topPairCount} times).`;
+    } else if (incidentCount >= 5) {
+      // Many incidents but no concentrated pattern — direct attention to factors.
+      line += ` Spread across multiple patterns — the strongest signal is in the contributing factors below.`;
+    }
+    summaryParts.push(line);
   }
   if (topFactorLine) summaryParts.push(topFactorLine);
   if (highRiskLine) summaryParts.push(highRiskLine);
+  // Action-focus prompt — only when we have something specific to focus on.
   if (incidentCount > 0) {
-    summaryParts.push('At the meeting: walk through the chain of events, check whether SOPs were followed and need updating, and agree one specific system-level change.');
+    if (topFactors.length > 0 && topFactors[0][1] >= 2) {
+      summaryParts.push(`Focus at the meeting: address ${topFactors[0][0].toLowerCase()}.`);
+    } else if (topPairLabel && topPairCount >= 2) {
+      summaryParts.push(`Focus at the meeting: address the recurring ${topPairLabel} pattern.`);
+    }
+    // Otherwise no generic "discuss the chain of events" line — the agenda covers process.
   }
   const stubSummaryText = incidentCount === 0
     ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'

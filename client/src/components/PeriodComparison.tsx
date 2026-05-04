@@ -35,8 +35,21 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
 
   if (loading) return <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 h-24 animate-pulse" />;
   if (!data) return null;
-  // Don't compare against an empty previous period — misleading.
-  if (data.previousPeriod.totalIncidents === 0) return null;
+  // First review: no previous period to compare against. Don't hide entirely —
+  // show a placeholder so the manager knows what to expect next month.
+  if (data.previousPeriod.totalIncidents === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-dashed border-gray-300 p-4 mb-4">
+        <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+          <Sparkles size={14} className="text-gray-400" />
+          Did our actions work?
+        </h3>
+        <p className="text-xs text-gray-500 mt-1.5 leading-snug">
+          This is the first review at your pharmacy — there's no earlier period to compare against yet. From next month, this section will show how each drug + error pattern changed: green ticks for resolved, red arrows for patterns that came back, orange flags for new ones.
+        </p>
+      </div>
+    );
+  }
   if (data.patterns.length === 0) return null;
 
   const fmt = (s: string) => new Date(s).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
@@ -51,8 +64,8 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
             <Sparkles size={14} className="text-[#0F6E56]" />
             Did our actions work?
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Vs previous period: {fmt(data.previousPeriod.from)} – {fmt(data.previousPeriod.to)}
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            Data — how each drug + error pattern changed vs {fmt(data.previousPeriod.from)} – {fmt(data.previousPeriod.to)}.
           </p>
         </div>
         <div className="text-right">

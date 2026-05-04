@@ -206,11 +206,12 @@ export function ReportPage() {
         {/* Last period improvements — what came out of the last meeting */}
         {prevSummary && (
           <div className={`rounded-xl p-4 mb-8 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 rounded-full bg-[#1D9E75]" />
               <span className="text-xs font-semibold uppercase text-gray-600">Last period improvements</span>
               {prevEdited && <EditBadge />}
             </div>
+            <p className="text-[11px] text-gray-500 mb-2">Notes — what was agreed at the last meeting and how it played out (editable).</p>
             {!report.locked ? (
               <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
                 rows={3} className="w-full p-2 rounded-lg border border-[#9FE1CB] text-sm bg-white" />
