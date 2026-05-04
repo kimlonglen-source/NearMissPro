@@ -347,21 +347,21 @@ router.get('/stats/period-comparison', requireRole('manager', 'founder'), async 
 // SYSTEM-level causes — the lever for actually reducing near misses, not
 // per-incident fixes.
 const FACTOR_SUGGESTIONS: Record<string, string> = {
-  'High volume period': 'Review whether incidents cluster on specific days or hours — adjust roster or queue management at peak.',
-  'Interruption / distraction': 'Trial a no-interruption zone during dispensing-critical steps (HQSC distraction-reduction guidance — e.g. tabard, "do not disturb" sign at counting).',
-  'Similar packaging': 'Physical separation on the shelf, tallman lettering, and a high-contrast alert sticker on the affected items (Medsafe LASA guidance).',
-  'Similar drug names': 'Apply tallman lettering at the bin label and dispensary software prompt (NZ SALAD list / Medsafe LASA).',
-  'Similar patient name': 'Add a dispensary software flag on same-name patients; confirm with NHI + DOB at every handoff (Pharmacy Council NZ two-identifier standard).',
-  'Script not checked against original': 'Make the original script visible at every check step — pharmacist-in-charge audits weekly.',
-  'Understaffed': 'Review roster against actual peak demand. Standby pharmacist on call for spikes.',
-  'System slow / down': 'Escalate to the dispensary-software vendor, and document a paper-backup SOP so dispensing continues safely during downtime.',
-  'Dispensary software issue': 'Log the specific issue with the vendor; review override-policy so alerts cannot be single-tap dismissed (Pharmacy Council NZ standard 1.8).',
-  'Illegible prescription': 'Standard "please clarify" callback template; do not dispense from an unclear script — Medicines Regulations 1984 require legibility.',
-  'Unusual dose / strength': 'Cross-check unusual doses against NZ Formulary; flag at data entry; require a deliberate confirmation step.',
-  'New staff member': 'Onboarding checklist with sign-off; supervised dispensing for the first weeks; near-miss patterns reviewed at induction.',
-  'Unfamiliar drug': 'Pause and consult NZULM / NZ Formulary before dispensing; this is a flag for additional CPD on the drug class.',
-  'Process not followed': 'SOP refresher with sign-off log; visual workflow reminders at each station.',
-  'Communication gap': 'Standardised handover phrase + written confirmation at each handoff (Te Whatu Ora Pharmacy Procedures Manual).',
+  'High volume period': 'Check whether errors happen more on certain days or times. Adjust the roster, or change how you manage queues at peak times.',
+  'Interruption / distraction': 'Set up a no-interruption zone for the most error-prone steps. The dispensing pharmacist can wear a tabard or display a "do not disturb" sign so the team knows not to interrupt (HQSC distraction-reduction guidance).',
+  'Similar packaging': 'Move the look-alike products apart on the shelf. Use TALLman lettering — write the unique letters BIG, e.g. amLODipine vs amIOdarone. Add a bright warning sticker on each (Medsafe LASA guidance).',
+  'Similar drug names': 'Use TALLman lettering on the bin label (e.g. cefaLEXin vs cefacLOR). Set up a popup warning in your dispensary software when these drugs are picked (NZ SALAD list / Medsafe LASA).',
+  'Similar patient name': 'Set up a flag in your dispensary software for patients with similar names. At every step, check both the NHI and date of birth (Pharmacy Council NZ two-identifier standard).',
+  'Script not checked against original': 'Keep the original prescription visible at every check (data entry, picking, final check). The pharmacist-in-charge audits weekly to make sure it\'s happening.',
+  'Understaffed': 'Compare your roster against when you actually get busy. Have a backup pharmacist on call for unexpectedly busy periods.',
+  'System slow / down': 'Tell your dispensary-software vendor about the slowness. Write down a paper-based backup process so you can keep dispensing safely if the system goes down.',
+  'Dispensary software issue': 'Record the specific software issue with your vendor. Review your override policy — alerts should not be dismissable with one tap (Pharmacy Council NZ standard 1.8).',
+  'Illegible prescription': 'Use a standard "please clarify" callback message to the prescriber. Never dispense from an unclear prescription — Medicines Regulations 1984 require it to be legible.',
+  'Unusual dose / strength': 'Look up unusual doses in the NZ Formulary. Flag them at data entry. Require an explicit confirmation step before dispensing.',
+  'New staff member': 'Create an onboarding checklist (with a sign-off step). Have new staff supervised in their first few weeks. Show them recent near-miss patterns when they start.',
+  'Unfamiliar drug': 'Pause and look up the drug in NZULM or the NZ Formulary before dispensing. This may also be a sign that the team needs more training on this drug class.',
+  'Process not followed': 'Run an SOP refresher with a sign-off log. Add visual workflow reminders at each work station.',
+  'Communication gap': 'Use a standard handover phrase. Write down what was passed on at each handoff (Te Whatu Ora Pharmacy Procedures Manual).',
 };
 
 router.get('/stats/factor-analysis', requireRole('manager', 'founder'), async (req: Request, res: Response) => {

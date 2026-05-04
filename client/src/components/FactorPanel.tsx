@@ -101,7 +101,9 @@ function FactorRowDisplay({ f, showComparison }: { f: FactorRow; showComparison:
               {f.currentCount} incident{f.currentCount === 1 ? '' : 's'}
             </span>
           </div>
-          <p className="text-[11px] text-gray-600 leading-snug mt-1">{f.suggestion}</p>
+          <p className="text-[11px] text-gray-700 leading-snug mt-1">
+            <span className="font-semibold text-gray-900">Fix:</span> {f.suggestion}
+          </p>
         </div>
       </li>
     );
@@ -147,7 +149,9 @@ function FactorRowDisplay({ f, showComparison }: { f: FactorRow; showComparison:
           </span>
         </div>
         {!isWin && (
-          <p className="text-[11px] text-gray-600 leading-snug mt-1">{f.suggestion}</p>
+          <p className="text-[11px] text-gray-700 leading-snug mt-1">
+            <span className="font-semibold text-gray-900">Fix:</span> {f.suggestion}
+          </p>
         )}
       </div>
     </li>

@@ -462,7 +462,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     !!highRiskCategoryFor(i.drug_name) || !!highRiskCategoryFor(i.dispensed_drug)
   );
   const highRiskLine = highRiskIncidents.length > 0
-    ? `${highRiskIncidents.length} of these involved a high-risk drug (e.g. anticoagulant, opioid, insulin) — review with extra care.`
+    ? `${highRiskIncidents.length} of these involved a high-risk medicine (insulin, anticoagulant, opioid, etc.) — these need extra care.`
     : '';
 
   // Compute the previous-period comparison so we can seed the editable
@@ -550,37 +550,29 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     highRiskIncidents.map(i => highRiskCategoryFor(i.drug_name) || highRiskCategoryFor(i.dispensed_drug)).filter((c): c is string => !!c)
   )];
 
-  // Period summary — covers what regulators expect a CQI review to address:
-  // trend (vs last period), most-affected pattern, top contributing factor,
-  // high-risk class involvement, and a clear pointer at root-cause analysis
-  // and SOP review at the meeting.
-  //
-  // We drop weak claims like "Most affected: X (1 time)" — calling something
-  // "most affected" when it's only one incident overstates the signal and
-  // confuses managers. Only surface a top pattern when count >= 2.
+  // Period summary — short, plain English. Each piece only appears when
+  // there's something specific to say. The factor breakdown sits below
+  // the summary text, so we don't repeat it here.
   const summaryParts: string[] = [];
   if (comparisonNarrative) {
     summaryParts.push(comparisonNarrative);
   } else if (incidentCount > 0) {
     let line = `${incidentCount} near miss${incidentCount > 1 ? 'es' : ''} this period.`;
+    // Only call out a "top pattern" when there's actually a pattern (count >= 2).
     if (topPairLabel && topPairCount >= 2) {
-      line += ` Most affected pattern: ${topPairLabel} (${topPairCount} times).`;
-    } else if (incidentCount >= 5) {
-      // Many incidents but no concentrated pattern — direct attention to factors.
-      line += ` Spread across multiple patterns — the strongest signal is in the contributing factors below.`;
+      line += ` ${topPairLabel.charAt(0).toUpperCase() + topPairLabel.slice(1)} happened ${topPairCount} times.`;
     }
     summaryParts.push(line);
   }
-  if (topFactorLine) summaryParts.push(topFactorLine);
+  // Top contributing factor in plain English.
+  if (topFactors.length > 0 && topFactors[0][1] >= 2 && incidentCount > 0) {
+    summaryParts.push(`Most common cause: ${topFactors[0][0].toLowerCase()} (in ${topFactors[0][1]} of ${incidentCount} incidents).`);
+  }
+  // High-risk drug callout.
   if (highRiskLine) summaryParts.push(highRiskLine);
-  // Action-focus prompt — only when we have something specific to focus on.
-  if (incidentCount > 0) {
-    if (topFactors.length > 0 && topFactors[0][1] >= 2) {
-      summaryParts.push(`Focus at the meeting: address ${topFactors[0][0].toLowerCase()}.`);
-    } else if (topPairLabel && topPairCount >= 2) {
-      summaryParts.push(`Focus at the meeting: address the recurring ${topPairLabel} pattern.`);
-    }
-    // Otherwise no generic "discuss the chain of events" line — the agenda covers process.
+  // Specific meeting focus when there's a clear top factor.
+  if (incidentCount > 0 && topFactors.length > 0 && topFactors[0][1] >= 2) {
+    summaryParts.push(`At the meeting, focus on reducing ${topFactors[0][0].toLowerCase()}.`);
   }
   const stubSummaryText = incidentCount === 0
     ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
