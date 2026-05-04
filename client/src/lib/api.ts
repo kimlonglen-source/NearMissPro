@@ -15,6 +15,20 @@ export interface PeriodComparisonData {
   patterns: PatternComparison[];
 }
 
+export interface FactorRow {
+  name: string;
+  currentCount: number;
+  previousCount: number;
+  delta: number;
+  direction: 'new' | 'up' | 'down' | 'same' | 'gone';
+  suggestion: string;
+}
+export interface FactorAnalysisData {
+  currentPeriod: { from: string; to: string };
+  previousPeriod: { from: string; to: string };
+  factors: FactorRow[];
+}
+
 class Api {
   private token: string | null = null;
 
@@ -130,6 +144,10 @@ class Api {
   getPeriodComparison(from: string, to: string) {
     const q = new URLSearchParams({ from, to }).toString();
     return this.req<PeriodComparisonData>(`/incidents/stats/period-comparison?${q}`);
+  }
+  getFactorAnalysis(from: string, to: string) {
+    const q = new URLSearchParams({ from, to }).toString();
+    return this.req<FactorAnalysisData>(`/incidents/stats/factor-analysis?${q}`);
   }
 
   // Pattern interventions (shared log per drug+error pair)

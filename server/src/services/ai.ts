@@ -439,6 +439,14 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const errorSummary = incidents?.flatMap(i => i.error_types).reduce<Record<string, number>>((acc, e) => { acc[e] = (acc[e] || 0) + 1; return acc; }, {}) || {};
   const topErrors = Object.entries(errorSummary).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
+  // Top contributing factors this period — drives the "system causes"
+  // narrative and the auto-generated agenda items.
+  const factorCounts = (incidents || []).flatMap(i => i.factors || []).reduce<Record<string, number>>((acc, f) => { acc[f] = (acc[f] || 0) + 1; return acc; }, {});
+  const topFactors = Object.entries(factorCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const topFactorLine = topFactors.length > 0 && topFactors[0][1] >= 2
+    ? `Top contributing factor: ${topFactors[0][0]} (${topFactors[0][1]} incidents).`
+    : '';
+
   // Compute the previous-period comparison so we can seed the editable
   // "Last period improvements" section with the actually meaningful
   // narrative ("Atorvastatin wrong-strength: 5 → 1, action working")
@@ -512,10 +520,11 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const stub = {
     summary: incidentCount === 0
       ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
-      : `This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : ''} Review the incident log below and discuss prevention actions at the team meeting.`,
+      : `This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : ''} ${topFactorLine} Review the incident log below and agree one system-level change at the team meeting.`.replace(/\s+/g, ' ').trim(),
     agenda: [
       'Acknowledge the team for continuing to report near misses — this culture of openness keeps patients safe.',
       ...(topErrors.length > 0 ? [`Discuss the ${topErrors[0][1]} ${topErrors[0][0]} incident${topErrors[0][1] > 1 ? 's' : ''} and agree on a specific prevention action.`] : []),
+      ...(topFactors.length > 0 && topFactors[0][1] >= 2 ? [`System factor to address: ${topFactors[0][0]} appeared in ${topFactors[0][1]} incidents — agree one workspace or process change.`] : []),
       ...(concerns.length > 0 ? ['Revisit any actions that have not yet reduced repeat patterns and decide on a stronger change.'] : []),
       'Identify any training needs or workflow changes required.',
       'Confirm the date of the next review meeting.',

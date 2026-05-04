@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { PeriodComparison } from '../components/PeriodComparison';
+import { FactorPanel } from '../components/FactorPanel';
 import { summarizeIncident } from '../lib/incidentSummary';
 import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar } from 'lucide-react';
 
@@ -172,6 +173,9 @@ export function DashboardPage() {
 
       {/* Did our actions work? — comparison vs previous period */}
       <PeriodComparison from={dateFrom} to={dateTo} />
+
+      {/* What's behind these errors? — top contributing system factors */}
+      <FactorPanel from={dateFrom} to={dateTo} />
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-4">

@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from '../components/Logo';
 import { PeriodComparison } from '../components/PeriodComparison';
+import { FactorPanel } from '../components/FactorPanel';
 import { summarizeIncident } from '../lib/incidentSummary';
 import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 
@@ -181,6 +182,9 @@ export function ReportPage() {
 
         {/* 2a. Did our actions work? — comparison vs the previous period */}
         <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
+
+        {/* 2a.ii What's behind these errors? — system factors driving them */}
+        <FactorPanel from={report.period_start} to={report.period_end} maxRows={20} />
 
         {/* 2b. Pattern alerts — drug + error-type hotspots in this period */}
         {report.pattern_alerts && report.pattern_alerts.length > 0 && (

@@ -340,6 +340,98 @@ router.get('/stats/period-comparison', requireRole('manager', 'founder'), async 
   }
 });
 
+// ── Factor analysis — "What's behind these errors?" (must be before /:id) ──
+// For each contributing factor (high volume / interruption / similar packaging
+// etc.) count occurrences this period, the previous same-length period, and
+// pair with one NZ-grounded suggestion the manager can act on. Surfaces
+// SYSTEM-level causes — the lever for actually reducing near misses, not
+// per-incident fixes.
+const FACTOR_SUGGESTIONS: Record<string, string> = {
+  'High volume period': 'Review whether incidents cluster on specific days or hours — adjust roster or queue management at peak.',
+  'Interruption / distraction': 'Trial a no-interruption zone during dispensing-critical steps (HQSC distraction-reduction guidance — e.g. tabard, "do not disturb" sign at counting).',
+  'Similar packaging': 'Physical separation on the shelf, tallman lettering, and a high-contrast alert sticker on the affected items (Medsafe LASA guidance).',
+  'Similar drug names': 'Apply tallman lettering at the bin label and dispensary software prompt (NZ SALAD list / Medsafe LASA).',
+  'Similar patient name': 'Add a dispensary software flag on same-name patients; confirm with NHI + DOB at every handoff (Pharmacy Council NZ two-identifier standard).',
+  'Script not checked against original': 'Make the original script visible at every check step — pharmacist-in-charge audits weekly.',
+  'Understaffed': 'Review roster against actual peak demand. Standby pharmacist on call for spikes.',
+  'System slow / down': 'Escalate to the dispensary-software vendor, and document a paper-backup SOP so dispensing continues safely during downtime.',
+  'Dispensary software issue': 'Log the specific issue with the vendor; review override-policy so alerts cannot be single-tap dismissed (Pharmacy Council NZ standard 1.8).',
+  'Illegible prescription': 'Standard "please clarify" callback template; do not dispense from an unclear script — Medicines Regulations 1984 require legibility.',
+  'Unusual dose / strength': 'Cross-check unusual doses against NZ Formulary; flag at data entry; require a deliberate confirmation step.',
+  'New staff member': 'Onboarding checklist with sign-off; supervised dispensing for the first weeks; near-miss patterns reviewed at induction.',
+  'Unfamiliar drug': 'Pause and consult NZULM / NZ Formulary before dispensing; this is a flag for additional CPD on the drug class.',
+  'Process not followed': 'SOP refresher with sign-off log; visual workflow reminders at each station.',
+  'Communication gap': 'Standardised handover phrase + written confirmation at each handoff (Te Whatu Ora Pharmacy Procedures Manual).',
+};
+
+router.get('/stats/factor-analysis', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const defaultTo = now.toISOString().slice(0, 10);
+    const fromStr = (typeof req.query.from === 'string' && req.query.from) || defaultFrom;
+    const toStr = (typeof req.query.to === 'string' && req.query.to) || defaultTo;
+
+    const fromIso = /^\d{4}-\d{2}-\d{2}$/.test(fromStr) ? `${fromStr}T00:00:00.000Z` : fromStr;
+    const toIso = /^\d{4}-\d{2}-\d{2}$/.test(toStr) ? `${toStr}T23:59:59.999Z` : toStr;
+    const periodMs = new Date(toIso).getTime() - new Date(fromIso).getTime();
+    const prevToIso = new Date(new Date(fromIso).getTime() - 1).toISOString();
+    const prevFromIso = new Date(new Date(fromIso).getTime() - periodMs - 1).toISOString();
+
+    const fetchFactors = async (a: string, b: string): Promise<Record<string, number>> => {
+      const { data, error } = await supabase.from('incidents').select('factors')
+        .eq('pharmacy_id', req.auth!.pharmacyId).eq('status', 'active')
+        .gte('submitted_at', a).lte('submitted_at', b);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of (data || []) as { factors: string[] | null }[]) {
+        for (const f of row.factors || []) counts[f] = (counts[f] || 0) + 1;
+      }
+      return counts;
+    };
+
+    const [current, previous] = await Promise.all([
+      fetchFactors(fromIso, toIso),
+      fetchFactors(prevFromIso, prevToIso),
+    ]);
+
+    const allFactors = new Set<string>([...Object.keys(current), ...Object.keys(previous)]);
+    type Direction = 'new' | 'up' | 'down' | 'same' | 'gone';
+    const factors = Array.from(allFactors).map(name => {
+      const cur = current[name] || 0;
+      const prev = previous[name] || 0;
+      let direction: Direction;
+      if (prev === 0 && cur > 0) direction = 'new';
+      else if (prev > 0 && cur === 0) direction = 'gone';
+      else if (cur > prev) direction = 'up';
+      else if (cur < prev) direction = 'down';
+      else direction = 'same';
+      return {
+        name,
+        currentCount: cur,
+        previousCount: prev,
+        delta: cur - prev,
+        direction,
+        suggestion: FACTOR_SUGGESTIONS[name] || 'Discuss at the next team meeting and agree a specific system-level change.',
+      };
+    });
+    // Show factors with at least 2 incidents in the current period — fewer
+    // is noise. Always include any factor that's gone (prev > 0, cur = 0)
+    // because that's a win worth celebrating.
+    factors.sort((a, b) => b.currentCount - a.currentCount || b.previousCount - a.previousCount);
+    const meaningful = factors.filter(f => f.currentCount >= 2 || (f.previousCount > 0 && f.currentCount === 0));
+
+    res.json({
+      currentPeriod: { from: fromStr, to: toStr },
+      previousPeriod: { from: prevFromIso.slice(0, 10), to: prevToIso.slice(0, 10) },
+      factors: meaningful,
+    });
+  } catch (err) {
+    console.error('[incidents] factor-analysis failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // ── Get single incident ─────────────────────────────────────
 router.get('/:id', async (req: Request, res: Response) => {
   try {
