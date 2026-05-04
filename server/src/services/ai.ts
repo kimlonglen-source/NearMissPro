@@ -535,18 +535,91 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     comparisonLines.push(comparisonNarrative);
   }
 
+  // Most-affected drug+error pair this period. Used in the summary and
+  // agenda so they name the actual drug ("Atorvastatin wrong strength")
+  // rather than just the error class ("wrong strength picked").
+  const sortedCurPatterns = [...curPatterns.entries()].sort((a, b) => b[1].count - a[1].count);
+  const topPair = sortedCurPatterns[0];
+  const topPairLabel = topPair && topPair[1].count >= 1
+    ? `${topPair[0].split('|||')[0]} ${topPair[0].split('|||')[1].toLowerCase()}`
+    : null;
+  const topPairCount = topPair?.[1].count || 0;
+
+  // Distinct high-risk classes touched this period — used in agenda.
+  const highRiskClasses = [...new Set(
+    highRiskIncidents.map(i => highRiskCategoryFor(i.drug_name) || highRiskCategoryFor(i.dispensed_drug)).filter((c): c is string => !!c)
+  )];
+
+  // Build a multi-sentence summary that leads with what changed (the
+  // comparison) — falls back to a count-and-class summary on the very
+  // first review when there's no previous period to compare to.
+  const summaryParts: string[] = [];
+  if (comparisonNarrative) {
+    summaryParts.push(comparisonNarrative);
+  } else if (incidentCount > 0) {
+    const errorList = topPairLabel
+      ? `Most affected: ${topPairLabel} (${topPairCount}).`
+      : (topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : '');
+    summaryParts.push(`This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${errorList}`.trim());
+  }
+  if (topFactorLine) summaryParts.push(topFactorLine);
+  if (highRiskLine) summaryParts.push(highRiskLine);
+  if (incidentCount > 0 && summaryParts.length < 3) {
+    summaryParts.push('Review the incident log below and agree one system-level change at the team meeting.');
+  }
+  const stubSummaryText = incidentCount === 0
+    ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
+    : summaryParts.join(' ').replace(/\s+/g, ' ').trim();
+
+  // Build an agenda where every item points at a specific decision the
+  // team can make, not generic placeholders. Items are conditional on
+  // the actual data — only items with content survive.
+  const agendaItems: string[] = [];
+
+  // 1. Close the loop on last meeting (only if there was a last meeting)
+  if (lastReport) {
+    agendaItems.push('Open: review what was agreed at the last meeting and confirm whether the related patterns have reduced this period.');
+  }
+
+  // 2. Most-affected drug+error pair — named, so the discussion is concrete
+  if (topPairLabel && topPairCount >= 1) {
+    agendaItems.push(`Discuss the ${topPairCount} ${topPairLabel} incident${topPairCount > 1 ? 's' : ''} — agree one specific shelf, labelling, or check change.`);
+  } else if (topErrors.length > 0) {
+    agendaItems.push(`Discuss the ${topErrors[0][1]} ${topErrors[0][0]} incident${topErrors[0][1] > 1 ? 's' : ''} — agree one specific prevention action.`);
+  }
+
+  // 3. Top system factor — explicitly framed as a workspace/process change
+  if (topFactors.length > 0 && topFactors[0][1] >= 2) {
+    agendaItems.push(`System factor: ${topFactors[0][0]} appeared in ${topFactors[0][1]} incident${topFactors[0][1] > 1 ? 's' : ''}. Agree one workspace or process change targeting this (the "What's behind these errors?" panel suggests a starting point).`);
+  }
+
+  // 4. High-risk drug class — Medsafe-aligned attention
+  if (highRiskClasses.length > 0) {
+    agendaItems.push(`High-risk drug${highRiskClasses.length > 1 ? 's' : ''} this period: ${highRiskClasses.join(', ')}. Confirm the dispensing-software alerts and double-check protocol for this class are in place.`);
+  }
+
+  // 5. Recurring concerns (last period's action wasn't enough)
+  if (concerns.length > 0) {
+    agendaItems.push(`Revisit ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last period's action hasn't been enough yet — decide on a stronger change.`);
+  }
+
+  // 6. Wins to celebrate (motivates continued reporting)
+  if (wins.length > 0) {
+    agendaItems.push(`Acknowledge: actions on ${wins.length} previous pattern${wins.length > 1 ? 's' : ''} have worked — those issues haven't recurred this period.`);
+  }
+
+  // 7. If the period was clean (no incidents at all) the agenda still has
+  //    one item so the meeting isn't empty.
+  if (incidentCount === 0) {
+    agendaItems.push('No near misses this period. Encourage staff to keep reporting — under-reporting is the bigger risk than the count itself.');
+  }
+
+  // 8. Always end with the next meeting date
+  agendaItems.push('Confirm the date of the next review meeting.');
+
   const stub = {
-    summary: incidentCount === 0
-      ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
-      : `This period recorded ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}. ${topErrors.length > 0 ? `Most common: ${topErrors.map(([e, c]) => `${e} (${c})`).join(', ')}.` : ''} ${topFactorLine} ${highRiskLine} Review the incident log below and agree one system-level change at the team meeting.`.replace(/\s+/g, ' ').trim(),
-    agenda: [
-      'Acknowledge the team for continuing to report near misses — this culture of openness keeps patients safe.',
-      ...(topErrors.length > 0 ? [`Discuss the ${topErrors[0][1]} ${topErrors[0][0]} incident${topErrors[0][1] > 1 ? 's' : ''} and agree on a specific prevention action.`] : []),
-      ...(topFactors.length > 0 && topFactors[0][1] >= 2 ? [`System factor to address: ${topFactors[0][0]} appeared in ${topFactors[0][1]} incidents — agree one workspace or process change.`] : []),
-      ...(concerns.length > 0 ? ['Revisit any actions that have not yet reduced repeat patterns and decide on a stronger change.'] : []),
-      'Identify any training needs or workflow changes required.',
-      'Confirm the date of the next review meeting.',
-    ],
+    summary: stubSummaryText,
+    agenda: agendaItems,
     // "Last period improvements" now seeded with the actual outcome of
     // last meeting's decisions, so the pharmacist can simply tweak rather
     // than recall and re-type each month. Editable as before.
