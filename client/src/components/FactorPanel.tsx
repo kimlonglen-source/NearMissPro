@@ -52,11 +52,8 @@ export function FactorPanel({ from, to, data: preFetched, maxRows = 5 }: Props) 
       <div className="mb-3">
         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
           <Sparkles size={14} className="text-[#0F6E56]" />
-          What&rsquo;s behind these errors?
+          Why errors happened
         </h3>
-        <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-          The most common reasons errors happened this period. Fix one of these and many future errors are prevented.
-        </p>
       </div>
 
       <ul className="space-y-3">
