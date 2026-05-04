@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { PeriodComparison } from '../components/PeriodComparison';
 import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar } from 'lucide-react';
 
 interface Rec { id: string; ai_text: string; manager_outcome: string | null; manager_text?: string; private_note?: string; }
@@ -167,6 +168,9 @@ export function DashboardPage() {
         </div>
         <button onClick={() => setPeriodSet(false)} className="text-sm text-gray-500 hover:text-[#0F6E56]">Change dates</button>
       </div>
+
+      {/* Did our actions work? — comparison vs previous period */}
+      <PeriodComparison from={dateFrom} to={dateTo} />
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-4">

@@ -427,6 +427,76 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const errorSummary = incidents?.flatMap(i => i.error_types).reduce<Record<string, number>>((acc, e) => { acc[e] = (acc[e] || 0) + 1; return acc; }, {}) || {};
   const topErrors = Object.entries(errorSummary).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
+  // Compute the previous-period comparison so we can seed the editable
+  // "Last period improvements" section with the actually meaningful
+  // narrative ("Atorvastatin wrong-strength: 5 → 1, action working")
+  // instead of generic placeholder text.
+  const startMs = new Date(periodStart).getTime();
+  const endMs = new Date(endBound).getTime();
+  const periodMs = endMs - startMs;
+  const prevEndIso = new Date(startMs - 1).toISOString();
+  const prevStartIso = new Date(startMs - periodMs - 1).toISOString();
+  const { data: prevIncidents } = await supabase.from('incidents')
+    .select('drug_name, error_types, recommendations(manager_outcome)')
+    .eq('pharmacy_id', pharmacyId).eq('status', 'active')
+    .gte('submitted_at', prevStartIso).lte('submitted_at', prevEndIso);
+
+  type PatStat = { count: number; actioned: boolean };
+  const buildPatternMap = (rows: { drug_name?: string | null; error_types?: string[] | null; recommendations?: { manager_outcome?: string | null }[] }[]): Map<string, PatStat> => {
+    const m = new Map<string, PatStat>();
+    for (const r of rows || []) {
+      if (!r.drug_name) continue;
+      const drug = r.drug_name.trim(); if (!drug) continue;
+      const wasActioned = Array.isArray(r.recommendations)
+        && r.recommendations.some(rc => rc.manager_outcome === 'accepted' || rc.manager_outcome === 'modified');
+      for (const et of r.error_types || []) {
+        const key = `${drug}|||${et}`;
+        const cur = m.get(key) || { count: 0, actioned: false };
+        cur.count += 1;
+        if (wasActioned) cur.actioned = true;
+        m.set(key, cur);
+      }
+    }
+    return m;
+  };
+  const curPatterns = buildPatternMap(incidents || []);
+  const prevPatterns = buildPatternMap(prevIncidents || []);
+  const allKeys = new Set<string>([...curPatterns.keys(), ...prevPatterns.keys()]);
+  const comparisonLines: string[] = [];
+  const wins: string[] = [];
+  const concerns: string[] = [];
+  const recurring: string[] = [];
+  for (const key of allKeys) {
+    const [drug, et] = key.split('|||');
+    const cur = curPatterns.get(key)?.count || 0;
+    const prev = prevPatterns.get(key)?.count || 0;
+    const wasActioned = prevPatterns.get(key)?.actioned || false;
+    if (prev > 0 && cur === 0) {
+      wins.push(`${drug} ${et}: ${prev} → 0${wasActioned ? ' (action worked)' : ''}`);
+    } else if (cur < prev && wasActioned) {
+      recurring.push(`${drug} ${et}: ${prev} → ${cur} (action helping)`);
+    } else if (cur > prev && wasActioned) {
+      concerns.push(`${drug} ${et}: ${prev} → ${cur} (action so far not enough — revisit)`);
+    } else if (prev === 0 && cur >= 2) {
+      concerns.push(`${drug} ${et}: new pattern this period (${cur} incidents)`);
+    }
+  }
+  let comparisonNarrative = '';
+  if (prevIncidents && prevIncidents.length > 0) {
+    const netDelta = incidentCount - (prevIncidents.length || 0);
+    const headline = netDelta < 0
+      ? `${Math.abs(netDelta)} fewer near misses than last period (${incidentCount} vs ${prevIncidents.length}).`
+      : netDelta > 0
+        ? `${netDelta} more near misses than last period (${incidentCount} vs ${prevIncidents.length}).`
+        : `Same total as last period (${incidentCount}).`;
+    const parts = [headline];
+    if (wins.length > 0) parts.push(`Resolved: ${wins.slice(0, 4).join('; ')}.`);
+    if (recurring.length > 0) parts.push(`Improving: ${recurring.slice(0, 3).join('; ')}.`);
+    if (concerns.length > 0) parts.push(`Needs attention: ${concerns.slice(0, 3).join('; ')}.`);
+    comparisonNarrative = parts.join(' ');
+    comparisonLines.push(comparisonNarrative);
+  }
+
   const stub = {
     summary: incidentCount === 0
       ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
@@ -434,11 +504,14 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     agenda: [
       'Acknowledge the team for continuing to report near misses — this culture of openness keeps patients safe.',
       ...(topErrors.length > 0 ? [`Discuss the ${topErrors[0][1]} ${topErrors[0][0]} incident${topErrors[0][1] > 1 ? 's' : ''} and agree on a specific prevention action.`] : []),
-      'Review any accepted recommendations and confirm they have been implemented.',
+      ...(concerns.length > 0 ? ['Revisit any actions that have not yet reduced repeat patterns and decide on a stronger change.'] : []),
       'Identify any training needs or workflow changes required.',
       'Confirm the date of the next review meeting.',
     ],
-    previousSummary: lastReport ? 'Review the actions agreed at the last meeting and assess whether they have reduced incidents.' : undefined,
+    // "Last period improvements" now seeded with the actual outcome of
+    // last meeting's decisions, so the pharmacist can simply tweak rather
+    // than recall and re-type each month. Editable as before.
+    previousSummary: comparisonNarrative || (lastReport ? 'Review the actions agreed at the last meeting and assess whether they have reduced incidents.' : undefined),
   };
 
   if (!env.anthropicApiKey || incidentCount === 0) return stub;
@@ -456,7 +529,14 @@ Write 3-5 short sentences in plain language. No markdown, no bold, no bullets. B
 Cover, in this order: what dominated the period (drug, error type, or factor), one concrete change to make, and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL.
 
 Skip preamble like "this period saw" or "it is recommended that". Don't restate counts the report already shows.`,
-        messages: [{ role: 'user', content: JSON.stringify({ incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })), previous_period_summary: lastReport?.period_summary }) }],
+        messages: [{ role: 'user', content: JSON.stringify({
+          incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })),
+          previous_period_summary: lastReport?.period_summary,
+          // Hand the AI the comparison so it can reference real outcomes
+          // ("the action on Atorvastatin appears to be working") instead
+          // of generic advice.
+          comparison_with_previous: comparisonNarrative || undefined,
+        }) }],
       }),
     });
     if (!response.ok) {
@@ -467,11 +547,12 @@ Skip preamble like "this period saw" or "it is recommended that". Don't restate 
     return {
       summary: result.content?.[0]?.text || stub.summary,
       agenda: stub.agenda,
-      // "Last period improvements" should carry forward what was written at
-      // the LAST team meeting, not a duplicate of this period's summary.
-      // Pull the previous report's saved text verbatim so the manager can
-      // see and review what they agreed last time.
-      previousSummary: lastReport?.period_summary || undefined,
+      // "Last period improvements" is now seeded with the comparison
+      // narrative (computed above) so it shows what actually happened
+      // since the last meeting — wins, still-recurring patterns, and new
+      // concerns — rather than a verbatim copy of last month's text.
+      // Pharmacist can still edit before saving.
+      previousSummary: stub.previousSummary,
     };
   } catch (err) {
     console.error('[ai] generatePeriodSummary failed:', err);

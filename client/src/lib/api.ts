@@ -1,5 +1,20 @@
 const BASE = '/api';
 
+export interface PatternComparison {
+  drug: string;
+  errorType: string;
+  currentCount: number;
+  previousCount: number;
+  delta: number;
+  actionedPreviously: boolean;
+  direction: 'resolved' | 'reduced' | 'same' | 'increased' | 'new';
+}
+export interface PeriodComparisonData {
+  currentPeriod: { from: string; to: string; totalIncidents: number };
+  previousPeriod: { from: string; to: string; totalIncidents: number };
+  patterns: PatternComparison[];
+}
+
 class Api {
   private token: string | null = null;
 
@@ -111,6 +126,10 @@ class Api {
   }
   getTrend(weeks: number) {
     return this.req<{ weeks: { weekStart: string; count: number }[] }>(`/incidents/stats/trend?weeks=${weeks}`);
+  }
+  getPeriodComparison(from: string, to: string) {
+    const q = new URLSearchParams({ from, to }).toString();
+    return this.req<PeriodComparisonData>(`/incidents/stats/period-comparison?${q}`);
   }
 
   // Pattern interventions (shared log per drug+error pair)

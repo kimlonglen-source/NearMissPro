@@ -228,6 +228,112 @@ router.get('/stats/monthly-count', async (req: Request, res: Response) => {
   } catch { res.status(500).json({ error: 'Failed' }); }
 });
 
+// ── Period comparison — "Did our actions work?" (must be before /:id) ──
+// Compares the current review period against the same-length window
+// immediately preceding it. For each (drug, error type) pair that
+// appeared in either period, return the count delta and whether the
+// previous-period incidents had a manager decision (accepted/modified)
+// so the UI can label things as "actioned and resolved" vs "actioned
+// but still happening" vs "new pattern this period".
+router.get('/stats/period-comparison', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const defaultTo = now.toISOString().slice(0, 10);
+    const fromStr = (typeof req.query.from === 'string' && req.query.from) || defaultFrom;
+    const toStr = (typeof req.query.to === 'string' && req.query.to) || defaultTo;
+
+    const fromIso = /^\d{4}-\d{2}-\d{2}$/.test(fromStr) ? `${fromStr}T00:00:00.000Z` : fromStr;
+    const toIso = /^\d{4}-\d{2}-\d{2}$/.test(toStr) ? `${toStr}T23:59:59.999Z` : toStr;
+    const periodMs = new Date(toIso).getTime() - new Date(fromIso).getTime();
+    const prevToIso = new Date(new Date(fromIso).getTime() - 1).toISOString();
+    const prevFromIso = new Date(new Date(fromIso).getTime() - periodMs - 1).toISOString();
+
+    type Row = { drug_name: string | null; error_types: string[] | null; recommendations: { manager_outcome: string | null }[] };
+    const fetchRange = async (a: string, b: string) => {
+      const { data, error } = await supabase.from('incidents')
+        .select('drug_name, error_types, recommendations(manager_outcome)')
+        .eq('pharmacy_id', req.auth!.pharmacyId).eq('status', 'active')
+        .gte('submitted_at', a).lte('submitted_at', b);
+      if (error) throw error;
+      return (data || []) as Row[];
+    };
+
+    const [current, previous] = await Promise.all([
+      fetchRange(fromIso, toIso),
+      fetchRange(prevFromIso, prevToIso),
+    ]);
+
+    type PatternStats = { count: number; actioned: boolean };
+    const buildMap = (rows: Row[]): Map<string, PatternStats> => {
+      const m = new Map<string, PatternStats>();
+      for (const r of rows) {
+        if (!r.drug_name) continue;
+        const drug = r.drug_name.trim();
+        if (!drug) continue;
+        const wasActioned = Array.isArray(r.recommendations)
+          && r.recommendations.some(rc => rc.manager_outcome === 'accepted' || rc.manager_outcome === 'modified');
+        for (const et of r.error_types || []) {
+          const key = `${drug}|||${et}`;
+          const cur = m.get(key) || { count: 0, actioned: false };
+          cur.count += 1;
+          if (wasActioned) cur.actioned = true;
+          m.set(key, cur);
+        }
+      }
+      return m;
+    };
+
+    const curMap = buildMap(current);
+    const prevMap = buildMap(previous);
+    const allKeys = new Set<string>([...curMap.keys(), ...prevMap.keys()]);
+
+    type Direction = 'resolved' | 'reduced' | 'same' | 'increased' | 'new';
+    const patterns = Array.from(allKeys).map(key => {
+      const [drug, errorType] = key.split('|||');
+      const cur = curMap.get(key)?.count || 0;
+      const prev = prevMap.get(key)?.count || 0;
+      const actionedPreviously = prevMap.get(key)?.actioned || false;
+      let direction: Direction;
+      if (prev === 0 && cur > 0) direction = 'new';
+      else if (prev > 0 && cur === 0) direction = 'resolved';
+      else if (cur < prev) direction = 'reduced';
+      else if (cur > prev) direction = 'increased';
+      else direction = 'same';
+      return { drug, errorType, currentCount: cur, previousCount: prev, delta: cur - prev, actionedPreviously, direction };
+    });
+
+    // Sort: highest-signal items first.
+    // Actioned + resolved (action worked!) → actioned + reduced → increased → new → resolved → reduced → same
+    const priority = (p: typeof patterns[number]) => {
+      if (p.direction === 'resolved' && p.actionedPreviously) return 0;
+      if (p.direction === 'reduced' && p.actionedPreviously) return 1;
+      if (p.direction === 'increased') return 2;
+      if (p.direction === 'new') return 3;
+      if (p.direction === 'resolved') return 4;
+      if (p.direction === 'reduced') return 5;
+      return 6;
+    };
+    patterns.sort((a, b) => {
+      const pa = priority(a), pb = priority(b);
+      if (pa !== pb) return pa - pb;
+      return Math.abs(b.delta) - Math.abs(a.delta);
+    });
+
+    res.json({
+      currentPeriod: { from: fromStr, to: toStr, totalIncidents: current.length },
+      previousPeriod: {
+        from: prevFromIso.slice(0, 10), to: prevToIso.slice(0, 10),
+        totalIncidents: previous.length,
+      },
+      patterns,
+    });
+  } catch (err) {
+    console.error('[incidents] period-comparison failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // ── Get single incident ─────────────────────────────────────
 router.get('/:id', async (req: Request, res: Response) => {
   try {
