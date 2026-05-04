@@ -186,7 +186,12 @@ export function ReportPage() {
         {/* ─── 2. EXECUTIVE SUMMARY ──────────────────────────── */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">Executive summary</h2>
 
-        {/* Period summary — narrative of the period (moved up from below) */}
+        {/* Did our actions work? — closed-loop check goes first.
+            The most important question in a CQI review is whether the changes
+            agreed at the last meeting actually reduced what they were meant to. */}
+        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
+
+        {/* Period summary — narrative of this period */}
         <div className={`rounded-xl p-4 mb-4 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-semibold uppercase text-gray-600">This period</span>
@@ -199,9 +204,6 @@ export function ReportPage() {
             <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
           )}
         </div>
-
-        {/* Did our actions work? — comparison vs the previous period */}
-        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
 
         {/* Last period improvements — what came out of the last meeting */}
         {prevSummary && (
