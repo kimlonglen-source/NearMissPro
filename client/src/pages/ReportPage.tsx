@@ -183,8 +183,13 @@ export function ReportPage() {
           ))}
         </div>
 
-        {/* ─── 2. EXECUTIVE SUMMARY ──────────────────────────── */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">Executive summary</h2>
+        {/* ─── 2. THIS PERIOD ────────────────────────────────
+            One section that tells the whole story of the period: closure
+            on last meeting's actions, summary + factor breakdown, when
+            errors clustered, weekly trend, and last meeting's notes.
+            Reads top-to-bottom as a single narrative rather than a series
+            of overlapping summaries. */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">This period</h2>
 
         {/* Did our actions work? — closed-loop check goes first.
             The most important question in a CQI review is whether the changes
@@ -232,13 +237,11 @@ export function ReportPage() {
           </div>
         )}
 
-        {/* ─── 3. DETAILED ANALYSIS ──────────────────────────── */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">Detailed analysis</h2>
-
         {/* When are near misses happening? — workflow heatmap.
+            Now sits under "This period" so the heatmap, factors, and
+            summary all read as one continuous story about the period.
             (The factor breakdown that used to live here has moved up
-            into the "This period" panel in the Executive Summary so
-            there's only one place that explains the period's causes.) */}
+            into the "This period" panel.) */}
         <WorkflowHeatmap from={report.period_start} to={report.period_end} />
 
         {/* Pattern alerts — drug + error-type hotspots in this period */}

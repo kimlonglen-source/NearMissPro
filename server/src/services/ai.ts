@@ -615,23 +615,31 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // Identifying trends — headline of this period
   if (incidentCount > 0) {
     let headline = `This period: ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}`;
-    if (prevIncidents) {
+    if (prevIncidents && prevIncidents.length > 0) {
+      // Only mention the trend when there's a real previous period to compare
+      // against — saying "up 10 from last period" when last period was zero
+      // is technically correct but misleading on a first review.
       const netDelta = incidentCount - prevIncidents.length;
       if (netDelta < 0) headline += ` (down ${Math.abs(netDelta)} from last period)`;
       else if (netDelta > 0) headline += ` (up ${netDelta} from last period)`;
     }
-    if (topPairLabel) {
-      headline += `. Most affected: ${topPairLabel} (${topPairCount} time${topPairCount > 1 ? 's' : ''})`;
+    // Only call out a "most affected" pattern when there's actually a pattern
+    // (count >= 2). Calling something "most affected" when it's only one
+    // incident overstates the signal.
+    if (topPairLabel && topPairCount >= 2) {
+      headline += `. Most affected: ${topPairLabel} (${topPairCount} times)`;
     }
     agendaItems.push(headline + '.');
   }
 
-  // Root cause analysis — walk through the chain of events for the top pattern
-  if (topPairLabel) {
-    agendaItems.push(`Walk through how the ${topPairLabel} ${topPairCount === 1 ? 'incident' : 'incidents'} happened — what was the chain of events?`);
+  // Root cause analysis — only when there's a recurring pattern to walk through.
+  // Walking through "the chain of events" for a single incident isn't useful;
+  // the per-incident recommendation already covers it.
+  if (topPairLabel && topPairCount >= 2) {
+    agendaItems.push(`Walk through how the ${topPairLabel} incidents happened — what was the chain of events?`);
   }
 
-  // Evaluating processes — SOP review
+  // Evaluating processes — SOP review (always relevant when there are incidents)
   if (incidentCount > 0) {
     agendaItems.push('Were the relevant SOPs followed? Do any need updating?');
   }
