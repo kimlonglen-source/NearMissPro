@@ -4,8 +4,9 @@ import { api } from '../lib/api';
 import { detectPHI, phiHint, PhiKind } from '../lib/phi';
 import {
   STAGES, WHERE_CAUGHT, CAUGHT_DEFAULT_BY_STAGE, FACTORS,
-  FACTORS_DEFAULT_VISIBLE, FORMULATIONS, DRUG_SUGGESTIONS, triggersFor,
+  FACTORS_DEFAULT_VISIBLE, FORMULATIONS, triggersFor,
 } from '../lib/taxonomy';
+import { NZ_DRUG_LIST, isKnownNzDrug, readDrugHistory, recordDrugInHistory } from '../lib/nzDrugList';
 import { CheckCircle2, AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 
 const SESSION_KEY = 'nmp_record_draft';
@@ -187,6 +188,32 @@ export function RecordPage() {
     return acc;
   }, [draft.errorTypes]);
 
+  // True when the chosen error type implies a specific medicine — drug name
+  // becomes required so reports and pattern matching can group properly.
+  const drugRequired = triggers.drug || triggers.strength || triggers.quantity || triggers.formulation;
+
+  // Autocomplete suggestions: pharmacy's own drug history first (encourages
+  // canonical spelling propagation), then the bundled NZ list as fallback.
+  // Re-read history on each open so newly-logged drugs surface immediately.
+  const drugSuggestions = useMemo(() => {
+    const history = readDrugHistory();
+    const historyLower = new Set(history.map(s => s.toLowerCase()));
+    const nzExtras = NZ_DRUG_LIST.filter(d => !historyLower.has(d.toLowerCase()));
+    return [...history, ...nzExtras];
+    // Recompute when the form opens (re-mounts) — using submitted to invalidate.
+  }, [submitted]);
+
+  // Typo hint: drug typed isn't in pharmacy history nor the NZ list.
+  // Doesn't block submit — could be a private-supply or imported drug —
+  // but nudges the user to double-check spelling so patterns group.
+  const drugNotRecognised = useMemo(() => {
+    const v = draft.drugName.trim();
+    if (!v) return false;
+    if (isKnownNzDrug(v)) return false;
+    const history = readDrugHistory();
+    return !history.some(s => s.toLowerCase() === v.toLowerCase());
+  }, [draft.drugName]);
+
   const visibleFactors = useMemo(
     () => draft.showMoreFactors ? FACTORS : FACTORS.slice(0, FACTORS_DEFAULT_VISIBLE),
     [draft.showMoreFactors],
@@ -350,6 +377,10 @@ export function RecordPage() {
       } else {
         const incident = await api.createIncident(payload) as { id: string; editable_until: string };
         setSubmittedIncidentId(incident.id);
+        // Add the drug name to this pharmacy's autocomplete history so future
+        // entries get suggestions in the canonical spelling used here.
+        if (draft.drugName.trim()) recordDrugInHistory(draft.drugName.trim());
+        if (draft.dispensedDrug.trim()) recordDrugInHistory(draft.dispensedDrug.trim());
         setEditableUntil(incident.editable_until);
       }
       resetDraft();
@@ -413,7 +444,10 @@ export function RecordPage() {
     draft.errorTypes.length > 0 &&
     !!draft.whereCaught &&
     draft.factors.length > 0 &&
-    !anyPhi;
+    !anyPhi &&
+    // Drug name is required when the chosen error type implies a specific
+    // medicine, so reports and pattern matching have something to group on.
+    (!drugRequired || !!draft.drugName.trim());
 
   // ── Success screen ──────────────────────────────────────────
   if (submitted) {
@@ -650,17 +684,61 @@ export function RecordPage() {
               {/* Layer 3 — intended → given, inline when triggered */}
               {(triggers.drug || triggers.strength || triggers.quantity || triggers.formulation) && (
                 <div className="space-y-3 pt-2 border-t border-gray-100">
+                  {/* Single drug-name field for cases where the error doesn't
+                      involve a wrong drug (wrong strength / quantity /
+                      formulation of the right drug). The "wrong drug" path
+                      below captures both prescribed + dispensed drugs in its
+                      own intended→given box so it doesn't need this. */}
+                  {!triggers.drug && (
+                    <div className="rounded-xl p-3 border-[1.5px] border-blue-200 bg-blue-50">
+                      <p className="text-xs font-semibold text-blue-700 mb-2">
+                        Drug <span className="text-red-600">*</span>
+                      </p>
+                      <input
+                        type="text"
+                        value={draft.drugName}
+                        onChange={e => update({ drugName: e.target.value })}
+                        list="drug-suggestions"
+                        placeholder="e.g. Atorvastatin"
+                        className="input-field text-sm py-2 w-full"
+                        autoComplete="off"
+                      />
+                      {phi.drugName.hit && (
+                        <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
+                          <AlertTriangle size={12} /> Looks like patient info — use a drug name only.
+                        </p>
+                      )}
+                      {!phi.drugName.hit && draft.drugName && drugNotRecognised && (
+                        <p className="text-[11px] text-gray-500 mt-1.5">
+                          Not in the NZ drug list — please double-check spelling so the report can spot patterns.
+                        </p>
+                      )}
+                      {!phi.drugName.hit && draft.drugName && !drugNotRecognised && (
+                        <p className="text-[11px] text-[#085041] mt-1.5">
+                          ✓ Recognised
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {triggers.drug && (
-                    <IntendedGiven
-                      label="Drug" colour="coral"
-                      a={draft.drugName} onA={v => update({ drugName: v })}
-                      b={draft.dispensedDrug} onB={v => update({ dispensedDrug: v })}
-                      aHint="Prescribed (e.g. Losartan)"
-                      bHint="Given in error (e.g. Lisinopril)"
-                      datalistId="drug-suggestions"
-                      aPhi={phi.drugName}
-                      bPhi={phi.dispensedDrug}
-                    />
+                    <>
+                      <IntendedGiven
+                        label="Drug" colour="coral"
+                        labelRequired
+                        a={draft.drugName} onA={v => update({ drugName: v })}
+                        b={draft.dispensedDrug} onB={v => update({ dispensedDrug: v })}
+                        aHint="Prescribed (e.g. Losartan)"
+                        bHint="Given in error (e.g. Lisinopril)"
+                        datalistId="drug-suggestions"
+                        aPhi={phi.drugName}
+                        bPhi={phi.dispensedDrug}
+                      />
+                      {!phi.drugName.hit && draft.drugName && drugNotRecognised && (
+                        <p className="text-[11px] text-gray-500 -mt-1 ml-1">
+                          Prescribed drug not in the NZ list — double-check spelling.
+                        </p>
+                      )}
+                    </>
                   )}
                   {triggers.strength && (
                     <IntendedGiven
@@ -686,7 +764,9 @@ export function RecordPage() {
                       options={FORMULATIONS}
                     />
                   )}
-                  <p className="text-[11px] text-gray-400 italic">Optional — you can submit without filling these.</p>
+                  <p className="text-[11px] text-gray-400 italic">
+                    Drug name required (helps the report spot patterns). The other "intended → given" details are optional but recommended.
+                  </p>
                 </div>
               )}
 
@@ -708,7 +788,8 @@ export function RecordPage() {
           )}
 
           <datalist id="drug-suggestions">
-            {DRUG_SUGGESTIONS.map(d => <option key={d} value={d} />)}
+            {/* Pharmacy's own drug history first — encourages spelling consistency */}
+            {drugSuggestions.map(d => <option key={d} value={d} />)}
           </datalist>
 
           {/* ═══ Section 3: Where was it caught? ═══ */}
@@ -857,6 +938,7 @@ const BOX_STYLE: Record<BoxColour, { border: string; bg: string; title: string; 
 function IntendedGiven(props: {
   label: string;
   colour?: BoxColour;
+  labelRequired?: boolean;
   a: string; onA: (v: string) => void;
   b: string; onB: (v: string) => void;
   aHint: string; bHint: string;
@@ -867,7 +949,11 @@ function IntendedGiven(props: {
   const c = BOX_STYLE[props.colour || 'gray'];
   return (
     <div className={`rounded-xl p-3 border-[1.5px] ${c.border}`} style={{ background: c.bg }}>
-      <p className={`text-xs font-semibold ${c.title} mb-2`}>{props.label} — intended → given</p>
+      <p className={`text-xs font-semibold ${c.title} mb-2`}>
+        {props.label}
+        {props.labelRequired && <span className="text-red-600"> *</span>}
+        {' — intended → given'}
+      </p>
       <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-end">
         <input type="text" value={props.a} onChange={e => props.onA(e.target.value)}
           list={props.datalistId} className="input-field text-sm py-2" placeholder={props.aHint} />

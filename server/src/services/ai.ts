@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import { supabase } from '../config/supabase.js';
+import { normalizeDrugName } from '../lib/normalize.js';
 
 interface IncidentData {
   id: string;
@@ -290,18 +291,27 @@ export async function detectPatterns(pharmacyId: string, since?: string, until?:
 
   if (!incidents || incidents.length < 3) return null;
 
+  // Drugs are counted by normalised key but displayed using the first
+  // spelling the user entered, so "Atorvastatin" / "atorvastatin" merge.
   const drugCounts: Record<string, number> = {};
+  const drugDisplay: Record<string, string> = {};
   const factorCounts: Record<string, number> = {};
   const timeCounts: Record<string, number> = {};
 
   for (const i of incidents) {
-    if (i.drug_name) drugCounts[i.drug_name] = (drugCounts[i.drug_name] || 0) + 1;
+    if (i.drug_name) {
+      const key = normalizeDrugName(i.drug_name);
+      if (key) {
+        drugCounts[key] = (drugCounts[key] || 0) + 1;
+        if (!drugDisplay[key]) drugDisplay[key] = i.drug_name.trim();
+      }
+    }
     if (i.time_of_day) timeCounts[i.time_of_day] = (timeCounts[i.time_of_day] || 0) + 1;
     for (const f of i.factors || []) factorCounts[f] = (factorCounts[f] || 0) + 1;
   }
 
   const alerts: string[] = [];
-  for (const [drug, count] of Object.entries(drugCounts)) { if (count >= 3) alerts.push(`${drug} appears in ${count} incidents`); }
+  for (const [key, count] of Object.entries(drugCounts)) { if (count >= 3) alerts.push(`${drugDisplay[key]} appears in ${count} incidents`); }
   for (const [factor, count] of Object.entries(factorCounts)) { if (count >= 3) alerts.push(`"${factor}" is a factor in ${count} incidents`); }
   for (const [time, count] of Object.entries(timeCounts)) { if (count >= 3) alerts.push(`${count} incidents during ${time}`); }
 
@@ -351,24 +361,26 @@ export async function detectDrugErrorHotspots(
   }
   const { data, error } = await q;
   if (error) { console.error('[ai] detectDrugErrorHotspots failed:', error); return []; }
+  // Match using normalised drug names so "Atorvastatin" / "atorvastatin" /
+  // "ATORVASTATIN" all group as one pattern. Display recovers the first
+  // version the staff actually typed for the matched key.
   const counts: Record<string, number> = {};
   for (const row of data || []) {
-    const drug = (row as { drug_name?: string }).drug_name?.trim();
-    if (!drug) continue;
-    const key = drug.toLowerCase();
+    const original = (row as { drug_name?: string }).drug_name;
+    const drugKey = normalizeDrugName(original);
+    if (!drugKey) continue;
     for (const et of (row as { error_types?: string[] }).error_types || []) {
-      const k = `${key}|||${et}`;
+      const k = `${drugKey}|||${et}`;
       counts[k] = (counts[k] || 0) + 1;
     }
   }
   return Object.entries(counts)
     .filter(([, c]) => c >= minCount)
     .map(([k, count]) => {
-      const [drugLower, errorType] = k.split('|||');
-      // Recover a pretty drug label — use the first incident's casing.
-      const drug = (data || []).find(r => (r as { drug_name?: string }).drug_name?.trim().toLowerCase() === drugLower)
-        ?.drug_name?.trim() || drugLower;
-      return { drug, errorType, count };
+      const [drugKey, errorType] = k.split('|||');
+      const display = (data || []).find(r => normalizeDrugName((r as { drug_name?: string }).drug_name) === drugKey)
+        ?.drug_name?.trim() || drugKey;
+      return { drug: display, errorType, count };
     })
     .sort((a, b) => b.count - a.count || a.drug.localeCompare(b.drug));
 }

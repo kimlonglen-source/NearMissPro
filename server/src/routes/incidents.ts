@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { scanFields } from '../lib/phi.js';
+import { normalizeDrugName } from '../lib/normalize.js';
 
 const router = Router();
 router.use(authenticate);
@@ -264,18 +265,21 @@ router.get('/stats/period-comparison', requireRole('manager', 'founder'), async 
       fetchRange(prevFromIso, prevToIso),
     ]);
 
-    type PatternStats = { count: number; actioned: boolean };
+    // Group by normalised drug name so spelling variants ("Atorvastatin"
+    // vs "atorvastatin" vs "ATORVASTATIN") count as one pattern. Display
+    // recovers whichever spelling the staff first used at this pharmacy.
+    type PatternStats = { count: number; actioned: boolean; display: string };
     const buildMap = (rows: Row[]): Map<string, PatternStats> => {
       const m = new Map<string, PatternStats>();
       for (const r of rows) {
-        if (!r.drug_name) continue;
-        const drug = r.drug_name.trim();
-        if (!drug) continue;
+        const display = (r.drug_name || '').trim();
+        const drugKey = normalizeDrugName(display);
+        if (!drugKey) continue;
         const wasActioned = Array.isArray(r.recommendations)
           && r.recommendations.some(rc => rc.manager_outcome === 'accepted' || rc.manager_outcome === 'modified');
         for (const et of r.error_types || []) {
-          const key = `${drug}|||${et}`;
-          const cur = m.get(key) || { count: 0, actioned: false };
+          const key = `${drugKey}|||${et}`;
+          const cur = m.get(key) || { count: 0, actioned: false, display };
           cur.count += 1;
           if (wasActioned) cur.actioned = true;
           m.set(key, cur);
@@ -290,10 +294,12 @@ router.get('/stats/period-comparison', requireRole('manager', 'founder'), async 
 
     type Direction = 'resolved' | 'reduced' | 'same' | 'increased' | 'new';
     const patterns = Array.from(allKeys).map(key => {
-      const [drug, errorType] = key.split('|||');
+      const [, errorType] = key.split('|||');
       const cur = curMap.get(key)?.count || 0;
       const prev = prevMap.get(key)?.count || 0;
       const actionedPreviously = prevMap.get(key)?.actioned || false;
+      // Prefer the spelling used in the current period, fall back to previous.
+      const drug = curMap.get(key)?.display || prevMap.get(key)?.display || key.split('|||')[0];
       let direction: Direction;
       if (prev === 0 && cur > 0) direction = 'new';
       else if (prev > 0 && cur === 0) direction = 'resolved';
