@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from '../components/Logo';
 import { PeriodComparison } from '../components/PeriodComparison';
 import { FactorPanel } from '../components/FactorPanel';
+import { WorkflowHeatmap } from '../components/WorkflowHeatmap';
 import { summarizeIncident } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
 import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
@@ -186,6 +187,9 @@ export function ReportPage() {
 
         {/* 2a.ii What's behind these errors? — system factors driving them */}
         <FactorPanel from={report.period_start} to={report.period_end} maxRows={20} />
+
+        {/* 2a.iii When are near misses happening? — workflow heatmap */}
+        <WorkflowHeatmap from={report.period_start} to={report.period_end} />
 
         {/* 2b. Pattern alerts — drug + error-type hotspots in this period */}
         {report.pattern_alerts && report.pattern_alerts.length > 0 && (

@@ -432,6 +432,81 @@ router.get('/stats/factor-analysis', requireRole('manager', 'founder'), async (r
   }
 });
 
+// ── Workflow heatmap (must be before /:id) ──────────────────
+// Time-of-day buckets x day-of-week, showing where incidents cluster across
+// the week. Reveals predictable danger zones (e.g. "Mondays at lunch") so
+// the manager can adjust roster, prep before rush, or apply HQSC's no-
+// interruption-zone guidance during specific hours.
+//
+// Buckets follow the existing time_of_day labels stored on incidents:
+// Morning 8–12pm, Lunch 12–2pm, Afternoon 2–6pm, Evening 6pm+.
+// Day of week comes from occurred_at (preferred) or submitted_at.
+router.get('/stats/heatmap', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const defaultTo = now.toISOString().slice(0, 10);
+    const fromStr = (typeof req.query.from === 'string' && req.query.from) || defaultFrom;
+    const toStr = (typeof req.query.to === 'string' && req.query.to) || defaultTo;
+
+    const fromIso = /^\d{4}-\d{2}-\d{2}$/.test(fromStr) ? `${fromStr}T00:00:00.000Z` : fromStr;
+    const toIso = /^\d{4}-\d{2}-\d{2}$/.test(toStr) ? `${toStr}T23:59:59.999Z` : toStr;
+
+    const { data, error } = await supabase.from('incidents')
+      .select('time_of_day, occurred_at, submitted_at')
+      .eq('pharmacy_id', req.auth!.pharmacyId).eq('status', 'active')
+      .gte('submitted_at', fromIso).lte('submitted_at', toIso);
+    if (error) throw error;
+
+    // Day labels: Mon..Sun (NZ convention).
+    const dayKeys = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const timeKeys = ['Morning 8–12pm', 'Lunch 12–2pm', 'Afternoon 2–6pm', 'Evening 6pm+'];
+    // Initialise grid as zeros so the response shape is stable.
+    const grid: Record<string, Record<string, number>> = {};
+    for (const t of timeKeys) {
+      grid[t] = {};
+      for (const d of dayKeys) grid[t][d] = 0;
+    }
+
+    let total = 0;
+    for (const row of (data || []) as { time_of_day: string | null; occurred_at: string | null; submitted_at: string }[]) {
+      const t = row.time_of_day;
+      if (!t || !grid[t]) continue;
+      const when = new Date(row.occurred_at || row.submitted_at);
+      const jsDay = when.getDay(); // 0 = Sun
+      const dKey = dayKeys[(jsDay + 6) % 7]; // shift so Mon = 0
+      grid[t][dKey] += 1;
+      total += 1;
+    }
+
+    // Find peak cell so the UI can highlight it ("Mondays at lunch is your danger zone").
+    let peakDay = '';
+    let peakTime = '';
+    let peakCount = 0;
+    for (const t of timeKeys) {
+      for (const d of dayKeys) {
+        if (grid[t][d] > peakCount) {
+          peakCount = grid[t][d];
+          peakDay = d;
+          peakTime = t;
+        }
+      }
+    }
+
+    res.json({
+      currentPeriod: { from: fromStr, to: toStr },
+      times: timeKeys,
+      days: dayKeys,
+      grid,
+      total,
+      peak: peakCount >= 2 ? { day: peakDay, time: peakTime, count: peakCount } : null,
+    });
+  } catch (err) {
+    console.error('[incidents] heatmap failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // ── Get single incident ─────────────────────────────────────
 router.get('/:id', async (req: Request, res: Response) => {
   try {

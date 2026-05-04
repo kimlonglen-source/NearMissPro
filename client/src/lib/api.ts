@@ -29,6 +29,15 @@ export interface FactorAnalysisData {
   factors: FactorRow[];
 }
 
+export interface HeatmapData {
+  currentPeriod: { from: string; to: string };
+  times: string[];
+  days: string[];
+  grid: Record<string, Record<string, number>>;
+  total: number;
+  peak: { day: string; time: string; count: number } | null;
+}
+
 class Api {
   private token: string | null = null;
 
@@ -148,6 +157,10 @@ class Api {
   getFactorAnalysis(from: string, to: string) {
     const q = new URLSearchParams({ from, to }).toString();
     return this.req<FactorAnalysisData>(`/incidents/stats/factor-analysis?${q}`);
+  }
+  getHeatmap(from: string, to: string) {
+    const q = new URLSearchParams({ from, to }).toString();
+    return this.req<HeatmapData>(`/incidents/stats/heatmap?${q}`);
   }
 
   // Pattern interventions (shared log per drug+error pair)
