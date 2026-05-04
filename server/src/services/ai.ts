@@ -28,6 +28,7 @@ Write ONE short prevention recommendation for this near miss. Hard rules:
 - Maximum 2 short sentences. Aim for under 40 words total.
 - Plain language. NO markdown, NO bold, NO headers, NO bullet points.
 - Do NOT restate what happened — go straight to the action.
+- Do NOT list the contributing factors at the end. They are shown elsewhere on the report and addressed separately by the system-factor panel.
 - One concrete action a tech could do tomorrow morning. Name the actual drug, shelf, label, dose, or check step. No generic advice ("be careful", "review processes", "consider implementing").
 - British spelling (colour, organise, centre, labelling).
 
@@ -57,7 +58,14 @@ function nzStubRecommendation(incident: IncidentData): string {
   const errors = (incident.error_types || []).map(e => e.toLowerCase());
   const stage = (incident.error_step || '').toLowerCase();
   const factors = incident.factors || [];
-  const factorNote = factors.length > 0 ? ` Contributing factor${factors.length > 1 ? 's' : ''}: ${factors.join(', ')}.` : '';
+  // Factors are shown on the incident's metadata line and analysed in the
+  // 'What's behind these errors?' panel with system-level suggestions, so
+  // we no longer repeat them in the recommendation body — that was just
+  // restating data the manager already sees.
+  const factorNote = '';
+  // Suppress unused-var warning while keeping the data available for
+  // future stub paths that may want to reference it.
+  void factors;
   const hasAny = (kw: string[]) => errors.some(e => kw.some(k => e.includes(k)));
 
   // Look-alike / sound-alike — Medsafe & NZ LASA guidance
