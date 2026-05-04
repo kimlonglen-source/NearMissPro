@@ -167,8 +167,9 @@ export function ReportPage() {
         </div>
         <div className="h-[2px] bg-[#0F6E56] mb-6" />
 
-        {/* 2. Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        {/* ─── 1. AT A GLANCE ─────────────────────────────────── */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">At a glance</h2>
+        <div className="grid grid-cols-4 gap-3 mb-8">
           {[
             { label: 'Total incidents', value: activeIncidents.length },
             { label: 'Actions taken', value: actionsCount },
@@ -182,16 +183,53 @@ export function ReportPage() {
           ))}
         </div>
 
-        {/* 2a. Did our actions work? — comparison vs the previous period */}
+        {/* ─── 2. EXECUTIVE SUMMARY ──────────────────────────── */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">Executive summary</h2>
+
+        {/* Period summary — narrative of the period (moved up from below) */}
+        <div className={`rounded-xl p-4 mb-4 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold uppercase text-gray-600">This period</span>
+            {summaryEdited && <EditBadge />}
+          </div>
+          {!report.locked ? (
+            <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
+              rows={4} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white" />
+          ) : (
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
+          )}
+        </div>
+
+        {/* Did our actions work? — comparison vs the previous period */}
         <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
 
-        {/* 2a.ii What's behind these errors? — system factors driving them */}
+        {/* Last period improvements — what came out of the last meeting */}
+        {prevSummary && (
+          <div className={`rounded-xl p-4 mb-8 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-[#1D9E75]" />
+              <span className="text-xs font-semibold uppercase text-gray-600">Last period improvements</span>
+              {prevEdited && <EditBadge />}
+            </div>
+            {!report.locked ? (
+              <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
+                rows={3} className="w-full p-2 rounded-lg border border-[#9FE1CB] text-sm bg-white" />
+            ) : (
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
+            )}
+          </div>
+        )}
+
+        {/* ─── 3. DETAILED ANALYSIS ──────────────────────────── */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">Detailed analysis</h2>
+
+        {/* What's behind these errors? — system factors */}
         <FactorPanel from={report.period_start} to={report.period_end} maxRows={20} />
 
-        {/* 2a.iii When are near misses happening? — workflow heatmap */}
+        {/* When are near misses happening? — workflow heatmap */}
         <WorkflowHeatmap from={report.period_start} to={report.period_end} />
 
-        {/* 2b. Pattern alerts — drug + error-type hotspots in this period */}
+        {/* Pattern alerts — drug + error-type hotspots in this period */}
         {report.pattern_alerts && report.pattern_alerts.length > 0 && (
           <div className="rounded-xl p-4 mb-6 border-2 border-[#BA7517]" style={{ background: '#FDF8EB' }}>
             <div className="flex items-center gap-2 mb-2">
@@ -207,30 +245,13 @@ export function ReportPage() {
           </div>
         )}
 
-        {/* 2c. Trend chart — weekly incidents over the reporting period */}
+        {/* Trend chart — weekly incidents over the reporting period */}
         {report.trend_data && report.trend_data.length > 0 && (
           <ReportTrendChart data={report.trend_data} />
         )}
 
-        {/* 3. Previous period improvements */}
-        {prevSummary && (
-          <div className={`rounded-xl p-4 mb-6 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-[#1D9E75]" />
-              <span className="text-xs font-semibold uppercase text-gray-600">Last period improvements</span>
-              {prevEdited && <EditBadge />}
-            </div>
-            {!report.locked ? (
-              <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
-                rows={3} className="w-full p-2 rounded-lg border border-[#9FE1CB] text-sm bg-white" />
-            ) : (
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
-            )}
-          </div>
-        )}
-
-        {/* 4. Incident log */}
-        <h3 className="text-lg font-bold mb-3">Incident log</h3>
+        {/* ─── 4. INCIDENT LOG ───────────────────────────────── */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Incident log</h2>
         {activeIncidents.length === 0 ? (
           <p className="text-sm text-gray-400 mb-6">No active incidents in this period.</p>
         ) : (
@@ -294,25 +315,11 @@ export function ReportPage() {
           </div>
         )}
 
-        {/* 5. Period summary */}
-        <div className={`rounded-xl p-4 mb-6 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold uppercase text-gray-600">Period summary</span>
-            {summaryEdited && <EditBadge />}
-          </div>
-          {!report.locked ? (
-            <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
-              rows={4} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white" />
-          ) : (
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
-          )}
-        </div>
-
-        {/* 6. Staff meeting agenda */}
-        <h3 className="text-lg font-bold mb-3">
-          Staff meeting agenda
+        {/* ─── 5. ACTION PLAN ────────────────────────────────── */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">
+          Action plan — staff meeting agenda
           {agendaEdited && <EditBadge />}
-        </h3>
+        </h2>
         <ol className="list-decimal list-inside space-y-2 mb-6">
           {agenda.map((item, i) => (
             <li key={i} className="text-sm">
@@ -333,8 +340,9 @@ export function ReportPage() {
             className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add item</button>
         )}
 
-        {/* 7. Staff acknowledgement table */}
-        <h3 className="text-lg font-bold mb-1">Staff acknowledgement</h3>
+        {/* ─── 6. SIGN-OFF ───────────────────────────────────── */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Sign-off</h2>
+        <h3 className="text-sm font-semibold text-gray-700 mb-1">Staff acknowledgement</h3>
         <p className="text-xs text-gray-500 mb-3">I confirm I have attended the near miss review meeting and have read and understood the incidents and actions in this report.</p>
         <table className="w-full border-collapse text-sm mb-4">
           <thead>
