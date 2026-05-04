@@ -17,37 +17,37 @@ const CATEGORIES: HighRiskCategory[] = [
   {
     category: 'Insulin',
     patterns: ['insulin'],
-    guidance: 'Insulin: confirm pen vs vial, units vs mL, and brand vs generic match. Two-person check recommended.',
+    guidance: 'Insulin needs extra care: check it\'s the right pen vs vial, units (not mL), and the brand is right. Have a second pharmacist check.',
   },
   {
     category: 'Anticoagulant',
     patterns: ['warfarin', 'dabigatran', 'rivaroxaban', 'apixaban', 'enoxaparin', 'heparin', 'edoxaban'],
-    guidance: 'Anticoagulant: dose-and-strength check is critical. Cross-check against NZ Formulary; verify INR or renal-dose adjustments where relevant.',
+    guidance: 'Anticoagulants (blood-thinners) need a careful dose check — small mistakes cause serious bleeding. Look up the dose in NZ Formulary; check for INR or kidney-related adjustments.',
   },
   {
     category: 'Opioid',
     patterns: ['morphine', 'oxycodone', 'methadone', 'fentanyl', 'tramadol', 'codeine', 'buprenorphine', 'pethidine', 'hydromorphone'],
-    guidance: 'Opioid: CD-register entry and two-person check apply (Misuse of Drugs Regulations). Confirm strength and total quantity.',
+    guidance: 'Opioid: log it in the controlled drugs (CD) register before dispensing, and have two people check (Misuse of Drugs Regulations). Confirm strength and total quantity.',
   },
   {
     category: 'Methotrexate',
     patterns: ['methotrexate'],
-    guidance: 'Methotrexate: weekly-vs-daily confusion is the most-reported error in NZ (Medsafe alert). Confirm intended frequency in writing.',
+    guidance: 'Methotrexate: weekly-vs-daily mix-ups are the most-reported error in NZ (Medsafe alert). Confirm in writing whether it\'s daily or weekly.',
   },
   {
     category: 'Narrow therapeutic index',
     patterns: ['digoxin', 'lithium', 'phenytoin', 'theophylline', 'carbamazepine', 'cyclosporin', 'cyclosporine', 'tacrolimus'],
-    guidance: 'Narrow therapeutic index drug: small dose changes matter. Verify strength and brand against NZ Formulary; check for interactions.',
+    guidance: 'This drug has a narrow safety margin — small dose changes cause big effects. Check the strength and brand carefully (NZ Formulary), and look for interactions.',
   },
   {
     category: 'Cytotoxic',
     patterns: ['methotrexate', 'cyclophosphamide', 'azathioprine', 'fluorouracil', 'tamoxifen', 'anastrozole', 'letrozole'],
-    guidance: 'Cytotoxic: handle per pharmacy SOP. Counselling required at handout (pregnancy precautions, handling).',
+    guidance: 'Cytotoxic medicine — handle per your pharmacy SOP. At handout, counsel the patient on safe handling and pregnancy precautions.',
   },
   {
     category: 'Paediatric (mg/kg)',
     patterns: ['paediatric', 'pediatric'],
-    guidance: 'Paediatric dose: cross-check mg/kg against NZ Formulary. Liquid concentrations vary — confirm strength.',
+    guidance: 'Paediatric dose: check the mg/kg dose against the NZ Formulary. Liquid concentrations differ — confirm the strength carefully.',
   },
 ];
 

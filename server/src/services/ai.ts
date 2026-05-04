@@ -26,7 +26,12 @@ const NZ_SYSTEM_PROMPT = `You are a safety advisor for a New Zealand community p
 
 Write ONE short prevention recommendation for this near miss. Hard rules:
 - Maximum 2 short sentences. Aim for under 40 words total.
-- Plain language. NO markdown, NO bold, NO headers, NO bullet points.
+- Plain language a non-pharmacist could follow. NO markdown, NO bold, NO headers, NO bullet points.
+- Explain technical terms inline the first time you use them. Examples:
+  * "TALLman lettering — write the unique letters BIG, e.g. amLODipine vs amIOdarone"
+  * "CAL (Cautionary Advisory Label — the warning sticker)"
+  * "NHI (patient ID number)"
+  * "PSO (Practitioner's Supply Order — for clinic stock, not patient prescriptions)"
 - Do NOT restate what happened — go straight to the action.
 - Do NOT list the contributing factors at the end. They are shown elsewhere on the report and addressed separately by the system-factor panel.
 - One concrete action a tech could do tomorrow morning. Name the actual drug, shelf, label, dose, or check step. No generic advice ("be careful", "review processes", "consider implementing").
@@ -67,138 +72,139 @@ function nzStubRecommendation(incident: IncidentData): string {
   // future stub paths that may want to reference it.
   void factors;
   const hasAny = (kw: string[]) => errors.some(e => kw.some(k => e.includes(k)));
+  const drugLabel = drug || 'this medicine';
 
   // Look-alike / sound-alike — Medsafe & NZ LASA guidance
   if (hasAny(['look-alike'])) {
-    return `Separate${drugRef} from similar-looking items on the dispensing shelf. Apply tallman lettering per Medsafe LASA guidance, add a high-contrast alert sticker, and require a second-check at picking. Review the NZULM entry for known look-alike pairs.${factorNote}`;
+    return `Move ${drugLabel} away from look-alike items on the shelf. Use TALLman lettering — write the unique letters BIG (e.g. amLODipine vs amIOdarone). Stick a bright warning label on each, and have a second pharmacist check picking (Medsafe LASA guidance).${factorNote}`;
   }
   if (hasAny(['sound-alike'])) {
-    return `Add a read-back confirmation at data entry${drugRef}. Flag known sound-alike pairs in your dispensary software (Medsafe publishes an NZ SALAD list). If phoned-in, require written confirmation before dispensing.${factorNote}`;
+    return `When entering ${drugLabel} into the dispensary software, read it back to whoever called it in. Flag known sound-alike pairs in your software (Medsafe NZ SALAD list). For phone orders, ask for written confirmation before dispensing.${factorNote}`;
   }
 
   // Strength / dose
   if (hasAny(['strength', 'dose'])) {
-    return `Segregate${drugRef} strengths with colour-coded bins on the shelf. Cross-check unusual doses against the NZ Formulary before dispensing, and flag them at data entry. Highlight strength on the dispensing label (bold/large).${factorNote}`;
+    return `Use colour-coded bins on the shelf to separate ${drugLabel} strengths. Look up unusual doses in the NZ Formulary before dispensing. Make the strength stand out on the dispensing label — bigger or bolder text.${factorNote}`;
   }
 
   // Quantity / volume counted or measured
   if (hasAny(['quantity', 'volume']) && stage.includes('counted')) {
-    return `Enforce a double-count${drugRef} — second person or calibrated tablet counter. Consider a no-interruption zone during counting (a tabard or clear signage), per HQSC distraction-reduction guidance.${factorNote}`;
+    return `Always double-count ${drugLabel} — a second person checks, or use a calibrated tablet counter. Set up a no-interruption zone during counting (e.g. wear a tabard or display a "do not disturb" sign) — HQSC distraction-reduction guidance.${factorNote}`;
   }
 
   // Wrong patient (data entry, bag, label) — NZ NHI guidance
   if (hasAny(['wrong patient'])) {
-    return `Confirm patient identity using NHI + date of birth at every handoff (data entry, final check, handout). For same-name patients, add a dispensary software flag. Pharmacy Council NZ practice standards require two identifiers at handout.${factorNote}`;
+    return `At every step (data entry, final check, handout), check both the patient's NHI number and date of birth. For patients with similar names, add a flag in your dispensary software. Pharmacy Council NZ requires two identifiers at handout.${factorNote}`;
   }
 
   // Allergy / interaction / duplicate therapy — clinical decision support
   if (hasAny(['allergy', 'interaction', 'duplicate therapy'])) {
-    return `Review dispensary software override policy: allergy/interaction/duplicate-therapy alerts should require a documented reason, not a single-tap dismissal. Pharmacist-in-charge audits the override log weekly. Pharmacy Council NZ standard 1.8 applies.${factorNote}`;
+    return `When the dispensary software flags an allergy, interaction, or duplicate medicine, the staff member should have to type a reason — not just tap-to-dismiss. The pharmacist-in-charge should review the override log weekly (Pharmacy Council NZ standard 1.8).${factorNote}`;
   }
 
   // Renal / hepatic / paediatric / geriatric / pregnancy dose
   if (hasAny(['renal', 'hepatic', 'paediatric', 'geriatric', 'pregnancy', 'breastfeeding'])) {
-    return `Cross-check${drugRef} against NZ Formulary special-population dosing. A dispensary software alert is required for high-risk populations. Consider a pharmacist clinical review step before dispensing for these groups.${factorNote}`;
+    return `Look up ${drugLabel} in the NZ Formulary for the special-population dose (kidney, liver, paediatric, etc.). Set up a software alert for these high-risk patient groups, and add a pharmacist review step before dispensing.${factorNote}`;
   }
 
   // Pharmac funding / Special Authority / brand
   if (hasAny(['pharmac', 'special authority', 'subsidy'])) {
-    return `Verify Pharmac Schedule Section B funding rules and Special Authority number before dispensing. Check expiry of SA. Pharmac Schedule updates monthly — subscribe to notifications.${factorNote}`;
+    return `Check the Pharmac Schedule funding rules and Special Authority (SA) number before dispensing. Confirm the SA hasn't expired. Pharmac updates monthly — sign up for their email notifications so you're not caught out.${factorNote}`;
   }
   if (hasAny(['brand'])) {
-    return `${drug || 'This drug'} is bioequivalence-sensitive on brand swap (Medsafe alert list). Counsel the patient verbally on any brand change and document it. Flag in dispensary software to prevent silent substitution.${factorNote}`;
+    return `${drug || 'This drug'} is sensitive to brand changes — switching brands can affect how it works in the body (Medsafe alert list). Talk to the patient about any brand change and write it down. Set up a software flag so brand swaps don't happen silently.${factorNote}`;
   }
 
   // NHI/HPI, NZePS, PSO
   if (hasAny(['nhi', 'hpi'])) {
-    return `Verify NHI at data entry against the patient's ID document. Pharmacy Procedures Manual (Te Whatu Ora) section on patient identification applies.${factorNote}`;
+    return `At data entry, check the NHI (patient ID) number against the patient's ID document. Te Whatu Ora's Pharmacy Procedures Manual covers patient identification.${factorNote}`;
   }
   if (hasAny(['nzeps'])) {
-    return `Check the NZePS reject reason in the dispensary software log. If re-submission is needed, confirm with the prescriber. Do not manually override a rejected electronic prescription.${factorNote}`;
+    return `Look up the NZePS (electronic prescription) rejection reason in your dispensary software log. If you need to resubmit, check with the prescriber first. Don't manually override a rejected electronic prescription.${factorNote}`;
   }
   if (hasAny(['pso'])) {
-    return `Practitioner's Supply Orders follow a separate funding and labelling path from patient scripts. Review the Pharmacy Procedures Manual (Te Whatu Ora) PSO section and retrain the team on recognising PSO forms.${factorNote}`;
+    return `Practitioner's Supply Orders (PSOs — orders for a clinic's stock, not a patient) follow different funding and labelling rules from patient prescriptions. Read the PSO section of Te Whatu Ora's Pharmacy Procedures Manual and refresh the team on spotting PSO forms.${factorNote}`;
   }
 
   // Out-of-date / forged prescription
   if (hasAny(['out-of-date', 'forged', 'altered'])) {
-    return `Check prescription date at receipt — scripts are valid for 6 months (3 for CD). If anything looks altered, verify with the prescriber and retain the original per Medicines Regulations 1984.${factorNote}`;
+    return `Check the prescription date when you receive it — most scripts are valid for 6 months (controlled drugs only 3 months). If anything looks altered, ring the prescriber to verify and keep the original (Medicines Regulations 1984).${factorNote}`;
   }
 
   // Verbal / phone / fax order
   if (hasAny(['verbal', 'phone order', 'faxed'])) {
-    return `Require a read-back for verbal/phone orders. Fax prescriptions must be followed by the original within 7 days (Medicines Regulations). Retain the original hardcopy.${factorNote}`;
+    return `For verbal or phone orders, always read it back to confirm. Faxed prescriptions must be followed by the original paper within 7 days (Medicines Regulations) — keep the original hardcopy.${factorNote}`;
   }
 
   // Label typo / directions / CAL
   if (hasAny(['typo', 'directions', 'sig'])) {
-    return `Read labels word-for-word against the prescription at final check. Pharmacist-in-charge reviews dispensing label templates quarterly. If dispensary software shortens directions, consider manual override per NZULM.${factorNote}`;
+    return `At final check, read the dispensing label word-for-word against the prescription. The pharmacist-in-charge should review label templates every 3 months. If your dispensary software shortens directions, manually override per NZULM.${factorNote}`;
   }
   if (hasAny(['cal'])) {
-    return `Check NZ CAL requirements for ${drug || 'this medication'} (NZULM or the NZ Formulary). Ensure dispensary software CAL prompts are not being dismissed without review. Print CAL labels on a high-contrast background.${factorNote}`;
+    return `Check the Cautionary Advisory Label (CAL — the warning sticker, e.g. "may cause drowsiness") requirements for ${drug || 'this medicine'} in NZULM or the NZ Formulary. CAL prompts in your software shouldn't be dismissed without a review. Print CALs on a bright background so they stand out.${factorNote}`;
   }
   if (hasAny(['label on wrong item', 'missing label'])) {
-    return `Enforce one-label-one-item workflow — never batch-label. Match label to item immediately after print. Pharmacist-in-charge final check must verify label is on the correct pack.${factorNote}`;
+    return `One label, one item — never batch-print labels and apply them later. Stick the label on the correct pack as soon as it prints. The pharmacist-in-charge final check must confirm the label matches the pack.${factorNote}`;
   }
   if (hasAny(['pharmacist initials'])) {
-    return `Pharmacist initials/signature on the dispensing label is required under Pharmacy Council NZ standard. Embed in the dispensary software template. Do not dispense without.${factorNote}`;
+    return `The dispensing pharmacist's initials must appear on the label (Pharmacy Council NZ standard). Add them to your software's label template so they're automatic. Don't dispense if missing.${factorNote}`;
   }
 
   // Stock / expiry / recall / damaged / pack size / Section 29
   if (hasAny(['expired'])) {
-    return `Monthly expiry-check rotation on the shelf. Flag stock within 3 months of expiry with a coloured sticker. Rotate FIFO. Medsafe publishes short-dated-stock alerts.${factorNote}`;
+    return `Check stock expiry dates monthly. Stick a coloured sticker on anything within 3 months of expiry. Use first-in-first-out (FIFO) so older stock leaves first. Subscribe to Medsafe alerts for short-dated stock.${factorNote}`;
   }
   if (hasAny(['recalled'])) {
-    return `Check Medsafe recall alerts daily (subscribe to the Medsafe recall feed). Remove recalled stock immediately and quarantine. Document the action per Medicines Act 1981.${factorNote}`;
+    return `Check Medsafe recall alerts every day — subscribe to their recall email feed. Remove recalled stock right away and put it in quarantine. Write down what you did (Medicines Act 1981).${factorNote}`;
   }
   if (hasAny(['damaged'])) {
-    return `Inspect packs at receipt and at picking. Damaged tablets/strips must not be dispensed — return to supplier with credit note. Document the batch.${factorNote}`;
+    return `Check packs for damage when they arrive AND when you pick them. Don't dispense damaged tablets or strips — send them back to the supplier with a credit note and record the batch number.${factorNote}`;
   }
   if (hasAny(['pack size'])) {
-    return `Verify pack size matches the prescribed quantity at picking. The dispensary software should warn on a mismatch. For non-matching packs, use original-pack dispensing where possible.${factorNote}`;
+    return `At picking, check the pack size matches the prescribed quantity. Your software should pop a warning if they don't match. If the pack size doesn't match, use original-pack dispensing where you can.${factorNote}`;
   }
   if (hasAny(['section 29'])) {
-    return `Section 29 (unapproved medicines) requires specific documentation: prescriber acknowledgement of unapproved status and retention for 10 years. Review Medsafe Section 29 guidance.${factorNote}`;
+    return `Section 29 (unapproved medicines — i.e. not formally approved by Medsafe) needs special paperwork: the prescriber must acknowledge the medicine is unapproved, and you keep records for 10 years. Read Medsafe's Section 29 guidance.${factorNote}`;
   }
 
   // Repeat / continuity
   if (hasAny(['repeat'])) {
-    return `Check dispensing history${drugRef} before processing repeats. Set a dispensary software alert on minimum repeat interval. Confirm with patient when they last collected.${factorNote}`;
+    return `Check the dispensing history for ${drugLabel} before processing a repeat. Set a software alert for the minimum repeat interval. Ask the patient when they last collected.${factorNote}`;
   }
 
   // Compliance pack
   if (stage.includes('compliance pack')) {
-    return `Double-check compliance pack contents against the medication chart at packing AND at final check (two pharmacists for CD items). Flag any pack changes with a sticker. Pharmacy Council NZ compliance-pack SOP applies.${factorNote}`;
+    return `Check compliance pack contents against the medication chart twice — at packing AND at final check (two pharmacists for controlled drugs). Stick a flag on any pack with changes (Pharmacy Council NZ compliance-pack SOP).${factorNote}`;
   }
 
   // CD dispensing — Misuse of Drugs Act
   if (stage.includes('controlled') || hasAny(['cd ', 'methadone'])) {
-    return `Review CD SOP under Misuse of Drugs Act/Regulations: register entry before dispensing, two-person check, observed methadone dose where required. Audit CD register this week. Pharmacist-in-charge reviews CD log weekly.${factorNote}`;
+    return `Review your controlled drugs (CD) SOP under the Misuse of Drugs Act/Regulations: log it in the CD register before dispensing, have two people check, observe methadone doses where required. Audit the CD register this week, and the pharmacist-in-charge reviews the log weekly.${factorNote}`;
   }
 
   // Formulation swap
   if (hasAny(['formulation'])) {
-    return `Separate formulations (tab/cap/liquid/IR/SR)${drugRef} on the shelf. Confirm formulation verbally at handout. The dispensary software should warn on formulation swap for the same drug.${factorNote}`;
+    return `Keep different formulations (tablet, capsule, liquid, immediate-release IR, slow-release SR) of ${drugLabel} apart on the shelf. Confirm the formulation with the patient at handout. Set up a software warning when the formulation changes for the same drug.${factorNote}`;
   }
 
   // Counselling / handout
   if (hasAny(['counselling', 'inhaler', 'driving', 'alcohol'])) {
-    return `Pharmacy Council NZ requires counselling for all new medicines. Demonstrate device technique in-store (inhalers, injectables). Document the counselling event in the dispensary software.${factorNote}`;
+    return `Pharmacy Council NZ requires counselling for all new medicines. For inhalers, injectables and other devices, show the patient how to use them in-store. Record that you counselled them in the dispensary software.${factorNote}`;
   }
 
   // Bag mix-up
   if (hasAny(['bag mixed', 'bag missing', 'bag contains extra'])) {
-    return `One-bag-one-patient workflow. Verify patient identifiers at handout. If multi-item bag, show contents to patient and confirm each item against the prescription.${factorNote}`;
+    return `One bag per patient — never mix patients in the same bag. At handout, confirm the patient's name and date of birth. For multi-item bags, show the patient each item and check it against the prescription.${factorNote}`;
   }
 
   // Unspecified / quick log
   if (errors[0]?.includes('unspecified')) {
-    return `This was logged as "submitted in error" or as a quick-log. Discuss the event at the team meeting to decide whether a full record is needed, or remove via Void if it was not a genuine near-miss.${factorNote}`;
+    return `This was logged as "submitted in error" or as a quick-log. Talk through it at the team meeting to decide whether a full record is needed, or remove it via Void if it wasn't a genuine near-miss.${factorNote}`;
   }
 
-  // Fallback — still references the specific stage and factor
+  // Fallback — still references the specific stage
   const stagePart = incident.error_step ? ` at the ${incident.error_step} stage` : '';
-  return `Review the dispensing workflow${drugRef}${stagePart}. Discuss at the next team meeting and agree a specific prevention action aligned with Pharmacy Council NZ practice standards. Document the agreed change.${factorNote}`;
+  return `Look at the dispensing workflow for ${drugLabel}${stagePart}. Talk through it at the next team meeting and agree a specific prevention action. Write down what you decided.${factorNote}`;
 }
 
 export async function generateRecommendation(incident: IncidentData): Promise<string> {
