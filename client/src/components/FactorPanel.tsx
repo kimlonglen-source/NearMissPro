@@ -9,6 +9,9 @@ interface Props {
   data?: FactorAnalysisData;
   /** Cap visible rows on the dashboard; the report shows all. */
   maxRows?: number;
+  /** When true, render without the outer card wrapper — used when the
+      panel is embedded inside another block (e.g. the period summary). */
+  embedded?: boolean;
 }
 
 /**
@@ -23,7 +26,7 @@ interface Props {
  * period" labels are hidden — every factor would be technically "new"
  * and showing it everywhere is just noise.
  */
-export function FactorPanel({ from, to, data: preFetched, maxRows = 5 }: Props) {
+export function FactorPanel({ from, to, data: preFetched, maxRows = 5, embedded = false }: Props) {
   const [data, setData] = useState<FactorAnalysisData | null>(preFetched || null);
   const [loading, setLoading] = useState(!preFetched);
 
@@ -38,7 +41,11 @@ export function FactorPanel({ from, to, data: preFetched, maxRows = 5 }: Props) 
     return () => { cancelled = true; };
   }, [from, to, preFetched]);
 
-  if (loading) return <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 h-32 animate-pulse" />;
+  if (loading) {
+    return embedded
+      ? <div className="h-24 animate-pulse bg-gray-100 rounded" />
+      : <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 h-32 animate-pulse" />;
+  }
   if (!data || data.factors.length === 0) return null;
 
   const visible = data.factors.slice(0, maxRows);
@@ -47,8 +54,9 @@ export function FactorPanel({ from, to, data: preFetched, maxRows = 5 }: Props) 
   // which is repetitive and meaningless for a first review.
   const showComparison = data.previousPeriod.totalIncidents > 0;
 
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+  // Inner content shared between standalone-card mode and embedded mode.
+  const inner = (
+    <>
       <div className="mb-3">
         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
           <Sparkles size={14} className="text-[#0F6E56]" />
@@ -65,6 +73,16 @@ export function FactorPanel({ from, to, data: preFetched, maxRows = 5 }: Props) 
           {data.factors.length - visible.length} more factor{data.factors.length - visible.length === 1 ? '' : 's'} not shown — full list in the printed report.
         </p>
       )}
+    </>
+  );
+
+  // Embedded mode: no card wrapper, no margin — meant to sit inside
+  // another block (e.g. the period summary section of the report).
+  if (embedded) return <div>{inner}</div>;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+      {inner}
     </div>
   );
 }
