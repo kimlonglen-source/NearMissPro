@@ -186,7 +186,7 @@ export function ReportPage() {
         {/* ─── 2. THIS PERIOD ────────────────────────────────
             One section that tells the whole story of the period: closure
             on last meeting's actions, summary + factor breakdown, when
-            errors clustered, weekly trend, and last meeting's notes.
+            near misses clustered, weekly trend, and last meeting's notes.
             Reads top-to-bottom as a single narrative rather than a series
             of overlapping summaries. */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">This period</h2>

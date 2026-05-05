@@ -50,7 +50,7 @@ Use NZ context where it adds real value — at most ONE source per recommendatio
 
 NZ shop-floor language: dispensary software (not "PMS"), script (not "prescription"), pick (not "select"), shelf (not "storage location"), checker / checking pharmacist, blister pack / compliance pack, Pharmac brand, subsidy, NHI, dispense fee, cautionary advisory label.
 
-If this is a clear repeat pattern, you may add ONE short final sentence flagging it — plain, no padding ("This is the third script-entry error this month — raise at next team meeting").`;
+If this is a clear repeat pattern, you may add ONE short final sentence flagging it — plain, no padding ("This is the third script-entry near miss this month — raise at next team meeting"). Always say "near miss" rather than "error" when describing the events themselves; an "error" implies it reached the patient (a dispensing error), which NearMissPro doesn't capture.`;
 
 // ── NZ-grounded stub recommendation ─────────────────────────────
 // Used when ANTHROPIC_API_KEY is not configured. Produces a specific
@@ -634,7 +634,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // agenda owns the meeting flow.
 
   const stubSummaryText = incidentCount === 0
-    ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
+    ? 'No near misses were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than the absence of any.'
     : summaryParts.join(' ').replace(/\s+/g, ' ').trim();
 
   // Agenda — runs the meeting. Each item is action-oriented (a discussion
@@ -745,7 +745,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
 
 Write 3-5 short sentences in plain language. No markdown, no bold, no bullets. British spelling.
 
-Cover, in this order: what dominated the period (drug, error type, or factor), one concrete change to make, and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL.
+Cover, in this order: what dominated the period (drug, near-miss type, or factor), one concrete change to make, and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL. Always say "near miss" when describing the events — these are events caught before reaching the patient, so calling them "errors" is technically incorrect.
 
 Skip preamble like "this period saw" or "it is recommended that". Don't restate counts the report already shows.`,
         messages: [{ role: 'user', content: JSON.stringify({

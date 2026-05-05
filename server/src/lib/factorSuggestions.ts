@@ -10,8 +10,8 @@
 // so a non-pharmacist reader can follow without a glossary.
 
 export const FACTOR_SUGGESTIONS: Record<string, string> = {
-  'High volume period': 'Check whether errors happen more on certain days or times. Adjust the roster, or change how you manage queues at peak times.',
-  'Interruption / distraction': 'Set up a no-interruption zone for the most error-prone steps. The dispensing pharmacist can wear a tabard or display a "do not disturb" sign so the team knows not to interrupt (HQSC distraction-reduction guidance).',
+  'High volume period': 'Check whether near misses happen more on certain days or times. Adjust the roster, or change how you manage queues at peak times.',
+  'Interruption / distraction': 'Set up a no-interruption zone for the dispensing-critical steps. The dispensing pharmacist can wear a tabard or display a "do not disturb" sign so the team knows not to interrupt (HQSC distraction-reduction guidance).',
   'Similar packaging': 'Move the look-alike products apart on the shelf. Use TALLman lettering — write the unique letters BIG, e.g. amLODipine vs amIOdarone. Add a bright warning sticker on each (Medsafe LASA guidance).',
   'Similar drug names': 'Use TALLman lettering on the bin label (e.g. cefaLEXin vs cefacLOR). Set up a popup warning in your dispensary software when these drugs are picked (NZ SALAD list / Medsafe LASA).',
   'Similar patient name': 'Set up a flag in your dispensary software for patients with similar names. At every step, check both the NHI and date of birth (Pharmacy Council NZ two-identifier standard).',
@@ -37,7 +37,7 @@ export function fixFor(factor: string): string {
  * without overwhelming it. Falls back to the full fix if no abridged form
  * is defined. */
 const FACTOR_INLINE_FIXES: Record<string, string> = {
-  'High volume period': 'check whether errors cluster on specific days or times and adjust the roster or queue management at peak',
+  'High volume period': 'check whether near misses cluster on specific days or times and adjust the roster or queue management at peak',
   'Interruption / distraction': 'trial a no-interruption zone during dispensing — e.g. the pharmacist counting wears a tabard or displays a "do not disturb" sign',
   'Similar packaging': 'move look-alike products apart on the shelf, use TALLman lettering (writing the unique letters BIG, e.g. amLODipine vs amIOdarone), and add a bright warning sticker on each',
   'Similar drug names': 'use TALLman lettering on the bin label (e.g. cefaLEXin vs cefacLOR) and set up a popup warning in your dispensary software',

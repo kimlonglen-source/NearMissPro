@@ -15,7 +15,7 @@ interface Props {
 }
 
 /**
- * "What's behind these errors?" — surfaces the top contributing system
+ * "Why near misses happened" — surfaces the top contributing system
  * factors (high volume / interruption / similar packaging etc.) and
  * pairs each with one concrete NZ-grounded suggestion the manager can
  * action. Complements the per-incident view by showing system causes
@@ -60,7 +60,7 @@ export function FactorPanel({ from, to, data: preFetched, maxRows = 5, embedded 
       <div className="mb-3">
         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
           <Sparkles size={14} className="text-[#0F6E56]" />
-          Why errors happened
+          Why near misses happened
         </h3>
       </div>
 

@@ -45,7 +45,7 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
           Did our actions work?
         </h3>
         <p className="text-xs text-gray-500 mt-1.5 leading-snug">
-          This is the first review at your pharmacy — there's no earlier period to compare against yet. From next month, this section will show how each drug + error pattern changed: green ticks for resolved, red arrows for patterns that came back, orange flags for new ones.
+          This is the first review at your pharmacy — there's no earlier period to compare against yet. From next month, this section will show how each near-miss pattern changed: green ticks for resolved, red arrows for patterns that came back, orange flags for new ones.
         </p>
       </div>
     );
@@ -65,7 +65,7 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
             Did our actions work?
           </h3>
           <p className="text-[11px] text-gray-500 mt-0.5">
-            Data — how each drug + error pattern changed vs {fmt(data.previousPeriod.from)} – {fmt(data.previousPeriod.to)}.
+            Data — how each near-miss pattern changed vs {fmt(data.previousPeriod.from)} – {fmt(data.previousPeriod.to)}.
           </p>
         </div>
         <div className="text-right">
