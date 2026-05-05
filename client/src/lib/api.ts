@@ -163,6 +163,9 @@ class Api {
     const q = new URLSearchParams({ from, to }).toString();
     return this.req<HeatmapData>(`/incidents/stats/heatmap?${q}`);
   }
+  getActiveHotspots() {
+    return this.req<{ hotspots: { drug: string; errorType: string; count: number; lastSeen: string | null }[] }>(`/incidents/stats/active-hotspots`);
+  }
 
   // Pattern interventions (shared log per drug+error pair)
   listInterventions(drug: string, errorType: string) {

@@ -1076,6 +1076,9 @@ function HotspotPanel({ drug, errorType, count, days }: {
         <p className="text-xs text-[#633806] leading-snug">
           <span className="font-semibold">Repeat pattern —</span> {drug} with "{errorType}" has come up{' '}
           <span className="font-semibold">{count} times</span> in the last {days} days.
+          {count >= 3 && (
+            <> <span className="font-semibold">Worth telling the pharmacist-in-charge now</span> so they can change something before it happens again.</>
+          )}
         </p>
       </div>
 

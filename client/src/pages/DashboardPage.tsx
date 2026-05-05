@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { LiveHotspotBanner } from '../components/LiveHotspotBanner';
 import { summarizeIncident } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
 import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar } from 'lucide-react';
@@ -171,11 +172,11 @@ export function DashboardPage() {
         <button onClick={() => setPeriodSet(false)} className="text-sm text-gray-500 hover:text-[#0F6E56]">Change dates</button>
       </div>
 
-      {/* Analysis panels (Did our actions work? / Why errors happened /
-          When near misses happen) used to live here. They've been moved
-          to the printed report only — the dashboard's job is the review
-          work itself, not the analysis. The panels duplicated what's in
-          the report and pushed the incident list further down. */}
+      {/* Live mid-month repeat-pattern alert — only renders when there's
+          a (drug, error_type) pair with 3+ incidents in the last 30 days.
+          Sits above the stats grid so the manager sees it the moment they
+          land on the dashboard, and can log an action straight away. */}
+      <LiveHotspotBanner />
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-4">
