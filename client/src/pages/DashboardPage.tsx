@@ -377,42 +377,10 @@ export function DashboardPage() {
         })}
       </div>
 
-      {/* Voided section \u2014 voided incidents are NOT deleted; they stay in
-          the database and can be restored if voided by mistake. The
-          reason typed at void time is shown so the manager can confirm
-          before restoring, and the audit_log captures both the void and
-          the restore for the audit trail. */}
-      {voidedIncidents.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Voided ({voidedIncidents.length})</h3>
-          <p className="text-[11px] text-gray-400 mb-2">Voided incidents are not deleted \u2014 they stay on file with the reason. Tap Restore if one was voided by mistake.</p>
-          <div className="space-y-1.5">
-            {voidedIncidents.map(inc => (
-              <div key={inc.id} className="bg-gray-50 rounded-lg border border-gray-200 px-4 py-2.5">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <XCircle size={14} className="text-red-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-600 flex-1 min-w-0">
-                    {inc.error_types.join(', ')}{inc.drug_name && <> &mdash; {inc.drug_name}</>}
-                  </span>
-                  <span className="text-xs text-gray-400">{new Date(inc.submitted_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</span>
-                  <button
-                    onClick={async () => {
-                      setBusy(true);
-                      try { await api.restoreIncident(inc.id); await load(); } finally { setBusy(false); }
-                    }}
-                    disabled={busy}
-                    className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white text-[#0F6E56] border border-[#0F6E56] hover:bg-[#F0FAF5] disabled:opacity-50">
-                    Restore
-                  </button>
-                </div>
-                {inc.edit_reason && (
-                  <p className="text-xs text-gray-500 italic mt-1.5 pl-6">Reason: {inc.edit_reason}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Voided incidents now live on a dedicated page (/voided) so the
+          dashboard stays focused on the active review work. The dashboard
+          shows a small link in the footer area when there's anything to
+          see. */}
 
       {/* ── Report section — at the bottom ── */}
       {activeIncidents.length > 0 && (
@@ -457,11 +425,18 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Past reports */}
-      <div className="mt-6 text-center">
-        <button onClick={() => nav('/reports')} className="text-sm text-gray-500 hover:text-[#0F6E56] flex items-center gap-1 mx-auto">
+      {/* Past reports + voided incidents — quiet links at the foot of the
+          dashboard. The voided link only appears when there's anything to
+          see; the page itself is at /voided. */}
+      <div className="mt-6 flex flex-col items-center gap-2">
+        <button onClick={() => nav('/reports')} className="text-sm text-gray-500 hover:text-[#0F6E56] flex items-center gap-1">
           <FileText size={14} /> View past reports
         </button>
+        {voidedIncidents.length > 0 && (
+          <button onClick={() => nav('/voided')} className="text-sm text-gray-500 hover:text-[#0F6E56] flex items-center gap-1">
+            <XCircle size={14} /> View voided incidents ({voidedIncidents.length})
+          </button>
+        )}
       </div>
 
       {/* Void modal */}
