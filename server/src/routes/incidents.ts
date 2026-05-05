@@ -620,4 +620,29 @@ router.post('/:id/void', requireRole('manager', 'founder'), async (req: Request,
   } catch { res.status(500).json({ error: 'Failed' }); }
 });
 
+// ── Restore voided incident (manager only) ──────────────────
+// A voided incident is never deleted — its row stays with status='voided'
+// and the void reason. Restore flips status back to 'active' so it
+// counts in analytics again. The audit log captures both the original
+// void and the restore so the trail is complete.
+router.post('/:id/restore', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase.from('incidents')
+      .update({ status: 'active', edit_reason: null })
+      .eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId)
+      .eq('status', 'voided').select().single();
+    if (error) throw error;
+    if (!data) { res.status(404).json({ error: 'Not found or not voided' }); return; }
+
+    await supabase.from('audit_log').insert({
+      pharmacy_id: req.auth!.pharmacyId, action: 'incident_restored',
+      performed_by: 'manager', details: { incident_id: req.params.id },
+    });
+    res.json(data);
+  } catch (err) {
+    console.error('[incidents] restore failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 export default router;

@@ -472,6 +472,36 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     ? `${highRiskIncidents.length} of these involved a high-risk medicine (insulin, anticoagulant, opioid, etc.) — these need extra care.`
     : '';
 
+  // Peak time-of-day and day-of-week — woven into the summary so the
+  // manager doesn't have to flip between paragraphs and the heatmap
+  // to know when errors are clustering.
+  const timeBucketCounts = (incidents || []).reduce<Record<string, number>>((acc, i) => {
+    if (i.time_of_day) acc[i.time_of_day] = (acc[i.time_of_day] || 0) + 1;
+    return acc;
+  }, {});
+  const timeBucketEntries = Object.entries(timeBucketCounts).sort((a, b) => b[1] - a[1]);
+  const dayCounts = (incidents || []).reduce<Record<string, number>>((acc, i) => {
+    const when = i.occurred_at || i.submitted_at;
+    if (!when) return acc;
+    const d = new Date(when as string);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const day = days[d.getDay()];
+    acc[day] = (acc[day] || 0) + 1;
+    return acc;
+  }, {});
+  const dayEntries = Object.entries(dayCounts).sort((a, b) => b[1] - a[1]);
+  let peakLine = '';
+  if (incidentCount >= 3) {
+    const topTime = timeBucketEntries[0];
+    const topDay = dayEntries[0];
+    if (topTime && topTime[1] >= 2) {
+      // Format: "Most happened during Lunch 12-2pm (5 of 10), mostly on Sunday and Monday."
+      const timePart = `Most clustered around ${topTime[0]} (${topTime[1]} of ${incidentCount})`;
+      const dayPart = topDay && topDay[1] >= 2 ? `, mostly on ${topDay[0]}` : '';
+      peakLine = `${timePart}${dayPart}.`;
+    }
+  }
+
   // Compute the previous-period comparison so we can seed the editable
   // "Last period improvements" section with the actually meaningful
   // narrative ("Atorvastatin wrong-strength: 5 → 1, action working")
@@ -589,6 +619,10 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     }
   }
 
+  // When errors clustered (peak time-of-day + day) — woven into the
+  // paragraph so the heatmap insight reads as part of the narrative.
+  if (peakLine) summaryParts.push(peakLine);
+
   // High-risk drug callout — separate sentence so it stands out.
   if (highRiskLine) summaryParts.push(highRiskLine);
 
@@ -601,100 +635,101 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
     : summaryParts.join(' ').replace(/\s+/g, ' ').trim();
 
-  // Agenda — structured to satisfy NZ CQI / regulatory expectations. Each
-  // item maps to one of the standard pillars of a near-miss review:
+  // Agenda — flows in the order an audit-ready CQI meeting would actually
+  // run, with explicit anchors to Pharmacy Council NZ practice standards,
+  // Medsafe guidance, and HQSC quality-improvement principles where they
+  // apply, so the saved report doubles as audit evidence.
   //
-  //   no-blame culture (Pharmacy Council NZ practice standards),
-  //   monitoring effectiveness (HQSC closed-loop QI),
-  //   identifying trends (HQSC),
-  //   root-cause analysis (HQSC, Pharmacy Council standard 1.8),
-  //   evaluating processes / SOP review,
-  //   identifying contributing factors,
-  //   implementing changes,
-  //   staff education and sharing of learnings.
+  // Flow:
+  //   OPEN     — culture + safety framing
+  //   CLOSE    — close the loop on last meeting's actions
+  //   PRESENT  — this period's headline (count, trend, peak time)
+  //   ANALYSE  — chain of events, SOPs, contributing factors
+  //   ACT      — pick one specific change for this month
+  //   ESCALATE — high-risk medicines need extra attention
+  //   LEARN    — training + share with wider team
+  //   DOCUMENT — sign-off + next meeting date
   //
-  // Conditional items only appear when the period has data for them — a
-  // quiet review (no incidents, no high-risk, no recurring concerns)
-  // produces a shorter agenda but the structural pillars (no-blame
-  // framing, education, next-meeting date) always survive.
+  // Items appear only when there's data behind them; a quiet period
+  // collapses to a shorter, still-coherent flow.
   const agendaItems: string[] = [];
 
-  // No-blame culture (always first — sets the tone for every meeting)
-  agendaItems.push('We use anonymised data here — the goal is learning, not blame.');
+  // ── OPEN — no-blame culture (Pharmacy Council NZ CQI principle) ──
+  agendaItems.push('Open: we use anonymised data here — the goal is learning, not blame (Pharmacy Council NZ continuous quality improvement principle).');
 
-  // Monitoring effectiveness of last period's actions
+  // ── CLOSE — close last meeting's loop (HQSC closed-loop QI) ──
   if (lastReport) {
-    agendaItems.push('Did the changes we agreed at the last meeting reduce the patterns we targeted?');
+    agendaItems.push('Last meeting: which changes did we agree, and have the targeted patterns reduced this period?');
   }
 
-  // Identifying trends — headline of this period
+  // ── PRESENT — this period's headline ──
   if (incidentCount > 0) {
     let headline = `This period: ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}`;
     if (prevIncidents && prevIncidents.length > 0) {
-      // Only mention the trend when there's a real previous period to compare
-      // against — saying "up 10 from last period" when last period was zero
-      // is technically correct but misleading on a first review.
       const netDelta = incidentCount - prevIncidents.length;
-      if (netDelta < 0) headline += ` (down ${Math.abs(netDelta)} from last period)`;
-      else if (netDelta > 0) headline += ` (up ${netDelta} from last period)`;
+      if (netDelta < 0) headline += `, down ${Math.abs(netDelta)} from last period`;
+      else if (netDelta > 0) headline += `, up ${netDelta} from last period`;
     }
-    // Only call out a "most affected" pattern when there's actually a pattern
-    // (count >= 2). Calling something "most affected" when it's only one
-    // incident overstates the signal.
+    // Add peak time so the team knows when errors clustered (HQSC distraction-reduction).
+    if (timeBucketEntries.length > 0 && timeBucketEntries[0][1] >= 2) {
+      headline += `, mostly during ${timeBucketEntries[0][0]}`;
+      if (dayEntries.length > 0 && dayEntries[0][1] >= 2) {
+        headline += ` and on ${dayEntries[0][0]}`;
+      }
+    }
     if (topPairLabel && topPairCount >= 2) {
       headline += `. Most affected: ${topPairLabel} (${topPairCount} times)`;
     }
     agendaItems.push(headline + '.');
   }
 
-  // Root cause analysis — only when there's a recurring pattern to walk through.
-  // Walking through "the chain of events" for a single incident isn't useful;
-  // the per-incident recommendation already covers it.
+  // ── ANALYSE — chain of events for the top pattern (root cause analysis,
+  //              Pharmacy Council NZ standard 1.8) ──
   if (topPairLabel && topPairCount >= 2) {
-    agendaItems.push(`Walk through how the ${topPairLabel} incidents happened — what was the chain of events?`);
+    agendaItems.push(`Root cause: walk through how the ${topPairLabel} incidents happened — what was the chain of events? (Pharmacy Council NZ standard 1.8 — clinical decision support)`);
   }
 
-  // Evaluating processes — SOP review (always relevant when there are incidents)
+  // ── ANALYSE — SOP review ──
   if (incidentCount > 0) {
-    agendaItems.push('Were the relevant SOPs followed? Do any need updating?');
+    agendaItems.push('Process check: were the relevant SOPs followed? Do any need updating to prevent recurrence?');
   }
 
-  // Identifying contributing factors — top factor with change prompt
+  // ── ANALYSE — top contributing factor (HQSC system-cause focus) ──
   if (topFactors.length > 0 && topFactors[0][1] >= 2) {
-    agendaItems.push(`Top contributing factor: ${topFactors[0][0]} in ${topFactors[0][1]} of ${incidentCount} incidents. What workspace or process change targets this?`);
+    agendaItems.push(`Top contributing factor: ${topFactors[0][0]} in ${topFactors[0][1]} of ${incidentCount} incidents. What workspace or process change targets this? (HQSC quality-improvement guidance)`);
   }
 
-  // High-risk drug class — Medsafe-aligned vigilance refresh
+  // ── ACKNOWLEDGE — wins (sustains reporting culture) ──
+  if (wins.length > 0) {
+    agendaItems.push(`Acknowledge: ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since we took action — worth thanking the team.`);
+  }
+
+  // ── ADDRESS — recurring concerns (closed-loop accountability) ──
+  if (concerns.length > 0) {
+    agendaItems.push(`Revisit: ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last action hasn't been enough — agree a stronger change today.`);
+  }
+
+  // ── ACT — single specific change (the audit's "what we decided") ──
+  if (incidentCount > 0) {
+    agendaItems.push('Decide one specific change to make this month: an SOP update, a layout change, an additional check step, or a software alert.');
+  }
+
+  // ── ESCALATE — high-risk medicines (Medsafe) ──
   if (highRiskClasses.length > 0) {
     const word = highRiskClasses.length === 1 ? 'class' : 'classes';
-    agendaItems.push(`${highRiskClasses.join(', ')} ${word} involved this period — refresh the safety check protocol for these.`);
+    agendaItems.push(`High-risk medicine ${word} this period: ${highRiskClasses.join(', ')}. Refresh the safety-check protocol for these (Medsafe high-risk medicines guidance).`);
   }
 
-  // Recurring concerns — last period's action wasn't enough
-  if (concerns.length > 0) {
-    agendaItems.push(`${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last meeting's action hasn't been enough — decide a stronger change.`);
-  }
+  // ── LEARN — training + share (Pharmacy Council NZ continuing competence) ──
+  agendaItems.push('Training: does anyone need extra learning on what we discussed? Share the key learning with the wider team (Pharmacy Council NZ continuing competence).');
 
-  // Wins to celebrate — encourages continued reporting and acknowledges good work
-  if (wins.length > 0) {
-    agendaItems.push(`${wins.length} previous pattern${wins.length > 1 ? 's' : ''} have been resolved by the actions we took — worth acknowledging.`);
-  }
-
-  // Implementing changes — force a single specific decision
-  if (incidentCount > 0) {
-    agendaItems.push('Pick one specific change to make this month: SOP update, layout change, additional check step, or software alert.');
-  }
-
-  // Staff education + sharing learnings
-  agendaItems.push('Does anyone need extra training on what we discussed? Share the key learning with the wider team.');
-
-  // Quiet period note (only when no incidents at all)
+  // Quiet-period note (no incidents at all)
   if (incidentCount === 0) {
-    agendaItems.push('No near misses this period — encourage staff to keep reporting. Under-reporting is the bigger risk than a quiet log.');
+    agendaItems.push('Reporting culture: no near misses this period — encourage staff to keep reporting, as under-reporting is the bigger risk than a quiet log.');
   }
 
-  // Always last — captures the documentation requirement (decisions agreed, next date)
-  agendaItems.push('Confirm the changes we agreed today, and set the date for the next review meeting.');
+  // ── DOCUMENT — sign-off + next meeting date (audit trail) ──
+  agendaItems.push('Sign off: confirm the changes we agreed today, sign the staff acknowledgement, and set the date for the next review meeting.');
 
   const stub = {
     summary: stubSummaryText,

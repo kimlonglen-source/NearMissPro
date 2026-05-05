@@ -108,6 +108,7 @@ class Api {
   editIncident(id: string, data: object) { return this.req<object>(`/incidents/${id}`, { method: 'PATCH', body: JSON.stringify(data) }); }
   flagIncident(id: string, note?: string) { return this.req<object>(`/incidents/${id}/flag`, { method: 'POST', body: JSON.stringify({ note }) }); }
   voidIncident(id: string, reason: string) { return this.req<object>(`/incidents/${id}/void`, { method: 'POST', body: JSON.stringify({ reason }) }); }
+  restoreIncident(id: string) { return this.req<object>(`/incidents/${id}/restore`, { method: 'POST' }); }
   getMonthlyCount() { return this.req<{ count: number }>('/incidents/stats/monthly-count'); }
 
   // Options
