@@ -626,32 +626,37 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // High-risk drug callout — separate sentence so it stands out.
   if (highRiskLine) summaryParts.push(highRiskLine);
 
-  // Closing meeting-focus pointer when there's a clear top factor to address.
-  if (incidentCount > 0 && meaningfulFactors.length > 0) {
-    summaryParts.push(`At the meeting, focus on reducing ${meaningfulFactors[0][0].toLowerCase()}.`);
-  }
+  // The closing "At the meeting, focus on X" line was here. It's been
+  // removed because the agenda below already contains the action prompt
+  // ("Decide ONE specific change… what targets X?"), and having both the
+  // summary and the agenda point at the same action made the report feel
+  // like it was repeating itself. Summary now ends with the facts; the
+  // agenda owns the meeting flow.
 
   const stubSummaryText = incidentCount === 0
     ? 'No incidents were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than absence of errors.'
     : summaryParts.join(' ').replace(/\s+/g, ' ').trim();
 
-  // Agenda — flows in the order an audit-ready CQI meeting would actually
-  // run, with explicit anchors to Pharmacy Council NZ practice standards,
-  // Medsafe guidance, and HQSC quality-improvement principles where they
-  // apply, so the saved report doubles as audit evidence.
+  // Agenda — runs the meeting. Each item is action-oriented (a discussion
+  // prompt or a decision to make). The agenda deliberately does NOT
+  // restate the headline numbers, peak times, or factor counts — those
+  // live in the summary above and would just be read twice.
   //
   // Flow:
   //   OPEN     — culture + safety framing
   //   CLOSE    — close the loop on last meeting's actions
-  //   PRESENT  — this period's headline (count, trend, peak time)
-  //   ANALYSE  — chain of events, SOPs, contributing factors
-  //   ACT      — pick one specific change for this month
+  //   ANALYSE  — root cause + SOP review for the top pattern
+  //   ACT      — decide ONE change targeting the top factor
   //   ESCALATE — high-risk medicines need extra attention
+  //   ACKNOWLEDGE — wins worth celebrating
+  //   ADDRESS  — concerns where prior action wasn't enough
   //   LEARN    — training + share with wider team
   //   DOCUMENT — sign-off + next meeting date
   //
-  // Items appear only when there's data behind them; a quiet period
-  // collapses to a shorter, still-coherent flow.
+  // Each conditional item only appears when there's data behind it.
+  // Regulator anchors (Pharmacy Council NZ, Medsafe, HQSC) are kept on
+  // the items where they directly apply, so the saved report doubles as
+  // audit evidence.
   const agendaItems: string[] = [];
 
   // ── OPEN — no-blame culture (Pharmacy Council NZ CQI principle) ──
@@ -659,65 +664,43 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
 
   // ── CLOSE — close last meeting's loop (HQSC closed-loop QI) ──
   if (lastReport) {
-    agendaItems.push('Last meeting: which changes did we agree, and have the targeted patterns reduced this period?');
+    agendaItems.push('Last meeting: did the changes we agreed reduce the patterns we targeted?');
   }
 
-  // ── PRESENT — this period's headline ──
-  if (incidentCount > 0) {
-    let headline = `This period: ${incidentCount} near miss${incidentCount > 1 ? 'es' : ''}`;
-    if (prevIncidents && prevIncidents.length > 0) {
-      const netDelta = incidentCount - prevIncidents.length;
-      if (netDelta < 0) headline += `, down ${Math.abs(netDelta)} from last period`;
-      else if (netDelta > 0) headline += `, up ${netDelta} from last period`;
-    }
-    // Add peak time so the team knows when errors clustered (HQSC distraction-reduction).
-    if (timeBucketEntries.length > 0 && timeBucketEntries[0][1] >= 2) {
-      headline += `, mostly during ${timeBucketEntries[0][0]}`;
-      if (dayEntries.length > 0 && dayEntries[0][1] >= 2) {
-        headline += ` and on ${dayEntries[0][0]}`;
-      }
-    }
-    if (topPairLabel && topPairCount >= 2) {
-      headline += `. Most affected: ${topPairLabel} (${topPairCount} times)`;
-    }
-    agendaItems.push(headline + '.');
-  }
-
-  // ── ANALYSE — chain of events for the top pattern (root cause analysis,
-  //              Pharmacy Council NZ standard 1.8) ──
+  // ── ANALYSE — root cause for the top pattern + SOP review (combined
+  //              so they read as one discussion topic, not two) ──
   if (topPairLabel && topPairCount >= 2) {
-    agendaItems.push(`Root cause: walk through how the ${topPairLabel} incidents happened — what was the chain of events? (Pharmacy Council NZ standard 1.8 — clinical decision support)`);
+    agendaItems.push(`Root cause for ${topPairLabel}: walk through the chain of events. Were the SOPs followed? Do any need updating? (Pharmacy Council NZ standard 1.8 — clinical decision support)`);
+  } else if (incidentCount > 0) {
+    // No single recurring pattern — still review the SOPs against the
+    // incidents in the log.
+    agendaItems.push('SOP review: walk through the incidents in the log. Were the SOPs followed? Do any need updating?');
   }
 
-  // ── ANALYSE — SOP review ──
-  if (incidentCount > 0) {
-    agendaItems.push('Process check: were the relevant SOPs followed? Do any need updating to prevent recurrence?');
-  }
-
-  // ── ANALYSE — top contributing factor (HQSC system-cause focus) ──
+  // ── ACT — decide ONE specific change targeting the top factor.
+  //         Combines the previous "top contributing factor" + "decide
+  //         one change" items so the meeting decides instead of
+  //         describing twice. ──
   if (topFactors.length > 0 && topFactors[0][1] >= 2) {
-    agendaItems.push(`Top contributing factor: ${topFactors[0][0]} in ${topFactors[0][1]} of ${incidentCount} incidents. What workspace or process change targets this? (HQSC quality-improvement guidance)`);
-  }
-
-  // ── ACKNOWLEDGE — wins (sustains reporting culture) ──
-  if (wins.length > 0) {
-    agendaItems.push(`Acknowledge: ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since we took action — worth thanking the team.`);
-  }
-
-  // ── ADDRESS — recurring concerns (closed-loop accountability) ──
-  if (concerns.length > 0) {
-    agendaItems.push(`Revisit: ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last action hasn't been enough — agree a stronger change today.`);
-  }
-
-  // ── ACT — single specific change (the audit's "what we decided") ──
-  if (incidentCount > 0) {
-    agendaItems.push('Decide one specific change to make this month: an SOP update, a layout change, an additional check step, or a software alert.');
+    agendaItems.push(`Decide ONE change for this month: what workspace or process change targets ${topFactors[0][0].toLowerCase()}? Pick from an SOP update, a layout change, an additional check step, or a software alert (HQSC quality-improvement guidance).`);
+  } else if (incidentCount > 0) {
+    agendaItems.push('Decide ONE change for this month: an SOP update, a layout change, an additional check step, or a software alert. Pick the one with the most leverage.');
   }
 
   // ── ESCALATE — high-risk medicines (Medsafe) ──
   if (highRiskClasses.length > 0) {
     const word = highRiskClasses.length === 1 ? 'class' : 'classes';
     agendaItems.push(`High-risk medicine ${word} this period: ${highRiskClasses.join(', ')}. Refresh the safety-check protocol for these (Medsafe high-risk medicines guidance).`);
+  }
+
+  // ── ACKNOWLEDGE — wins (sustains reporting culture) ──
+  if (wins.length > 0) {
+    agendaItems.push(`Acknowledge: ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting — thank the team.`);
+  }
+
+  // ── ADDRESS — recurring concerns (closed-loop accountability) ──
+  if (concerns.length > 0) {
+    agendaItems.push(`Revisit: ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last action hasn't been enough — agree a stronger change today.`);
   }
 
   // ── LEARN — training + share (Pharmacy Council NZ continuing competence) ──
