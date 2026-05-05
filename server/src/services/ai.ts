@@ -662,9 +662,14 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // ── OPEN — no-blame culture (Pharmacy Council NZ CQI principle) ──
   agendaItems.push('Open: we use anonymised data here — the goal is learning, not blame (Pharmacy Council NZ continuous quality improvement principle).');
 
-  // ── CLOSE — close last meeting's loop (HQSC closed-loop QI) ──
+  // ── CLOSE — close last loop using the data, not a remembered agreement.
+  //   The manager has already accepted/modified per-incident
+  //   recommendations during review, so the meeting isn't deciding
+  //   those again. What the meeting DOES need to reflect on is whether
+  //   prior SYSTEM changes have reduced the targeted patterns. The
+  //   "Did our actions work?" panel above answers this directly. ──
   if (lastReport) {
-    agendaItems.push('Last meeting: did the changes we agreed reduce the patterns we targeted?');
+    agendaItems.push('Look at the "Did our actions work?" panel above: which patterns reduced after the changes we made, and which kept happening despite them?');
   }
 
   // ── ANALYSE — root cause for the top pattern + SOP review (combined
@@ -677,14 +682,14 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     agendaItems.push('SOP review: walk through the incidents in the log. Were the SOPs followed? Do any need updating?');
   }
 
-  // ── ACT — decide ONE specific change targeting the top factor.
-  //         Combines the previous "top contributing factor" + "decide
-  //         one change" items so the meeting decides instead of
-  //         describing twice. ──
+  // ── ACT — agree ONE SYSTEM-level change as a team. The manager has
+  //   already actioned per-incident recommendations during review;
+  //   THIS item is the broader workspace/SOP/layout/software change
+  //   that needs team buy-in and someone to own it. ──
   if (topFactors.length > 0 && topFactors[0][1] >= 2) {
-    agendaItems.push(`Decide ONE change for this month: what workspace or process change targets ${topFactors[0][0].toLowerCase()}? Pick from an SOP update, a layout change, an additional check step, or a software alert (HQSC quality-improvement guidance).`);
+    agendaItems.push(`Agree ONE system change for this month — what workspace, SOP, layout, or software change will target ${topFactors[0][0].toLowerCase()}? Decide as a team and assign an owner (HQSC quality-improvement guidance).`);
   } else if (incidentCount > 0) {
-    agendaItems.push('Decide ONE change for this month: an SOP update, a layout change, an additional check step, or a software alert. Pick the one with the most leverage.');
+    agendaItems.push('Agree ONE system change for this month — workspace, SOP, layout, or software. Decide as a team and assign an owner.');
   }
 
   // ── ESCALATE — high-risk medicines (Medsafe) ──
@@ -711,8 +716,13 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     agendaItems.push('Reporting culture: no near misses this period — encourage staff to keep reporting, as under-reporting is the bigger risk than a quiet log.');
   }
 
-  // ── DOCUMENT — sign-off + next meeting date (audit trail) ──
-  agendaItems.push('Sign off: confirm the changes we agreed today, sign the staff acknowledgement, and set the date for the next review meeting.');
+  // ── DOCUMENT — sign-off + next meeting date (audit trail).
+  //   Confirms the SYSTEM change agreed at this meeting (not the
+  //   per-incident decisions, which were already actioned during
+  //   review). The staff acknowledgement evidences that the team
+  //   was briefed on what happened and on the system change going
+  //   forward. ──
+  agendaItems.push('Sign off: write down the system change we agreed today, who owns it, and by when. Sign the staff acknowledgement and set the next meeting date.');
 
   const stub = {
     summary: stubSummaryText,
