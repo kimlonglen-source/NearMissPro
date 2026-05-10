@@ -208,6 +208,22 @@ function nzStubRecommendation(incident: IncidentData): string {
   return `Look at the dispensing workflow for ${drugLabel}${stagePart}. Talk through it at the next team meeting and agree a specific prevention action. Write down what you decided.${factorNote}`;
 }
 
+// Look up the pharmacy size so the AI can adapt its advice — sole-charge
+// pharmacies shouldn't be told to "have a second pharmacist check".
+async function getPharmacySize(pharmacyId: string): Promise<string | null> {
+  try {
+    const { data } = await supabase.from('pharmacies').select('pharmacy_size').eq('id', pharmacyId).single();
+    return (data?.pharmacy_size as string | null) || null;
+  } catch { return null; }
+}
+
+function pharmacySizeContext(size: string | null): string {
+  if (size === 'sole') return 'Pharmacy context: this is a sole-charge pharmacy — only ONE pharmacist on duty. Do NOT recommend "second pharmacist check" or "two-person verification". Suggest solo-workflow controls instead (pre-pick script review, self-check pause, dispensary software prompt, no-interruption zone, paper checklist).';
+  if (size === 'multi') return 'Pharmacy context: this pharmacy has multiple pharmacists rostered together — second-pharmacist checks and two-person verification are realistic options to suggest where appropriate.';
+  // 'pharmacist_plus_tech' or null — generic default.
+  return '';
+}
+
 export async function generateRecommendation(incident: IncidentData): Promise<string> {
   if (!env.anthropicApiKey) {
     const recommendation = nzStubRecommendation(incident);
@@ -218,6 +234,8 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
   try {
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const pharmacySize = await getPharmacySize(incident.pharmacy_id);
+    const sizeNote = pharmacySizeContext(pharmacySize);
 
     const [drugCount, factorCounts] = await Promise.all([
       incident.drug_name
@@ -244,7 +262,7 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 150,
-        system: NZ_SYSTEM_PROMPT,
+        system: sizeNote ? `${NZ_SYSTEM_PROMPT}\n\n${sizeNote}` : NZ_SYSTEM_PROMPT,
         messages: [{
           role: 'user',
           content: JSON.stringify({
@@ -735,19 +753,23 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
 
   if (!env.anthropicApiKey || incidentCount === 0) return stub;
 
+  const summarySize = await getPharmacySize(pharmacyId);
+  const summarySizeNote = pharmacySizeContext(summarySize);
+  const summarySystemBase = `You are a NZ community pharmacy safety advisor writing the period summary for a team-meeting report. Audience is the dispensary team — techs and pharmacists.
+
+Write 3-5 short sentences in plain language. No markdown, no bold, no bullets. British spelling.
+
+Cover, in this order: what dominated the period (drug, near-miss type, or factor), one concrete change to make, and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL. Always say "near miss" when describing the events — these are events caught before reaching the patient, so calling them "errors" is technically incorrect.
+
+Skip preamble like "this period saw" or "it is recommended that". Don't restate counts the report already shows.`;
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6', max_tokens: 500,
-        system: `You are a NZ community pharmacy safety advisor writing the period summary for a team-meeting report. Audience is the dispensary team — techs and pharmacists.
-
-Write 3-5 short sentences in plain language. No markdown, no bold, no bullets. British spelling.
-
-Cover, in this order: what dominated the period (drug, near-miss type, or factor), one concrete change to make, and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL. Always say "near miss" when describing the events — these are events caught before reaching the patient, so calling them "errors" is technically incorrect.
-
-Skip preamble like "this period saw" or "it is recommended that". Don't restate counts the report already shows.`,
+        system: summarySizeNote ? `${summarySystemBase}\n\n${summarySizeNote}` : summarySystemBase,
         messages: [{ role: 'user', content: JSON.stringify({
           incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })),
           previous_period_summary: lastReport?.period_summary,

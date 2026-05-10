@@ -179,8 +179,40 @@ router.post('/founder/login', async (req: Request, res: Response) => {
 });
 
 // ── Current auth ────────────────────────────────────────────
-router.get('/me', authenticate, (req: Request, res: Response) => {
-  res.json(req.auth);
+router.get('/me', authenticate, async (req: Request, res: Response) => {
+  // Enrich with pharmacy-level settings the client wants on first load
+  // so it doesn't have to make a second round-trip. pharmacy_size drives
+  // the AI's tone in recommendations and summaries.
+  let pharmacySize: string | null = null;
+  if (req.auth!.pharmacyId) {
+    const { data } = await supabase.from('pharmacies')
+      .select('pharmacy_size').eq('id', req.auth!.pharmacyId).single();
+    pharmacySize = (data?.pharmacy_size as string | null) || null;
+  }
+  res.json({ ...req.auth, pharmacySize });
+});
+
+// ── Update pharmacy-level settings (manager only) ───────────
+// Single endpoint for whatever pharmacy-level toggles we add over time.
+// Today: pharmacy_size. Returns the saved value so the client can
+// confirm the write rather than trusting its local state.
+router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const body = z.object({
+      pharmacySize: z.enum(['sole', 'pharmacist_plus_tech', 'multi']).nullable().optional(),
+    }).parse(req.body);
+    const updates: Record<string, unknown> = {};
+    if (body.pharmacySize !== undefined) updates.pharmacy_size = body.pharmacySize;
+    if (Object.keys(updates).length === 0) { res.json({ ok: true }); return; }
+    const { data, error } = await supabase.from('pharmacies').update(updates)
+      .eq('id', req.auth!.pharmacyId).select('pharmacy_size').single();
+    if (error) throw error;
+    res.json({ ok: true, pharmacySize: data?.pharmacy_size || null });
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
+    console.error('[auth] pharmacy/settings failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
 });
 
 // ── Founder: create pharmacy ────────────────────────────────

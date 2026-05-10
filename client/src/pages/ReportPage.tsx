@@ -83,6 +83,13 @@ export function ReportPage() {
     }
   };
 
+  // Auto-save on blur — manager doesn't have to remember to click Save.
+  // Only fires when something has actually changed; the Save button stays
+  // as a visible fallback (and shows the saved/error state).
+  const autoSaveOnBlur = () => {
+    if (prevEdited || summaryEdited || agendaEdited) saveEdits();
+  };
+
   const toggleCompleted = async () => {
     if (!report) return;
     const next = !report.locked;
@@ -208,6 +215,7 @@ export function ReportPage() {
           </div>
           {!report.locked ? (
             <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
+              onBlur={autoSaveOnBlur}
               rows={8} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white leading-relaxed" />
           ) : (
             <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
@@ -225,6 +233,7 @@ export function ReportPage() {
             <p className="text-[11px] text-gray-500 mb-2">Notes — what was agreed at the last meeting and how it played out (editable).</p>
             {!report.locked ? (
               <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
+                onBlur={autoSaveOnBlur}
                 rows={3} className="w-full p-2 rounded-lg border border-[#9FE1CB] text-sm bg-white" />
             ) : (
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
@@ -338,7 +347,8 @@ export function ReportPage() {
                   onChange={e => {
                     const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
                     setAgenda(next); setAgendaEdited(true);
-                  }} />
+                  }}
+                  onBlur={autoSaveOnBlur} />
               ) : (
                 <span>{item.text}</span>
               )}
