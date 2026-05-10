@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Key, Shield, Building2, FileText } from 'lucide-react';
+import { Lock, Key, Shield, Building2, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 
 type Tab = 'security' | 'password' | 'pharmacy' | 'audit';
 type PharmacySize = 'sole' | 'pharmacist_plus_tech' | 'multi';
@@ -11,6 +11,63 @@ const SIZE_LABELS: Record<PharmacySize, { title: string; help: string }> = {
   pharmacist_plus_tech: { title: 'Pharmacist + tech', help: 'One pharmacist with one or more technicians.' },
   multi: { title: 'Two or more pharmacists', help: 'Two or more pharmacists rostered together.' },
 };
+
+// Plain-English label for the action column. Falls back to the raw
+// underscore_separated action so new actions still show something readable.
+function auditActionLabel(action: string): string {
+  switch (action) {
+    case 'recommendation_accepted': return 'Recommendation accepted';
+    case 'recommendation_modified': return 'Recommendation modified';
+    case 'recommendation_no_action': return 'Recommendation marked no action';
+    case 'bulk_accept': return 'Bulk-accepted recommendations';
+    case 'incident_voided': return 'Incident voided';
+    case 'incident_restored': return 'Incident restored';
+    case 'incident_edited': return 'Incident edited';
+    case 'phi_suspected': return 'Possible patient identifier in notes';
+    case 'report_generated': return 'Report generated';
+    case 'pin_enabled': return 'Manager PIN enabled';
+    case 'pin_disabled': return 'Manager PIN disabled';
+    case 'pin_changed': return 'Manager PIN changed';
+    case 'password_changed': return 'Password changed';
+    case 'pharmacy_created': return 'Pharmacy created';
+    default: return action.replace(/_/g, ' ');
+  }
+}
+
+// Per-action detail rows for the expanded view. Returns [label, value]
+// pairs in the order to render. Skips fields we don't want surfaced
+// (like raw IDs without a way to navigate to them).
+function auditDetailRows(action: string, details: Record<string, unknown> | null): { label: string; value: string }[] {
+  const out: { label: string; value: string }[] = [];
+  if (!details) return out;
+  const get = (k: string) => {
+    const v = details[k];
+    return v === null || v === undefined ? '' : String(v);
+  };
+  if (action.startsWith('recommendation_')) {
+    if (get('modified_text')) out.push({ label: 'Modified text', value: get('modified_text') });
+    if (get('recommendation_id')) out.push({ label: 'Recommendation ID', value: get('recommendation_id') });
+  } else if (action === 'bulk_accept') {
+    if (get('count')) out.push({ label: 'Count', value: `${get('count')} recommendations` });
+  } else if (action === 'incident_voided' || action === 'incident_edited') {
+    if (get('reason')) out.push({ label: 'Reason', value: get('reason') });
+    if (get('incident_id')) out.push({ label: 'Incident ID', value: get('incident_id') });
+  } else if (action === 'incident_restored') {
+    if (get('incident_id')) out.push({ label: 'Incident ID', value: get('incident_id') });
+  } else if (action === 'phi_suspected') {
+    if (get('incident_id')) out.push({ label: 'Incident ID', value: get('incident_id') });
+    const fields = details.fields;
+    if (fields && typeof fields === 'object') {
+      out.push({ label: 'Fields flagged', value: Object.keys(fields as Record<string, unknown>).join(', ') });
+    }
+  } else if (action === 'report_generated') {
+    if (get('period')) out.push({ label: 'Period', value: get('period') });
+    if (get('report_id')) out.push({ label: 'Report ID', value: get('report_id') });
+  } else if (action === 'pharmacy_created') {
+    if (get('name')) out.push({ label: 'Pharmacy name', value: get('name') });
+  }
+  return out;
+}
 
 export function SettingsPage() {
   const { pharmacyName } = useAuth();
@@ -41,6 +98,7 @@ export function SettingsPage() {
   const [auditTotal, setAuditTotal] = useState(0);
   const [auditPage, setAuditPage] = useState(1);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [auditExpanded, setAuditExpanded] = useState<Record<string, boolean>>({});
   const auditLimit = 50;
 
   useEffect(() => {
@@ -208,15 +266,35 @@ export function SettingsPage() {
           {!auditLoading && auditEntries.length > 0 && (
             <div className="divide-y divide-gray-100 -mx-2">
               {auditEntries.map(e => {
-                const reason = (e.details && typeof e.details === 'object' && 'reason' in e.details) ? String((e.details as Record<string, unknown>).reason || '') : '';
+                const rows = auditDetailRows(e.action, e.details);
+                const hasDetails = rows.length > 0;
+                const expanded = !!auditExpanded[e.id];
                 return (
                   <div key={e.id} className="px-2 py-3 text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-900">{e.action.replace(/_/g, ' ')}</span>
-                      <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-0.5">{e.performed_by || 'system'}</div>
-                    {reason && <div className="text-xs text-gray-700 mt-1 italic">"{reason}"</div>}
+                    <button
+                      onClick={() => hasDetails && setAuditExpanded(s => ({ ...s, [e.id]: !s[e.id] }))}
+                      className={`w-full text-left ${hasDetails ? 'cursor-pointer' : 'cursor-default'}`}
+                      disabled={!hasDetails}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-gray-900 flex items-center gap-1">
+                          {hasDetails && (expanded ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />)}
+                          {auditActionLabel(e.action)}
+                        </span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5 ml-[18px]">{e.performed_by || 'system'}</div>
+                    </button>
+                    {expanded && hasDetails && (
+                      <div className="mt-2 ml-[18px] p-3 bg-gray-50 rounded-lg space-y-1.5">
+                        {rows.map((r, idx) => (
+                          <div key={idx} className="text-xs">
+                            <span className="text-gray-500">{r.label}: </span>
+                            <span className="text-gray-800 break-all">{r.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
