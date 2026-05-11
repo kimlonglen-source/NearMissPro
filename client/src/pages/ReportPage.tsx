@@ -328,7 +328,9 @@ export function ReportPage() {
           {agenda.map((item, i) => (
             <li key={i} className="text-sm leading-relaxed pl-1">
               {!report.locked ? (
-                <input type="text" value={item.text} className="input-field inline-block w-full text-sm"
+                <textarea value={item.text}
+                  className="w-full text-sm leading-relaxed p-2 rounded-lg border border-gray-200 bg-white resize-none"
+                  rows={Math.max(2, Math.ceil(item.text.length / 90))}
                   onChange={e => {
                     const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
                     setAgenda(next); setAgendaEdited(true);
