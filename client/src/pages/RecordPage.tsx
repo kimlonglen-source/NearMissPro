@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { detectPHI, phiHint, PhiKind } from '../lib/phi';
 import {
   STAGES, WHERE_CAUGHT, CAUGHT_DEFAULT_BY_STAGE, FACTORS,
-  FACTORS_DEFAULT_VISIBLE, FORMULATIONS, triggersFor,
+  FACTORS_DEFAULT_VISIBLE, FORMULATIONS, triggersFor, isNonDrugError,
 } from '../lib/taxonomy';
 import { NZ_DRUG_LIST, isKnownNzDrug, readDrugHistory, recordDrugInHistory } from '../lib/nzDrugList';
 import { checkHighRisk } from '../lib/highRiskDrugs';
@@ -191,7 +191,11 @@ export function RecordPage() {
 
   // True when the chosen error type implies a specific medicine — drug name
   // becomes required so reports and pattern matching can group properly.
-  const drugRequired = triggers.drug || triggers.strength || triggers.quantity || triggers.formulation;
+  // Default to required as soon as an error type is picked; only relaxed when
+  // EVERY selected error type is genuinely not about a medicine (wrong
+  // patient, NHI mismatch, register not signed, bag mix-up, etc).
+  const drugRequired = draft.errorTypes.length > 0
+    && !draft.errorTypes.every(e => isNonDrugError(e));
 
   // Autocomplete suggestions: pharmacy's own drug history first (encourages
   // canonical spelling propagation), then the bundled NZ list as fallback.
@@ -688,8 +692,13 @@ export function RecordPage() {
                 )}
               </div>
 
-              {/* Layer 3 — intended → given, inline when triggered */}
-              {(triggers.drug || triggers.strength || triggers.quantity || triggers.formulation) && (
+              {/* Layer 3 — drug + intended → given fields.
+                  Shown whenever a drug is involved (drugRequired) OR a
+                  specific trigger field fires. Previously only rendered
+                  when a trigger fired, so cases like "Wrong directions"
+                  and "Wrong pack size" never asked for the drug, which
+                  meant headlines on the report dropped the medicine. */}
+              {(drugRequired || triggers.drug || triggers.strength || triggers.quantity || triggers.formulation) && (
                 <div className="space-y-3 pt-2 border-t border-gray-100">
                   {highRisk && (
                     <div className="rounded-xl border-2 border-[#C84B4B] bg-[#FCEBEB] p-3">

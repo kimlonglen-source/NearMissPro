@@ -208,3 +208,23 @@ export function triggersFor(subLabel: string): {
     formulation: l.includes('formulation'),
   };
 }
+
+// Some error types are about the patient, the script, or paperwork \u2014
+// not about a specific medicine. For everything else, the drug name
+// should be captured so reports group properly and an inspector can
+// trace "what drug was involved" without opening every incident.
+export function isNonDrugError(subLabel: string): boolean {
+  const l = subLabel.toLowerCase();
+  return (
+    l.includes('wrong patient') ||
+    l.includes('nhi') ||
+    l.includes('hpi') ||
+    l.includes('subsidy') ||
+    l.includes('register not signed') ||
+    l.includes('bag mixed') ||
+    l.includes('bag missing') ||
+    l.includes('pso treated') ||
+    l.includes('wrong day') ||
+    l.includes('handed to wrong')
+  );
+}
