@@ -198,8 +198,14 @@ export function ReportPage() {
 
         {/* What worked — wins lead so the meeting opens positively. */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What worked</h2>
-        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
-        {prevSummary && (
+        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={5} />
+        {/* "Notes from last meeting" only shows when the manager has
+            typed something. We deliberately suppress the auto-generated
+            comparison narrative here (phrases like "X more near misses
+            than last period…", "Resolved:", "Improving:") because that
+            text duplicates the "Did our actions work?" panel above and
+            was the single biggest source of wall-of-text on this page. */}
+        {prevSummary && !/(more|fewer|same total|resolved:|improving:|needs attention:)/i.test(prevSummary) && (
           <div className="mb-8">
             <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
               Notes from last meeting

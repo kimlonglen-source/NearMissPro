@@ -725,10 +725,12 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const stub = {
     summary: stubSummaryText,
     agenda: agendaItems,
-    // "Last period improvements" now seeded with the actual outcome of
-    // last meeting's decisions, so the pharmacist can simply tweak rather
-    // than recall and re-type each month. Editable as before.
-    previousSummary: comparisonNarrative || (lastReport ? 'Review the actions agreed at the last meeting and assess whether they have reduced incidents.' : undefined),
+    // "Notes from last meeting" is left blank for the manager to type
+    // their own observations. We previously seeded it with the
+    // comparison narrative, but that duplicates the "Did our actions
+    // work?" panel and clutters the report. A small placeholder is
+    // shown only when there's a prior report but nothing else to say.
+    previousSummary: lastReport ? undefined : undefined,
   };
 
   if (!env.anthropicApiKey || incidentCount === 0) return stub;
