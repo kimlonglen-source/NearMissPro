@@ -174,103 +174,83 @@ export function ReportPage() {
         </div>
         <div className="h-[2px] bg-[#0F6E56] mb-6" />
 
-        {/* ─── 1. AT A GLANCE ─────────────────────────────────── */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">At a glance</h2>
-        <div className="grid grid-cols-4 gap-3 mb-8">
-          {[
-            { label: 'Total incidents', value: activeIncidents.length },
-            { label: 'Actions taken', value: actionsCount },
-            { label: 'Reviewed', value: activeIncidents.filter(i => i.recommendations?.[0]?.manager_outcome).length },
-            { label: 'Peak risk time', value: peakTime },
-          ].map(s => (
-            <div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
-              <div className="text-lg font-bold text-gray-900">{s.value}</div>
-              <div className="text-[11px] text-gray-500">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* ─── 2. THIS PERIOD ────────────────────────────────
-            One section that tells the whole story of the period: closure
-            on last meeting's actions, summary + factor breakdown, when
-            near misses clustered, weekly trend, and last meeting's notes.
-            Reads top-to-bottom as a single narrative rather than a series
-            of overlapping summaries. */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">This period</h2>
-
-        {/* Did our actions work? — closed-loop check goes first.
-            The most important question in a CQI review is whether the changes
-            agreed at the last meeting actually reduced what they were meant to. */}
-        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
-
-        {/* Summary — single flowing paragraph that contains the count,
-            top patterns, top contributing factors WITH their fixes
-            inline, and the meeting focus. (The inner label was 'This
-            period' which collided with the section header above; renamed
-            to 'Summary' so the hierarchy reads cleanly.) */}
-        <div className={`rounded-xl p-4 mb-4 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#C8E6D8]'}`} style={{ background: '#F8FAF8' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold uppercase text-gray-600">Summary</span>
-            {summaryEdited && <EditBadge />}
-          </div>
+        {/* Opening narrative — the manager reads this aloud to start the
+            meeting. Replaces the "At a glance" + "This period" headers
+            (which read like a table of contents). Numbers move below
+            into a small inline strip. */}
+        <div className="mb-2">
           {!report.locked ? (
             <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
               onBlur={autoSaveOnBlur}
-              rows={8} className="w-full p-2 rounded-lg border border-[#C8E6D8] text-sm bg-white leading-relaxed" />
+              rows={6} className="w-full p-3 rounded-lg border border-gray-200 text-[15px] bg-white leading-relaxed text-gray-800" />
           ) : (
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
+            <p className="text-[15px] text-gray-800 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
           )}
+          {summaryEdited && <div className="mt-1"><EditBadge /></div>}
         </div>
 
-        {/* Last period improvements — what came out of the last meeting */}
+        <p className="text-xs text-gray-500 mb-8">
+          {activeIncidents.length} near miss{activeIncidents.length === 1 ? '' : 'es'}
+          {' · '}{actionsCount} action{actionsCount === 1 ? '' : 's'} taken
+          {' · '}{activeIncidents.filter(i => i.recommendations?.[0]?.manager_outcome).length} of {activeIncidents.length} reviewed
+          {peakTime !== '-' && <> · peak time {peakTime}</>}
+        </p>
+
+        {/* What worked — wins lead so the meeting opens positively. */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What worked</h2>
+        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={20} />
         {prevSummary && (
-          <div className={`rounded-xl p-4 mb-8 ${!report.locked ? 'border-2 border-[#1D9E75]' : 'border border-[#9FE1CB]'}`} style={{ background: '#F0FAF5' }}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-[#1D9E75]" />
-              <span className="text-xs font-semibold uppercase text-gray-600">Last period improvements</span>
+          <div className="mb-8">
+            <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
+              Notes from last meeting
               {prevEdited && <EditBadge />}
-            </div>
-            <p className="text-[11px] text-gray-500 mb-2">Notes — what was agreed at the last meeting and how it played out (editable).</p>
+            </p>
             {!report.locked ? (
               <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
                 onBlur={autoSaveOnBlur}
-                rows={3} className="w-full p-2 rounded-lg border border-[#9FE1CB] text-sm bg-white" />
+                rows={3} className="w-full p-3 rounded-lg border border-gray-200 text-sm bg-white leading-relaxed" />
             ) : (
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
             )}
           </div>
         )}
 
-        {/* When are near misses happening? — workflow heatmap.
-            Now sits under "This period" so the heatmap, factors, and
-            summary all read as one continuous story about the period.
-            (The factor breakdown that used to live here has moved up
-            into the "This period" panel.) */}
-        <WorkflowHeatmap from={report.period_start} to={report.period_end} />
+        {/* What to look at — patterns + heatmap + trend. Each visual gets
+            a short caption above it so it can be read aloud without the
+            manager having to interpret the chart on the spot. */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What to look at</h2>
 
-        {/* Pattern alerts — drug + error-type hotspots in this period */}
         {report.pattern_alerts && report.pattern_alerts.length > 0 && (
-          <div className="rounded-xl p-4 mb-6 border-2 border-[#BA7517]" style={{ background: '#FDF8EB' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-[#BA7517]" />
-              <span className="text-xs font-semibold uppercase text-gray-600">Pattern alerts</span>
-            </div>
+          <div className="mb-6">
+            <p className="text-sm text-gray-700 mb-3">
+              {report.pattern_alerts.length === 1
+                ? <>One drug + error pair came up more than once this period.</>
+                : <>{report.pattern_alerts.length} drug + error pairs came up more than once this period.</>}
+              {' '}Discuss a prevention action for each.
+            </p>
             <ul className="space-y-3">
               {report.pattern_alerts.map((p, i) => (
                 <PatternAlertRow key={i} drug={p.drug} errorType={p.errorType} count={p.count} />
               ))}
             </ul>
-            <p className="text-[11px] text-[#633806]/70 mt-3">Discuss a specific prevention action for each at the team meeting.</p>
           </div>
         )}
 
-        {/* Trend chart — weekly incidents over the reporting period */}
+        <p className="text-sm text-gray-700 mb-2">When are near misses happening? The heatmap below shows when in the week they cluster.</p>
+        <WorkflowHeatmap from={report.period_start} to={report.period_end} />
+
         {report.trend_data && report.trend_data.length > 0 && (
-          <ReportTrendChart data={report.trend_data} />
+          <>
+            <p className="text-sm text-gray-700 mb-2 mt-4">Weekly trend — are we logging more or fewer near misses each week?</p>
+            <ReportTrendChart data={report.trend_data} />
+          </>
         )}
 
-        {/* ─── 4. INCIDENT LOG ───────────────────────────────── */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Incident log</h2>
+        {/* Near misses this period — unified card style (one grey border
+            on every card; high-risk via red chip + bold drug name, not
+            via a coloured border) so the visual rhythm stays even down
+            the page. */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Near misses this period</h2>
         {activeIncidents.length === 0 ? (
           <p className="text-sm text-gray-400 mb-6">No active incidents in this period.</p>
         ) : (
@@ -278,28 +258,26 @@ export function ReportPage() {
             {activeIncidents.map(inc => {
               const rec = inc.recommendations?.[0];
               const outcome = rec?.manager_outcome;
+              const highRiskInfo = checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug);
+              const isHighRisk = !!highRiskInfo;
               return (
-                <div key={inc.id} className={`border rounded-xl p-4 ${checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug) ? 'border-l-4 border-l-[#C84B4B] border-t-gray-200 border-r-gray-200 border-b-gray-200' : 'border-gray-200'}`}>
-                  {/* Outcome badge — top right, doesn't compete with the headline */}
+                <div key={inc.id} className="border border-gray-200 rounded-xl p-4">
                   {outcome && (
                     <span className={`float-right text-xs font-semibold px-2 py-0.5 rounded-full ${outcome === 'accepted' ? 'bg-[#E1F5EE] text-[#085041]' : outcome === 'modified' ? 'bg-[#EEEDFE] text-[#3C3489]' : 'bg-gray-100 text-gray-600'}`}>
-                    {outcome === 'accepted' ? '\u2713 Accepted' : outcome === 'modified' ? '\u2713 Modified' : '\u2713 No action'}
-                  </span>
-                  )}
-
-                  {/* High-risk drug class chip \u2014 Medsafe-aligned */}
-                  {(checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug)) && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F] mb-1.5">
-                      ⚠ High-risk · {(checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug))!.category}
+                      {outcome === 'accepted' ? '✓ Accepted' : outcome === 'modified' ? '✓ Modified' : '✓ No action'}
                     </span>
                   )}
 
-                  {/* Plain-English headline \u2014 what happened, in one line */}
-                  <p className="text-sm font-semibold text-gray-900 leading-snug mb-1.5 pr-24">
+                  {isHighRisk && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F] mb-1.5">
+                      ⚠ High-risk · {highRiskInfo!.category}
+                    </span>
+                  )}
+
+                  <p className={`text-sm leading-snug mb-1.5 pr-24 ${isHighRisk ? 'font-bold text-[#791F1F]' : 'font-semibold text-gray-900'}`}>
                     {summarizeIncident(inc)}
                   </p>
 
-                  {/* Compact metadata line — date, where caught, time, factors all on one row */}
                   <p className="text-xs text-gray-500 leading-snug mb-3">
                     {fmtDate(inc.occurred_at || inc.submitted_at)}
                     {inc.where_caught && <> · Caught at {inc.where_caught}</>}
@@ -311,11 +289,10 @@ export function ReportPage() {
                     <p className="text-xs text-gray-500 italic mb-3 pl-2 border-l-2 border-gray-200">"{inc.notes}"</p>
                   )}
 
-                  {/* Recommendation */}
                   {rec && (
                     <div className="bg-gray-50 rounded-lg p-3 mt-2">
                       <div className="text-xs font-semibold text-gray-600 mb-1">
-                        {outcome === 'modified' ? 'Recommendation \u2014 modified by pharmacist-in-charge' : outcome === 'accepted' ? 'Recommendation accepted' : outcome === 'no_action' ? 'No change needed' : 'Recommendation'}
+                        {outcome === 'modified' ? 'Recommendation — modified by pharmacist-in-charge' : outcome === 'accepted' ? 'Recommendation accepted' : outcome === 'no_action' ? 'No change needed' : 'Recommendation'}
                       </div>
                       {outcome === 'modified' && rec.manager_text ? (
                         <>
@@ -334,16 +311,17 @@ export function ReportPage() {
           </div>
         )}
 
-        {/* ─── 5. ACTION PLAN ────────────────────────────────── */}
+        {/* What we'll do — agenda. Numbered list, no boxes around each
+            row — those made the page feel like a form. */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">
-          Action plan — staff meeting agenda
+          What we'll do
           {agendaEdited && <EditBadge />}
         </h2>
-        <ol className="list-decimal list-inside space-y-2 mb-6">
+        <ol className="list-decimal list-outside ml-5 space-y-3 mb-6">
           {agenda.map((item, i) => (
-            <li key={i} className="text-sm">
+            <li key={i} className="text-sm leading-relaxed pl-1">
               {!report.locked ? (
-                <input type="text" value={item.text} className="input-field inline-block w-[calc(100%-2rem)] text-sm"
+                <input type="text" value={item.text} className="input-field inline-block w-full text-sm"
                   onChange={e => {
                     const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
                     setAgenda(next); setAgendaEdited(true);
@@ -376,10 +354,10 @@ export function ReportPage() {
           <tbody>
             {ackRows.map((row, i) => (
               <tr key={i}>
-                <td className="border border-gray-200 px-3 py-2">{row.name || '\u00A0'}</td>
-                <td className="border border-gray-200 px-3 py-2">{row.role || '\u00A0'}</td>
-                <td className="border border-gray-200 px-3 py-2">{'\u00A0'}</td>
-                <td className="border border-gray-200 px-3 py-2">{'\u00A0'}</td>
+                <td className="border border-gray-200 px-3 py-2">{row.name || '&nbsp;'}</td>
+                <td className="border border-gray-200 px-3 py-2">{row.role || '&nbsp;'}</td>
+                <td className="border border-gray-200 px-3 py-2">{'&nbsp;'}</td>
+                <td className="border border-gray-200 px-3 py-2">{'&nbsp;'}</td>
               </tr>
             ))}
           </tbody>
