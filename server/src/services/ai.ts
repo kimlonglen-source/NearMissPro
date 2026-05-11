@@ -655,113 +655,72 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     ? 'No near misses were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than the absence of any.'
     : summaryParts.join(' ').replace(/\s+/g, ' ').trim();
 
-  // Agenda — runs the meeting. Each item is action-oriented (a discussion
-  // prompt or a decision to make). The agenda deliberately does NOT
-  // restate the headline numbers, peak times, or factor counts — those
-  // live in the summary above and would just be read twice.
+  // Agenda — runs the meeting. Four items, max. A community pharmacy
+  // team meeting is ~30 minutes; nine bullet points just gets skipped.
+  // Conditional detail is woven INSIDE each item rather than spawning
+  // a new bullet.
   //
   // Flow:
-  //   OPEN     — culture + safety framing
-  //   CLOSE    — close the loop on last meeting's actions
-  //   ANALYSE  — root cause + SOP review for the top pattern
-  //   ACT      — decide ONE change targeting the top factor
-  //   ESCALATE — high-risk medicines need extra attention
-  //   ACKNOWLEDGE — wins worth celebrating
-  //   ADDRESS  — concerns where prior action wasn't enough
-  //   LEARN    — training + share with wider team
-  //   DOCUMENT — sign-off + next meeting date
-  //
-  // Each conditional item only appears when there's data behind it.
-  // Regulator anchors (Pharmacy Council NZ, Medsafe, HQSC) are kept on
-  // the items where they directly apply, so the saved report doubles as
-  // audit evidence.
+  //   1. OPEN     — culture + what worked since last meeting
+  //   2. REVIEW   — top pattern, other near misses, high-risk
+  //   3. DECIDE   — ONE system change + revisit recurring concerns
+  //   4. CLOSE    — training, sign-off, next meeting date
   const agendaItems: string[] = [];
 
-  // ── OPEN — no-blame culture (Pharmacy Council NZ CQI principle) ──
-  agendaItems.push('Open: we use anonymised data here — the goal is learning, not blame (Pharmacy Council NZ continuous quality improvement principle).');
-
-  // ── CLOSE — close last loop using the data, not a remembered agreement.
-  //   The manager has already accepted/modified per-incident
-  //   recommendations during review, so the meeting isn't deciding
-  //   those again. What the meeting DOES need to reflect on is whether
-  //   prior SYSTEM changes have reduced the targeted patterns. The
-  //   "Did our actions work?" panel above answers this directly. ──
-  if (lastReport) {
-    agendaItems.push('Look at the "Did our actions work?" panel above: which patterns reduced after the changes we made, and which kept happening despite them?');
-  }
-
-  // ── ANALYSE — root cause for the top pattern + SOP review (combined
-  //              so they read as one discussion topic, not two) ──
-  if (topPairLabel && topPairCount >= 2) {
-    agendaItems.push(`Root cause for ${topPairLabel}: walk through the chain of events. Were the SOPs followed? Do any need updating? (Pharmacy Council NZ standard 1.8 — clinical decision support)`);
-  } else if (incidentCount > 0) {
-    // No single recurring pattern — still review the SOPs against the
-    // incidents in the log.
-    agendaItems.push('SOP review: walk through the incidents in the log. Were the SOPs followed? Do any need updating?');
-  }
-
-  // ── WALK THROUGH the rest of the log so OTHER near misses get the
-  //   same scrutiny as the top pattern. Without this, single incidents
-  //   (which can still be the most clinically serious — e.g. a one-off
-  //   methotrexate or warfarin near miss) get skipped. ──
-  const remainingAfterTop = incidentCount - topPairCount;
-  if (incidentCount > 0) {
-    if (topPairLabel && topPairCount >= 2 && remainingAfterTop >= 1) {
-      agendaItems.push(`Walk through the other ${remainingAfterTop} near miss${remainingAfterTop > 1 ? 'es' : ''} in the log. For each, was the action the manager took right? Anything to do differently next time?`);
-    } else if (!topPairLabel || topPairCount < 2) {
-      agendaItems.push(`Walk through each near miss in the log. For each, was the action the manager took right? Anything to do differently next time?`);
-    }
-  }
-
-  // ── ACT — agree ONE SYSTEM-level change as a team. The manager has
-  //   already actioned per-incident recommendations during review;
-  //   THIS item is the broader workspace/SOP/layout/software change
-  //   that needs team buy-in and someone to own it. ──
-  if (topFactors.length > 0 && topFactors[0][1] >= 2) {
-    agendaItems.push(`Agree ONE system change for this month — what workspace, SOP, layout, or software change will target ${topFactors[0][0].toLowerCase()}? Decide as a team and assign an owner (HQSC quality-improvement guidance).`);
-  } else if (incidentCount > 0) {
-    agendaItems.push('Agree ONE system change for this month — workspace, SOP, layout, or software. Decide as a team and assign an owner.');
-  }
-
-  // ── ESCALATE — high-risk medicines (Medsafe) ──
-  if (highRiskClasses.length > 0) {
-    const word = highRiskClasses.length === 1 ? 'class' : 'classes';
-    agendaItems.push(`High-risk medicine ${word} this period: ${highRiskClasses.join(', ')}. Refresh the safety-check protocol for these (Medsafe high-risk medicines guidance).`);
-  }
-
-  // ── ACKNOWLEDGE — always appears, so wins aren't lost behind
-  //   problem items. Three flavours depending on what we can claim:
-  //     1. Patterns resolved since last meeting (strongest)
-  //     2. Patterns reducing (in-progress)
-  //     3. No comparison data — credit the reporting culture itself ──
+  // ── 1. OPEN: no-blame framing + acknowledge wins (inline) ──
+  let openItem = 'Open the meeting: anonymised data, no blame — the goal is learning (Pharmacy Council NZ continuous quality improvement).';
   if (wins.length > 0) {
-    agendaItems.push(`What worked: ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting — thank the team and note what changed so we don't lose it.`);
+    openItem += ` Thank the team — ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting.`;
   } else if (recurring.length > 0) {
-    agendaItems.push(`What's working: ${recurring.length} pattern${recurring.length > 1 ? 's are' : ' is'} reducing — the action is helping but not done. Keep going.`);
+    openItem += ` ${recurring.length} pattern${recurring.length > 1 ? 's are' : ' is'} reducing — the action is helping but not done.`;
   } else if (incidentCount > 0) {
-    agendaItems.push(`What worked: ${incidentCount} near miss${incidentCount > 1 ? 'es were' : ' was'} caught and reported this period — the team kept flagging things, which is what keeps patients safe.`);
+    openItem += ` ${incidentCount} near miss${incidentCount > 1 ? 'es were' : ' was'} reported this period — the team is flagging things, which is what keeps patients safe.`;
+  }
+  agendaItems.push(openItem);
+
+  // ── 2. REVIEW: walk through the log (top pattern + the rest) ──
+  //   High-risk medicines woven in as a sentence rather than a new
+  //   bullet so the meeting flows naturally from one big "review"
+  //   discussion instead of three separate ones. ──
+  if (incidentCount > 0) {
+    let reviewItem = 'Walk through the log';
+    const remainingAfterTop = incidentCount - topPairCount;
+    if (topPairLabel && topPairCount >= 2) {
+      reviewItem += `: start with ${topPairLabel} (${topPairCount} this period) — root cause and SOPs`;
+      if (remainingAfterTop >= 1) {
+        reviewItem += `, then the other ${remainingAfterTop} near miss${remainingAfterTop > 1 ? 'es' : ''}`;
+      }
+      reviewItem += '. For each, was the action the manager took right?';
+    } else {
+      reviewItem += '. For each near miss, was the action the manager took right? Anything to do differently?';
+    }
+    if (highRiskClasses.length > 0) {
+      reviewItem += ` Pay extra attention to the high-risk medicines (${highRiskClasses.join(', ')}) — Medsafe protocol applies.`;
+    }
+    agendaItems.push(reviewItem);
   }
 
-  // ── ADDRESS — recurring concerns (closed-loop accountability) ──
-  if (concerns.length > 0) {
-    agendaItems.push(`Revisit: ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last action hasn't been enough — agree a stronger change today.`);
+  // ── 3. DECIDE: ONE system change + revisit concerns ──
+  if (incidentCount > 0) {
+    let decideItem;
+    if (topFactors.length > 0 && topFactors[0][1] >= 2) {
+      decideItem = `Agree ONE system change for this month — what workspace, SOP, layout, or software change will target ${topFactors[0][0].toLowerCase()}? Decide as a team and assign an owner.`;
+    } else {
+      decideItem = 'Agree ONE system change for this month — workspace, SOP, layout, or software. Decide as a team and assign an owner.';
+    }
+    if (concerns.length > 0) {
+      decideItem += ` Also revisit ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last action hasn't been enough.`;
+    }
+    agendaItems.push(decideItem);
   }
 
-  // ── LEARN — training + share (Pharmacy Council NZ continuing competence) ──
-  agendaItems.push('Training: does anyone need extra learning on what we discussed? Share the key learning with the wider team (Pharmacy Council NZ continuing competence).');
-
-  // Quiet-period note (no incidents at all)
+  // Quiet period — no incidents at all. Single item instead of items 2 + 3.
   if (incidentCount === 0) {
-    agendaItems.push('Reporting culture: no near misses this period — encourage staff to keep reporting, as under-reporting is the bigger risk than a quiet log.');
+    agendaItems.push('No near misses this period — encourage staff to keep reporting. Under-reporting is the bigger risk than a quiet log.');
   }
 
-  // ── DOCUMENT — sign-off + next meeting date (audit trail).
-  //   Confirms the SYSTEM change agreed at this meeting (not the
-  //   per-incident decisions, which were already actioned during
-  //   review). The staff acknowledgement evidences that the team
-  //   was briefed on what happened and on the system change going
-  //   forward. ──
-  agendaItems.push('Sign off: write down the system change we agreed today, who owns it, and by when. Sign the staff acknowledgement and set the next meeting date.');
+  // ── 4. CLOSE: training + sign off + next meeting (one item) ──
+  agendaItems.push('Close: anyone need extra learning? Write down the change we agreed today, who owns it, and by when. Sign the staff acknowledgement and set the next meeting date.');
 
   const stub = {
     summary: stubSummaryText,
