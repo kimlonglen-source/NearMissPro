@@ -667,8 +667,11 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   //   4. CLOSE    — training, sign-off, next meeting date
   const agendaItems: string[] = [];
 
-  // ── 1. OPEN: no-blame framing + acknowledge wins (inline) ──
-  let openItem = 'Open the meeting: anonymised data, no blame — the goal is learning (Pharmacy Council NZ continuous quality improvement).';
+  // ── 1. OPEN: read the summary aloud + no-blame framing +
+  //   acknowledge wins (inline). Reading the summary to the team is
+  //   the manager's first job in the meeting; without it the staff
+  //   walk in cold and the rest of the agenda doesn't land. ──
+  let openItem = 'Open the meeting: read the Period Summary above aloud to the team. Remind everyone the data is anonymised — the goal is learning, not blame (Pharmacy Council NZ continuous quality improvement).';
   if (wins.length > 0) {
     openItem += ` Thank the team — ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting.`;
   } else if (recurring.length > 0) {

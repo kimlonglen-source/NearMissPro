@@ -361,10 +361,10 @@ export function ReportPage() {
           <tbody>
             {ackRows.map((row, i) => (
               <tr key={i}>
-                <td className="border border-gray-200 px-3 py-2">{row.name || '&nbsp;'}</td>
-                <td className="border border-gray-200 px-3 py-2">{row.role || '&nbsp;'}</td>
-                <td className="border border-gray-200 px-3 py-2">{'&nbsp;'}</td>
-                <td className="border border-gray-200 px-3 py-2">{'&nbsp;'}</td>
+                <td className="border border-gray-200 px-3 py-2">{row.name || ' '}</td>
+                <td className="border border-gray-200 px-3 py-2">{row.role || ' '}</td>
+                <td className="border border-gray-200 px-3 py-2">{' '}</td>
+                <td className="border border-gray-200 px-3 py-2">{' '}</td>
               </tr>
             ))}
           </tbody>
