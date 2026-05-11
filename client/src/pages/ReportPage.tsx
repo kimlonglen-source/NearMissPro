@@ -290,7 +290,7 @@ export function ReportPage() {
                   {/* High-risk drug class chip \u2014 Medsafe-aligned */}
                   {(checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug)) && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F] mb-1.5">
-                      \u26a0 High-risk \u00b7 {(checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug))!.category}
+                      ⚠ High-risk · {(checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug))!.category}
                     </span>
                   )}
 

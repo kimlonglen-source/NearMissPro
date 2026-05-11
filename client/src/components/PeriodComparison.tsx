@@ -54,7 +54,16 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
 
   const fmt = (s: string) => new Date(s).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
   const netDelta = data.currentPeriod.totalIncidents - data.previousPeriod.totalIncidents;
-  const visible = data.patterns.slice(0, maxRows);
+
+  // Split into two groups so wins and concerns don't blur together.
+  // Good news: resolved + reduced. Needs attention: new + increased.
+  // Unchanged is hidden when we have other rows; shown alone when it's all there is.
+  const good = data.patterns.filter(p => p.direction === 'resolved' || p.direction === 'reduced');
+  const bad = data.patterns.filter(p => p.direction === 'new' || p.direction === 'increased');
+  const same = data.patterns.filter(p => p.direction === 'same');
+  const goodVisible = good.slice(0, maxRows);
+  const badVisible = bad.slice(0, maxRows);
+  const hiddenCount = Math.max(0, good.length - goodVisible.length) + Math.max(0, bad.length - badVisible.length);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
@@ -65,7 +74,7 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
             Did our actions work?
           </h3>
           <p className="text-[11px] text-gray-500 mt-0.5">
-            Data — how each near-miss pattern changed vs {fmt(data.previousPeriod.from)} – {fmt(data.previousPeriod.to)}.
+            How each near-miss pattern changed vs {fmt(data.previousPeriod.from)} – {fmt(data.previousPeriod.to)}.
           </p>
         </div>
         <div className="text-right">
@@ -81,12 +90,34 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
           </div>
         </div>
       </div>
-      <ul className="space-y-1.5">
-        {visible.map(p => <ComparisonRow key={`${p.drug}|${p.errorType}`} p={p} />)}
-      </ul>
-      {data.patterns.length > visible.length && (
+
+      {goodVisible.length > 0 && (
+        <div className="mb-3">
+          <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#085041] mb-1.5">Good news — {good.length === 1 ? '1 pattern' : `${good.length} patterns`} improving</h4>
+          <ul className="space-y-1.5">
+            {goodVisible.map(p => <ComparisonRow key={`${p.drug}|${p.errorType}`} p={p} />)}
+          </ul>
+        </div>
+      )}
+
+      {badVisible.length > 0 && (
+        <div className={goodVisible.length > 0 ? 'pt-3 border-t border-gray-100' : ''}>
+          <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#791F1F] mb-1.5">Needs attention — {bad.length === 1 ? '1 pattern' : `${bad.length} patterns`} to discuss</h4>
+          <ul className="space-y-1.5">
+            {badVisible.map(p => <ComparisonRow key={`${p.drug}|${p.errorType}`} p={p} />)}
+          </ul>
+        </div>
+      )}
+
+      {good.length === 0 && bad.length === 0 && same.length > 0 && (
+        <ul className="space-y-1.5">
+          {same.slice(0, maxRows).map(p => <ComparisonRow key={`${p.drug}|${p.errorType}`} p={p} />)}
+        </ul>
+      )}
+
+      {hiddenCount > 0 && (
         <p className="text-[11px] text-gray-400 mt-2">
-          {data.patterns.length - visible.length} more pattern{data.patterns.length - visible.length === 1 ? '' : 's'} not shown — see the printed report for the full list.
+          {hiddenCount} more pattern{hiddenCount === 1 ? '' : 's'} not shown — see the printed report for the full list.
         </p>
       )}
     </div>
