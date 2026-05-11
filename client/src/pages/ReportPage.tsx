@@ -174,10 +174,11 @@ export function ReportPage() {
         </div>
         <div className="h-[2px] bg-[#0F6E56] mb-6" />
 
-        {/* Opening narrative — the manager reads this aloud to start the
-            meeting. Replaces the "At a glance" + "This period" headers
-            (which read like a table of contents). Numbers move below
-            into a small inline strip. */}
+        {/* Period summary — labelled so the reader knows what this
+            opening paragraph is. Heading uses the same teal small-caps
+            style as every other section so the rhythm down the page
+            stays consistent. */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">Period summary</h2>
         <div className="mb-2">
           {!report.locked ? (
             <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
