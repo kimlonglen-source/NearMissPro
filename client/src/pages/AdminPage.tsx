@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 
-type Tab = 'overview' | 'other' | 'pharmacies' | 'audit';
+type Tab = 'overview' | 'other' | 'pharmacies';
 type Health = { totalPharmacies: number; activePharmacies: number; inactivePharmacies: number; incidentsThisMonth: number; incidentsLastMonth: number; otherEntriesPending: number };
 type OtherEntry = { id: string; category: string; text: string; review_outcome: string | null; created_at: string; pharmacy_id: string };
 type Pharmacy = { id: string; name: string; subscription_status: string; created_at: string; incidentsThisMonth: number; lastActive: string | null };
-type AuditEntry = { id: string; action: string; actor: string; target: string; detail: string; created_at: string };
 
 const TABS: { key: Tab; label: string; subtitle: string }[] = [
   { key: 'overview', label: 'Overview', subtitle: 'How NearMissPro is doing across all your pharmacies.' },
   { key: 'other', label: 'Suggestions', subtitle: 'Things staff typed into "Other" boxes — patterns to fold into the app.' },
   { key: 'pharmacies', label: 'Pharmacies', subtitle: 'Every pharmacy account: status, activity, onboarding, suspend/reinstate.' },
-  { key: 'audit', label: 'Audit log', subtitle: 'Every action across every pharmacy — proof for inspectors.' },
 ];
 
 const CHECKLIST = ['Account created', 'Manager first login', 'PWA installed', 'First near miss submitted', 'First review completed'];
@@ -30,39 +28,11 @@ function statusPill(s: string) {
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${map[s] || 'bg-gray-100 text-gray-600'}`}>{s.charAt(0).toUpperCase() + s.slice(1)}</span>;
 }
 
-// Plain-English label for the audit action column. Mirrors the manager
-// Settings → Audit log so the same vocabulary is used everywhere a
-// regulator might read.
-function auditActionLabel(action: string): string {
-  switch (action) {
-    case 'recommendation_accepted': return 'Recommendation accepted';
-    case 'recommendation_modified': return 'Recommendation modified';
-    case 'recommendation_no_action': return 'Recommendation marked no action';
-    case 'bulk_accept': return 'Bulk-accepted recommendations';
-    case 'incident_voided': return 'Near miss voided';
-    case 'incident_restored': return 'Near miss restored';
-    case 'incident_edited': return 'Near miss edited';
-    case 'phi_suspected': return 'Possible patient identifier in notes';
-    case 'report_generated': return 'Report generated';
-    case 'pin_enabled': return 'Manager PIN enabled';
-    case 'pin_disabled': return 'Manager PIN disabled';
-    case 'pin_changed': return 'Manager PIN changed';
-    case 'password_changed': return 'Password changed';
-    case 'pharmacy_created': return 'Pharmacy created';
-    case 'founder_login': return 'Founder logged in';
-    default: return action.replace(/_/g, ' ');
-  }
-}
-
 export function AdminPage() {
   const [tab, setTab] = useState<Tab>('overview');
   const [health, setHealth] = useState<Health | null>(null);
   const [others, setOthers] = useState<OtherEntry[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
-  const [audit, setAudit] = useState<AuditEntry[]>([]);
-  const [auditTotal, setAuditTotal] = useState(0);
-  const [auditPage, setAuditPage] = useState(1);
-  const [auditExpanded, setAuditExpanded] = useState<Record<string, boolean>>({});
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', password: '', managerEmail: '', address: '', licenceNumber: '' });
   const [busy, setBusy] = useState(false);
@@ -71,12 +41,10 @@ export function AdminPage() {
   const loadHealth = () => api.getAdminHealth().then(d => setHealth(d as unknown as Health));
   const loadOthers = () => api.getOtherEntries().then(d => setOthers(d as unknown as OtherEntry[]));
   const loadPharmacies = () => api.getPharmacyStats().then(d => setPharmacies(d as unknown as Pharmacy[]));
-  const loadAudit = (p = 1) => api.getAuditLog(p).then(d => { setAudit(d.entries as unknown as AuditEntry[]); setAuditTotal(d.total); });
 
   useEffect(() => { loadHealth(); }, []);
   useEffect(() => { if (tab === 'other') loadOthers(); }, [tab]);
   useEffect(() => { if (tab === 'pharmacies') loadPharmacies(); }, [tab]);
-  useEffect(() => { if (tab === 'audit') loadAudit(auditPage); }, [tab, auditPage]);
 
   const trend = health && health.incidentsLastMonth > 0
     ? Math.round(((health.incidentsThisMonth - health.incidentsLastMonth) / health.incidentsLastMonth) * 100) : 0;
@@ -266,57 +234,6 @@ export function AdminPage() {
         </div>
       )}
 
-      {/* Audit Log */}
-      {tab === 'audit' && (
-        <div>
-          {audit.length === 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <p className="text-sm text-gray-500">No audit entries yet.</p>
-              <p className="text-xs text-gray-400 mt-1">Every action — voids, restores, recommendations, founder logins — will appear here as people use the app.</p>
-            </div>
-          )}
-          {audit.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-              {audit.map(e => {
-                const expanded = !!auditExpanded[e.id];
-                const hasDetail = !!e.detail && e.detail.trim().length > 0;
-                return (
-                  <div key={e.id} className="px-4 py-3 text-sm">
-                    <button
-                      onClick={() => hasDetail && setAuditExpanded(s => ({ ...s, [e.id]: !s[e.id] }))}
-                      className={`w-full text-left ${hasDetail ? 'cursor-pointer' : 'cursor-default'}`}
-                      disabled={!hasDetail}
-                    >
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <span className="font-medium text-gray-900 flex items-center gap-1">
-                          {hasDetail && (expanded ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />)}
-                          {auditActionLabel(e.action)}
-                        </span>
-                        <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5 ml-[18px]">
-                        {e.actor || 'system'}{e.target ? ` · ${e.target}` : ''}
-                      </div>
-                    </button>
-                    {expanded && hasDetail && (
-                      <div className="mt-2 ml-[18px] p-3 bg-gray-50 rounded-lg text-xs text-gray-700 break-all">
-                        {e.detail}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {auditTotal > 50 && (
-            <div className="flex justify-center gap-2 mt-4">
-              <button className="btn-outline text-xs" disabled={auditPage <= 1} onClick={() => setAuditPage(p => p - 1)}>Previous</button>
-              <span className="text-sm text-gray-500 py-1">Page {auditPage}</span>
-              <button className="btn-outline text-xs" disabled={audit.length < 50} onClick={() => setAuditPage(p => p + 1)}>Next</button>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
