@@ -700,6 +700,19 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     agendaItems.push('SOP review: walk through the incidents in the log. Were the SOPs followed? Do any need updating?');
   }
 
+  // ── WALK THROUGH the rest of the log so OTHER near misses get the
+  //   same scrutiny as the top pattern. Without this, single incidents
+  //   (which can still be the most clinically serious — e.g. a one-off
+  //   methotrexate or warfarin near miss) get skipped. ──
+  const remainingAfterTop = incidentCount - topPairCount;
+  if (incidentCount > 0) {
+    if (topPairLabel && topPairCount >= 2 && remainingAfterTop >= 1) {
+      agendaItems.push(`Walk through the other ${remainingAfterTop} near miss${remainingAfterTop > 1 ? 'es' : ''} in the log. For each, was the action the manager took right? Anything to do differently next time?`);
+    } else if (!topPairLabel || topPairCount < 2) {
+      agendaItems.push(`Walk through each near miss in the log. For each, was the action the manager took right? Anything to do differently next time?`);
+    }
+  }
+
   // ── ACT — agree ONE SYSTEM-level change as a team. The manager has
   //   already actioned per-incident recommendations during review;
   //   THIS item is the broader workspace/SOP/layout/software change
@@ -716,9 +729,17 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     agendaItems.push(`High-risk medicine ${word} this period: ${highRiskClasses.join(', ')}. Refresh the safety-check protocol for these (Medsafe high-risk medicines guidance).`);
   }
 
-  // ── ACKNOWLEDGE — wins (sustains reporting culture) ──
+  // ── ACKNOWLEDGE — always appears, so wins aren't lost behind
+  //   problem items. Three flavours depending on what we can claim:
+  //     1. Patterns resolved since last meeting (strongest)
+  //     2. Patterns reducing (in-progress)
+  //     3. No comparison data — credit the reporting culture itself ──
   if (wins.length > 0) {
-    agendaItems.push(`Acknowledge: ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting — thank the team.`);
+    agendaItems.push(`What worked: ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting — thank the team and note what changed so we don't lose it.`);
+  } else if (recurring.length > 0) {
+    agendaItems.push(`What's working: ${recurring.length} pattern${recurring.length > 1 ? 's are' : ' is'} reducing — the action is helping but not done. Keep going.`);
+  } else if (incidentCount > 0) {
+    agendaItems.push(`What worked: ${incidentCount} near miss${incidentCount > 1 ? 'es were' : ' was'} caught and reported this period — the team kept flagging things, which is what keeps patients safe.`);
   }
 
   // ── ADDRESS — recurring concerns (closed-loop accountability) ──

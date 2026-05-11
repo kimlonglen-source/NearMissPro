@@ -133,6 +133,7 @@ class Api {
   getReports() { return this.req<Record<string, unknown>[]>('/reports'); }
   getReport(id: string) { return this.req<Record<string, unknown>>(`/reports/${id}`); }
   updateReport(id: string, data: object) { return this.req<object>(`/reports/${id}`, { method: 'PATCH', body: JSON.stringify(data) }); }
+  regenerateReport(id: string) { return this.req<Record<string, unknown>>(`/reports/${id}/regenerate`, { method: 'POST' }); }
   emailReport(id: string) { return this.req<object>(`/reports/${id}/email`, { method: 'POST' }); }
 
   // Admin

@@ -64,6 +64,41 @@ router.patch('/:id', async (req: Request, res: Response) => {
   } catch { res.status(500).json({ error: 'Failed' }); }
 });
 
+// ── Regenerate AI sections (summary, agenda, previous-period notes,
+//    pattern alerts, trend) for an existing report using current data
+//    and the current agenda generator. The period and any manager-edited
+//    fields the user has saved get overwritten, so this is only safe to
+//    expose when the report is still in 'Pending review' (not locked). ──
+router.post('/:id/regenerate', async (req: Request, res: Response) => {
+  try {
+    const { data: existing } = await supabase.from('reports').select('*')
+      .eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId).single();
+    if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+    if (existing.locked) { res.status(400).json({ error: 'Report is locked — re-open it to regenerate.' }); return; }
+
+    const [{ summary, agenda, previousSummary }, hotspots, trend] = await Promise.all([
+      generatePeriodSummary(req.auth!.pharmacyId, existing.period_start, existing.period_end),
+      detectDrugErrorHotspots(req.auth!.pharmacyId, existing.period_start, existing.period_end),
+      getTrendSeries(req.auth!.pharmacyId, existing.period_start, existing.period_end),
+    ]);
+
+    const { data: updated, error } = await supabase.from('reports')
+      .update({
+        period_summary: summary,
+        previous_period_summary: previousSummary || null,
+        agenda_items: agenda.map(text => ({ text, edited: false })),
+        pattern_alerts: hotspots,
+        trend_data: trend,
+      })
+      .eq('id', req.params.id).select().single();
+    if (error) throw error;
+    res.json(updated);
+  } catch (err) {
+    console.error('Regenerate report:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // ── List reports ────────────────────────────────────────────
 router.get('/', async (req: Request, res: Response) => {
   try {
