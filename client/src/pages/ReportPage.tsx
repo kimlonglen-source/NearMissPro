@@ -181,9 +181,18 @@ export function ReportPage() {
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">Period summary</h2>
         <div className="mb-2">
           {!report.locked ? (
-            <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
-              onBlur={autoSaveOnBlur}
-              rows={6} className="w-full p-3 rounded-lg border border-gray-200 text-[15px] bg-white leading-relaxed text-gray-800" />
+            <>
+              {/* Editable view on screen — auto-grows with content so
+                  the full text is always visible (was rows={6}, which
+                  cut off long summaries). */}
+              <textarea value={periodSummary} onChange={e => { setPeriodSummary(e.target.value); setSummaryEdited(true); }}
+                onBlur={autoSaveOnBlur}
+                rows={Math.max(6, Math.ceil(periodSummary.length / 90))}
+                className="no-print w-full p-3 rounded-lg border border-gray-200 text-[15px] bg-white leading-relaxed text-gray-800" />
+              {/* Print fallback — paragraph so the FULL summary prints,
+                  not just the textarea's visible rows. */}
+              <p className="hidden print:block text-[15px] text-gray-800 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
+            </>
           ) : (
             <p className="text-[15px] text-gray-800 leading-relaxed whitespace-pre-wrap">{periodSummary || 'No summary generated.'}</p>
           )}
@@ -213,9 +222,13 @@ export function ReportPage() {
               {prevEdited && <EditBadge />}
             </p>
             {!report.locked ? (
-              <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
-                onBlur={autoSaveOnBlur}
-                rows={3} className="w-full p-3 rounded-lg border border-gray-200 text-sm bg-white leading-relaxed" />
+              <>
+                <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
+                  onBlur={autoSaveOnBlur}
+                  rows={Math.max(3, Math.ceil(prevSummary.length / 90))}
+                  className="no-print w-full p-3 rounded-lg border border-gray-200 text-sm bg-white leading-relaxed" />
+                <p className="hidden print:block text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
+              </>
             ) : (
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
             )}
@@ -324,24 +337,35 @@ export function ReportPage() {
           What we'll do
           {agendaEdited && <EditBadge />}
         </h2>
-        <ol className="list-decimal list-outside ml-5 space-y-3 mb-6">
+        {/* Flex layout instead of <ol> + <li> so the number stays
+            aligned with the FIRST line of each agenda item even when
+            the textarea wraps to multiple rows. Was: numbers floated
+            to the bottom of the box because <li> let the textarea
+            push everything down. */}
+        <div className="space-y-3 mb-6">
           {agenda.map((item, i) => (
-            <li key={i} className="text-sm leading-relaxed pl-1">
-              {!report.locked ? (
-                <textarea value={item.text}
-                  className="w-full text-sm leading-relaxed p-2 rounded-lg border border-gray-200 bg-white resize-none"
-                  rows={Math.max(2, Math.ceil(item.text.length / 90))}
-                  onChange={e => {
-                    const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
-                    setAgenda(next); setAgendaEdited(true);
-                  }}
-                  onBlur={autoSaveOnBlur} />
-              ) : (
-                <span>{item.text}</span>
-              )}
-            </li>
+            <div key={i} className="flex gap-3 items-start">
+              <span className="text-sm font-medium text-gray-500 pt-2 select-none">{i + 1}.</span>
+              <div className="flex-1">
+                {!report.locked ? (
+                  <>
+                    <textarea value={item.text}
+                      className="no-print w-full text-sm leading-relaxed p-2 rounded-lg border border-gray-200 bg-white resize-none"
+                      rows={Math.max(2, Math.ceil(item.text.length / 90))}
+                      onChange={e => {
+                        const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
+                        setAgenda(next); setAgendaEdited(true);
+                      }}
+                      onBlur={autoSaveOnBlur} />
+                    <p className="hidden print:block text-sm leading-relaxed">{item.text}</p>
+                  </>
+                ) : (
+                  <p className="text-sm leading-relaxed">{item.text}</p>
+                )}
+              </div>
+            </div>
           ))}
-        </ol>
+        </div>
         {!report.locked && (
           <button onClick={() => { setAgenda([...agenda, { text: '', edited: true }]); setAgendaEdited(true); }}
             className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add item</button>
