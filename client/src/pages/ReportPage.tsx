@@ -8,7 +8,7 @@ import { FactorPanel } from '../components/FactorPanel';
 import { WorkflowHeatmap } from '../components/WorkflowHeatmap';
 import { summarizeIncident } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
-import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface Incident {
   id: string; error_types: string[]; drug_name?: string; dispensed_drug?: string;
@@ -97,25 +97,6 @@ export function ReportPage() {
     setReport({ ...report, locked: next });
   };
 
-  const [regenerating, setRegenerating] = useState(false);
-  const handleRegenerate = async () => {
-    if (!report || regenerating) return;
-    if (!confirm('Regenerate the summary, "Last period improvements", agenda, patterns, and trend using the latest incident data? Any unsaved edits to these sections will be overwritten — your accepted/modified recommendations on individual incidents stay as they are.')) return;
-    setRegenerating(true);
-    try {
-      const fresh = await api.regenerateReport(report.id);
-      setReport(fresh as unknown as Report);
-      setPrevSummary((fresh.previous_period_summary as string) || '');
-      setPeriodSummary((fresh.period_summary as string) || '');
-      setAgenda((fresh.agenda_items as { text: string; edited: boolean }[]) || []);
-      setPrevEdited(false); setSummaryEdited(false); setAgendaEdited(false);
-    } catch (err) {
-      alert('Regenerate failed. ' + (err instanceof Error ? err.message : ''));
-    } finally {
-      setRegenerating(false);
-    }
-  };
-
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin text-[#0F6E56]" size={32} /></div>;
   if (!report) return <div className="text-center py-12 text-gray-500">Report not found</div>;
 
@@ -160,12 +141,6 @@ export function ReportPage() {
           <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-[#FAEEDA] text-[#633806]">
             Pending review
           </span>
-        )}
-        {!report.locked && (
-          <button onClick={handleRegenerate} disabled={regenerating}
-            className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200">
-            {regenerating ? <><Loader2 size={14} className="animate-spin" /> Regenerating…</> : <><RefreshCw size={14} /> Regenerate</>}
-          </button>
         )}
         <button onClick={toggleCompleted}
           className={`btn text-sm ${report.locked ? 'bg-gray-50 text-gray-700 border border-gray-200' : 'bg-[#0F6E56] text-white'}`}>
