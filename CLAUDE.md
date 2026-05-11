@@ -48,15 +48,46 @@ Goal: turn anonymous near-miss logs into a regulator-friendly CQI (continuous qu
 
 - Patient-reached gate at start of recording
 - Smart drug autocomplete (pharmacy history + bundled ~200 NZ Pharmac drugs)
+- **Drug name now required for almost every error type** unless the error is genuinely not about a medicine (wrong patient, NHI mismatch, register not signed, bag mix-up, PSO paperwork). Logic in `client/src/lib/taxonomy.ts:isNonDrugError`.
 - High-risk drug warnings (insulin, warfarin, methotrexate, opioids, NTI drugs)
 - Hotspot panel + mid-month repeat-pattern banner with one-tap action logging
 - PHI scanner on the notes field (flags NHI, DOB, phone, full names)
 - Dashboard: stats, trend strip, plain-English incident headlines, inline Accept/Modify/No-change/Void
 - Dedicated `/voided` page with Restore
-- Period report: At-a-glance / Summary / Last period improvements / heatmap / pattern alerts / weekly trend / incident log / action plan agenda / sign-off table
+- Period report (`ReportPage.tsx`) restructured into a top-to-bottom meeting script:
+  - PERIOD SUMMARY (opening paragraph the manager reads aloud + one inline stats line)
+  - WHAT WORKED (PeriodComparison panel split into "Good news" / "Needs attention", capped at 5 rows; notes from last meeting only show if manually typed — auto-fill removed)
+  - WHAT TO LOOK AT (pattern alerts + captioned heatmap + captioned trend)
+  - NEAR MISSES THIS PERIOD (unified card style; high-risk via red chip + bold red text, NOT a coloured left border)
+  - WHAT WE'LL DO (4-item agenda max; item 1 includes "read the Period Summary above aloud")
+  - SIGN-OFF (acknowledgement table)
+- Every editable field has a `no-print` textarea + `print:block hidden` paragraph sibling, so printing captures full text not the textarea's visible rows.
 - AI per-incident recommendations + period summary (NZ-grounded, plain language)
-- Settings tabs: Security (PIN), Password, Pharmacy size (sole/tech/multi — shapes AI advice), Audit log (expandable for details)
+- Settings tabs: Security (PIN), Password, Pharmacy size (sole/tech/multi — shapes AI prompt in `services/ai.ts`), Audit log (expandable rows with plain-English action labels)
+- Founder page (`AdminPage.tsx`): Overview / Suggestions / Pharmacies. Audit tab was removed deliberately — regulators inspect the pharmacy, not the vendor; per-pharmacy audit covers them.
 - Auto-save on blur for the three editable report fields
+
+## Seed scripts (test data)
+
+Two scripts, both tag rows with `[SEED]` in the notes column for cleanup.
+
+- `npm -w server run seed` — drops 32 near misses spanning 3 months + current month, plus 2 locked historical reports. Atorvastatin pattern decreases 5→3→1→0 to showcase "Did our actions work?".
+- `npm -w server run seed-fresh-month` — drops 14 reviewed near misses into the current month and immediately generates a fresh report using the live generator (picks up latest layout + agenda).
+
+Cleanup later in Supabase SQL Editor:
+```
+delete from incidents where notes like '[SEED]%';
+delete from reports where generated_by = 'seed';
+```
+
+## DB migrations to apply on a fresh install
+
+In order, in Supabase SQL Editor:
+1. `supabase/schema.sql`
+2. `supabase/migrate_workflow_stage.sql` (Layer 1/2/3 taxonomy)
+3. `supabase/migrate_pharmacy_size.sql` (adds `pharmacy_size` column)
+4. `supabase/migrate_rename_pack_to_compliance_pack.sql` (relabels old "pack" rows to "compliance pack")
+5. Any other `migrate_*.sql` files in `supabase/`
 
 ## Compliance anchors
 
@@ -71,6 +102,15 @@ Pharmacy Council NZ, Medsafe, HQSC, Te Whatu Ora, NZ Formulary, NZULM, Pharmac, 
 - Search/filter on long lists
 - Real dispensary-software integration
 - Replace `founder123` with a real founder accounts table (security debt before any real deploy)
+- Founder-level audit-log UI (backend still records everything; tab was removed)
+- "Regenerate" button on a report (was built then removed — managers don't actually need it day-to-day)
+
+## Things that bit us — don't repeat
+
+- **JSX text doesn't process JS escape codes.** Writing `⚠` as JSX text renders the literal six characters. Use the actual character (⚠) or wrap in `{'⚠'}`.
+- **`cp server/.env.example server/.env` silently overwrites.** Real env values for Supabase live only in the user's `server/.env` — always have him `cat server/.env` first.
+- **`npm run dev` runs both client and server.** A crash in the server (e.g. missing Supabase URL after an .env wipe) leaves the client running but the browser shows JSON-parse errors when API calls hit the proxy.
+- **The seed script's historical reports have static agendas.** They will NOT reflect changes to the agenda generator. To see current-generator output, run `seed-fresh-month` or generate a new report through the UI.
 
 ## How to update this file
 
