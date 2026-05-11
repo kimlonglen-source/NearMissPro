@@ -115,10 +115,10 @@ export const STAGES: Stage[] = [
     label: 'Compliance pack packing',
     subErrors: [
       { label: 'Wrong day / time slot', common: true },
-      { label: 'Wrong drug in pack', common: true },
-      { label: "Wrong patient's pack", common: true },
-      { label: 'Missing dose from pack', common: true },
-      { label: 'Extra dose in pack', common: true },
+      { label: 'Wrong drug in compliance pack', common: true },
+      { label: "Wrong patient's compliance pack", common: true },
+      { label: 'Missing dose from compliance pack', common: true },
+      { label: 'Extra dose in compliance pack', common: true },
     ],
   },
 ];

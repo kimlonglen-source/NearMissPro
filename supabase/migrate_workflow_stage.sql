@@ -126,8 +126,8 @@ INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
 
 -- Compliance pack packing
 INSERT INTO checkbox_options (category, group_name, label, sort_order) VALUES
-  ('error_type', 'Compliance pack packing', 'Wrong day / time slot',                1),
-  ('error_type', 'Compliance pack packing', 'Wrong drug in pack',                   2),
-  ('error_type', 'Compliance pack packing', 'Wrong patient''s pack',                3),
-  ('error_type', 'Compliance pack packing', 'Missing dose from pack',               4),
-  ('error_type', 'Compliance pack packing', 'Extra dose in pack',                   5);
+  ('error_type', 'Compliance pack packing', 'Wrong day / time slot',                       1),
+  ('error_type', 'Compliance pack packing', 'Wrong drug in compliance pack',               2),
+  ('error_type', 'Compliance pack packing', 'Wrong patient''s compliance pack',            3),
+  ('error_type', 'Compliance pack packing', 'Missing dose from compliance pack',           4),
+  ('error_type', 'Compliance pack packing', 'Extra dose in compliance pack',               5);
