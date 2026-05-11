@@ -7,7 +7,8 @@
     "dev": "node --loader tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed": "node --loader tsx src/scripts/seed-test-data.ts"
+    "seed": "node --loader tsx src/scripts/seed-test-data.ts",
+    "seed-fresh-month": "node --loader tsx src/scripts/seed-fresh-month.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
