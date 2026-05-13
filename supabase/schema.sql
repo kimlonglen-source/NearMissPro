@@ -171,6 +171,30 @@ CREATE POLICY checkbox_write ON checkbox_options FOR INSERT WITH CHECK (current_
 CREATE POLICY checkbox_update ON checkbox_options FOR UPDATE USING (current_setting('app.role', true) = 'founder');
 
 -- ============================================================
+-- DATA API GRANTS (service_role)
+--
+-- From May 30 2026, Supabase no longer auto-grants new tables in
+-- the public schema to API roles. From October 30 2026, the same
+-- applies to all existing projects on any new table.
+--
+-- NearMissPro's Express server uses the service_role key for every
+-- database call (server-side only — the client never holds it), so
+-- we grant service_role full CRUD on every app table. Anon and
+-- authenticated roles get NOTHING — there is no direct client→DB
+-- traffic by design.
+-- ============================================================
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON pharmacies            TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON incidents             TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON recommendations       TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON reports               TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON pattern_interventions TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON checkbox_options      TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON other_entries         TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON audit_log             TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;
+
+-- ============================================================
 -- SEED DATA
 -- ============================================================
 
