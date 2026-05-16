@@ -11,6 +11,53 @@ router.use(authenticate);
 // original as drug_label for display.
 function drugKey(d: string): string { return d.trim().toLowerCase(); }
 
+// Error-type-aware stub used when ANTHROPIC_API_KEY isn't set. Each
+// branch suggests a SYSTEM-level change (workspace / SOP / software /
+// register) rather than a per-incident fix. Order matters — more
+// specific checks first.
+function stubSuggestion(drug: string, errorType: string): string {
+  const e = errorType.toLowerCase();
+  const d = drug || 'this medicine';
+
+  if (e.includes('register not signed') || e.includes('cd register')) {
+    return `Move the CD register to a clip next to the safe with a "sign before the drug leaves" prompt, require two-person sign-off on every ${d} dispense, and audit the register weekly (Misuse of Drugs Regulations).`;
+  }
+  if (e.includes('allergy')) {
+    return `Block allergy alert dismissal in the dispensary software unless a typed reason is entered. The pharmacist-in-charge reviews the override log weekly (Pharmacy Council NZ standard 1.8).`;
+  }
+  if (e.includes('wrong strength')) {
+    return `Use colour-coded bins on the shelf to separate ${d} strengths, and make the strength stand out on the dispensing label (bold/large). Flag unusual doses at data entry.`;
+  }
+  if (e.includes('wrong drug') || e.includes('look-alike') || e.includes('sound-alike')) {
+    return `Move ${d} away from look-alike items on the shelf, use TALLman lettering on the bin label (e.g. cefaLEXin vs cefaCLOR), and set up a popup warning in your dispensary software.`;
+  }
+  if (e.includes('wrong directions')) {
+    return `Build a "directions sanity check" step into the final check: read the label word-for-word against the script. Review label templates every 3 months.`;
+  }
+  if (e.includes('wrong quantity') || e.includes('wrong volume')) {
+    return `Set up a no-interruption zone during counting (HQSC distraction-reduction guidance) — tabard or "do not disturb" sign — and double-count every ${d} pack.`;
+  }
+  if (e.includes('wrong patient')) {
+    return `Require two patient identifiers (NHI + date of birth) at every step — data entry, final check, handout — and flag similar-name patients in your dispensary software.`;
+  }
+  if (e.includes('wrong pack size')) {
+    return `Add a pack-size check at picking and a software pop-up when the pack size doesn't match the prescribed quantity. Prefer original-pack dispensing where possible.`;
+  }
+  if (e.includes('formulation')) {
+    return `Separate formulations (tablet / capsule / liquid / inhaler / IR / SR) of ${d} on the shelf with clear labels, and confirm the formulation with the patient at handout.`;
+  }
+  if (e.includes('brand')) {
+    return `Set up a dispensary software flag on Pharmac brand changes for ${d}, talk to the patient about the brand change at handout, and write it down (Medsafe brand-change guidance).`;
+  }
+  if (e.includes('nhi') || e.includes('hpi')) {
+    return `Add a data-entry checkpoint that confirms NHI against the patient's ID document. Flag any mismatches for the pharmacist-in-charge (Te Whatu Ora Pharmacy Procedures Manual).`;
+  }
+  if (e.includes('compliance pack')) {
+    return `Two-person check at packing AND at final pack release for ${d}. Flag any pack changes with a coloured sticker (Pharmacy Council NZ compliance-pack SOP).`;
+  }
+  return `Review the dispensing workflow for ${d} (${errorType}) at the next team meeting and agree one specific system change — workspace, SOP, software, or layout.`;
+}
+
 // ── List interventions for a (drug, error_type) pattern ─────
 // Staff, manager, or founder can list — all see their own pharmacy only.
 router.get('/', async (req: Request, res: Response) => {
@@ -82,9 +129,10 @@ router.post('/suggest', async (req: Request, res: Response) => {
     const priorNotes = (prior || []).map(r => r.note).filter(Boolean);
 
     if (!env.anthropicApiKey) {
-      // No key — return a generic stub so the UI still works.
-      const stub = `Move ${d.drug} away from look-alike items. Use TALLman lettering on the bin label, add a bright warning sticker, and brief the team at the next handover.`;
-      res.json({ suggestion: stub });
+      // No Anthropic key — return an error-type-aware stub so the UI
+      // still gives a relevant suggestion (the old stub always said
+      // 'look-alike' regardless of the actual problem).
+      res.json({ suggestion: stubSuggestion(d.drug, d.errorType) });
       return;
     }
 
