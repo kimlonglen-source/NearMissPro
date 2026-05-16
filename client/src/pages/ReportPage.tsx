@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from '../components/Logo';
+import { usePatternMap, findPattern } from '../lib/usePatternMap';
 import { PeriodComparison } from '../components/PeriodComparison';
 import { FactorPanel } from '../components/FactorPanel';
 import { WorkflowHeatmap } from '../components/WorkflowHeatmap';
@@ -96,6 +97,12 @@ export function ReportPage() {
     await api.updateReport(report.id, { locked: next });
     setReport({ ...report, locked: next });
   };
+
+  // Pattern lookup for the report's date range. Used to swap each
+  // incident card's recommendation for the pattern action when that
+  // pair has been actioned, so the report tells the same story as
+  // the dashboard banner and the WHAT WORKED comparison.
+  const { map: patternMap } = usePatternMap(report?.period_start, report?.period_end);
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin text-[#0F6E56]" size={32} /></div>;
   if (!report) return <div className="text-center py-12 text-gray-500">Report not found</div>;
@@ -309,22 +316,33 @@ export function ReportPage() {
                     <p className="text-xs text-gray-500 italic mb-3 pl-2 border-l-2 border-gray-200">"{inc.notes}"</p>
                   )}
 
-                  {rec && (
-                    <div className="bg-gray-50 rounded-lg p-3 mt-2">
-                      <div className="text-xs font-semibold text-gray-600 mb-1">
-                        {outcome === 'modified' ? 'Recommendation — modified by pharmacist-in-charge' : outcome === 'accepted' ? 'Recommendation accepted' : outcome === 'no_action' ? 'No change needed' : 'Recommendation'}
+                  {rec && (() => {
+                    const pattern = findPattern(patternMap, inc.drug_name || null, inc.error_types);
+                    const usePatternAction = !!pattern && !!pattern.latestAction;
+                    return (
+                      <div className="bg-gray-50 rounded-lg p-3 mt-2">
+                        <div className="text-xs font-semibold text-gray-600 mb-1">
+                          {usePatternAction
+                            ? `Pattern action — ${pattern!.count} incidents in this pattern`
+                            : outcome === 'modified' ? 'Recommendation — modified by pharmacist-in-charge'
+                            : outcome === 'accepted' ? 'Recommendation accepted'
+                            : outcome === 'no_action' ? 'No change needed'
+                            : 'Recommendation'}
+                        </div>
+                        {usePatternAction ? (
+                          <p className="text-sm text-gray-800">{pattern!.latestAction!.note}</p>
+                        ) : outcome === 'modified' && rec.manager_text ? (
+                          <>
+                            <p className="text-sm text-gray-800">{rec.manager_text}</p>
+                            <p className="text-sm text-gray-400 line-through mt-1">{rec.ai_text}</p>
+                            <p className="text-[10px] text-gray-400 italic mt-0.5">Modified from AI suggestion</p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-800">{rec.ai_text}</p>
+                        )}
                       </div>
-                      {outcome === 'modified' && rec.manager_text ? (
-                        <>
-                          <p className="text-sm text-gray-800">{rec.manager_text}</p>
-                          <p className="text-sm text-gray-400 line-through mt-1">{rec.ai_text}</p>
-                          <p className="text-[10px] text-gray-400 italic mt-0.5">Modified from AI suggestion</p>
-                        </>
-                      ) : (
-                        <p className="text-sm text-gray-800">{rec.ai_text}</p>
-                      )}
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               );
             })}

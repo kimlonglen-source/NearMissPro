@@ -516,23 +516,37 @@ router.get('/stats/active-hotspots', requireRole('manager', 'founder'), async (r
     const { detectDrugErrorHotspots } = await import('../services/ai.js');
     const hotspots = await detectDrugErrorHotspots(req.auth!.pharmacyId, since, until, 2);
 
-    // Look up the most recent submitted_at for each hotspot so the UI
-    // can show "last seen 5 May" — managers care more about whether the
-    // pattern is still happening than just the rolling count.
+    // For each hotspot also look up:
+    //   1. the most recent incident date (so the UI can show "last 5 May")
+    //   2. the most recent logged pattern action + total action count
+    // Both are pulled live, so editing a pattern action updates every
+    // incident card across the dashboard and report without any cache.
     const enriched = await Promise.all(hotspots.map(async h => {
-      let q = supabase.from('incidents')
+      let lastSeenQ = supabase.from('incidents')
         .select('submitted_at')
         .eq('pharmacy_id', req.auth!.pharmacyId).eq('status', 'active')
         .ilike('drug_name', h.drug.replace(/[%_\\]/g, '\\$&'))
         .contains('error_types', [h.errorType])
         .gte('submitted_at', since);
-      if (until) q = q.lte('submitted_at', until);
-      const { data } = await q.order('submitted_at', { ascending: false }).limit(1).single();
+      if (until) lastSeenQ = lastSeenQ.lte('submitted_at', until);
+      const { data: lastSeenRow } = await lastSeenQ
+        .order('submitted_at', { ascending: false }).limit(1).single();
+
+      const { data: actions } = await supabase.from('pattern_interventions')
+        .select('note, created_at')
+        .eq('pharmacy_id', req.auth!.pharmacyId)
+        .eq('drug_key', h.drug.trim().toLowerCase())
+        .eq('error_type', h.errorType)
+        .order('created_at', { ascending: false });
+      const latestAction = (actions && actions.length > 0) ? actions[0] : null;
+
       return {
         drug: h.drug,
         errorType: h.errorType,
         count: h.count,
-        lastSeen: data?.submitted_at || null,
+        lastSeen: lastSeenRow?.submitted_at || null,
+        latestAction: latestAction ? { note: latestAction.note, created_at: latestAction.created_at } : null,
+        actionCount: actions?.length || 0,
       };
     }));
 

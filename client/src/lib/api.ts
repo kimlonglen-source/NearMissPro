@@ -168,7 +168,7 @@ class Api {
     if (from) q.set('from', from);
     if (to) q.set('to', to);
     const qs = q.toString();
-    return this.req<{ hotspots: { drug: string; errorType: string; count: number; lastSeen: string | null }[] }>(`/incidents/stats/active-hotspots${qs ? '?' + qs : ''}`);
+    return this.req<{ hotspots: { drug: string; errorType: string; count: number; lastSeen: string | null; latestAction: { note: string; created_at: string } | null; actionCount: number }[] }>(`/incidents/stats/active-hotspots${qs ? '?' + qs : ''}`);
   }
 
   // Pattern interventions (shared log per drug+error pair)

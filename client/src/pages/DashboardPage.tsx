@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { LiveHotspotBanner } from '../components/LiveHotspotBanner';
 import { summarizeIncident } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
-import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar } from 'lucide-react';
+import { usePatternMap, findPattern } from '../lib/usePatternMap';
+import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar, Sparkles } from 'lucide-react';
 
 interface Rec { id: string; ai_text: string; manager_outcome: string | null; manager_text?: string; private_note?: string; }
 interface Incident {
@@ -36,6 +37,13 @@ export function DashboardPage() {
   const now = new Date();
   const [dateFrom, setDateFrom] = useState(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10));
   const [dateTo, setDateTo] = useState(now.toISOString().slice(0, 10));
+
+  // Recurring patterns inside the selected date range, keyed for O(1)
+  // lookup from each incident card. When an incident belongs to a
+  // pattern that has a logged action, the card shows the pattern
+  // action AS the recommendation (one source of truth across the
+  // banner, the incident, and the report).
+  const { map: patternMap } = usePatternMap(dateFrom, dateTo);
   const [periodSet, setPeriodSet] = useState(false);
 
   // Trend strip — independent of review period, always "last N weeks"
@@ -300,26 +308,58 @@ export function DashboardPage() {
                     </p>
                   )}
 
-                  {/* AI Recommendation */}
-                  {rec && (
-                    <div className="bg-[#F0FAF5] border border-[#C8E6D8] rounded-xl p-4">
-                      <p className="text-xs font-bold text-[#085041] uppercase tracking-wider mb-1">AI Recommendation</p>
-                      <p className="text-[10px] text-[#085041]/60 mb-2">Read this suggestion, then choose an action below.</p>
-                      <p className="text-sm text-gray-800 leading-relaxed">{rec.ai_text}</p>
-                      {rec.manager_outcome === 'modified' && rec.manager_text && (
-                        <div className="mt-3 pt-3 border-t border-[#C8E6D8]">
-                          <p className="text-xs font-bold text-[#3C3489] mb-1">Your version:</p>
-                          <p className="text-sm text-gray-800">{rec.manager_text}</p>
-                        </div>
-                      )}
-                      {rec.private_note && (
-                        <div className="mt-3 pt-3 border-t border-[#C8E6D8]">
-                          <p className="text-xs text-gray-500"><MessageSquare size={10} className="inline mr-1" />Note: {rec.private_note}</p>
-                        </div>
-                      )}
-                      <p className="text-[9px] text-gray-400 mt-3 italic">Advisory only. The pharmacist-in-charge makes all decisions.</p>
-                    </div>
-                  )}
+                  {/* Recommendation panel — three states:
+                      1. Part of a recurring pattern WITH a logged action:
+                         show the pattern action as the recommendation, so
+                         every incident in the pattern reads the same.
+                      2. Part of a recurring pattern WITHOUT an action yet:
+                         show the AI rec, plus a nudge to log a pattern action.
+                      3. One-off (not a pattern): AI rec, same as before. */}
+                  {rec && (() => {
+                    const pattern = findPattern(patternMap, inc.drug_name || null, inc.error_types);
+                    const usePatternAction = !!pattern && !!pattern.latestAction;
+                    return (
+                      <div className="bg-[#F0FAF5] border border-[#C8E6D8] rounded-xl p-4">
+                        {usePatternAction ? (
+                          <>
+                            <p className="text-xs font-bold text-[#085041] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                              <Sparkles size={11} /> Pattern action ({pattern!.count} incidents)
+                            </p>
+                            <p className="text-[10px] text-[#085041]/60 mb-2">
+                              Your logged action for {pattern!.drug} · {pattern!.errorType}. Same answer on every incident in this pattern.
+                            </p>
+                            <p className="text-sm text-gray-800 leading-relaxed">{pattern!.latestAction!.note}</p>
+                            {pattern!.actionCount > 1 && (
+                              <p className="text-[11px] text-gray-500 mt-1">+{pattern!.actionCount - 1} earlier action{pattern!.actionCount > 2 ? 's' : ''} on this pattern.</p>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-xs font-bold text-[#085041] uppercase tracking-wider mb-1">AI Recommendation</p>
+                            <p className="text-[10px] text-[#085041]/60 mb-2">Read this suggestion, then choose an action below.</p>
+                            <p className="text-sm text-gray-800 leading-relaxed">{rec.ai_text}</p>
+                            {pattern && !pattern.latestAction && (
+                              <p className="text-xs text-[#9A6113] mt-3 leading-snug">
+                                ⓘ This is the {pattern.count}{pattern.count === 2 ? 'nd' : pattern.count === 3 ? 'rd' : 'th'} time — log a pattern action on the banner above so the whole team's on the same fix.
+                              </p>
+                            )}
+                          </>
+                        )}
+                        {rec.manager_outcome === 'modified' && rec.manager_text && (
+                          <div className="mt-3 pt-3 border-t border-[#C8E6D8]">
+                            <p className="text-xs font-bold text-[#3C3489] mb-1">Your version:</p>
+                            <p className="text-sm text-gray-800">{rec.manager_text}</p>
+                          </div>
+                        )}
+                        {rec.private_note && (
+                          <div className="mt-3 pt-3 border-t border-[#C8E6D8]">
+                            <p className="text-xs text-gray-500"><MessageSquare size={10} className="inline mr-1" />Note: {rec.private_note}</p>
+                          </div>
+                        )}
+                        <p className="text-[9px] text-gray-400 mt-3 italic">Advisory only. The pharmacist-in-charge makes all decisions.</p>
+                      </div>
+                    );
+                  })()}
 
                   {/* Actions */}
                   {inc.status !== 'voided' && rec && !showMod && !showNote && (
