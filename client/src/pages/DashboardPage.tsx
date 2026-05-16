@@ -180,7 +180,7 @@ export function DashboardPage() {
           a (drug, error_type) pair with 3+ incidents in the last 30 days.
           Sits above the stats grid so the manager sees it the moment they
           land on the dashboard, and can log an action straight away. */}
-      <LiveHotspotBanner />
+      <LiveHotspotBanner from={dateFrom} to={dateTo} />
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-4">

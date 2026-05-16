@@ -163,8 +163,12 @@ class Api {
     const q = new URLSearchParams({ from, to }).toString();
     return this.req<HeatmapData>(`/incidents/stats/heatmap?${q}`);
   }
-  getActiveHotspots() {
-    return this.req<{ hotspots: { drug: string; errorType: string; count: number; lastSeen: string | null }[] }>(`/incidents/stats/active-hotspots`);
+  getActiveHotspots(from?: string, to?: string) {
+    const q = new URLSearchParams();
+    if (from) q.set('from', from);
+    if (to) q.set('to', to);
+    const qs = q.toString();
+    return this.req<{ hotspots: { drug: string; errorType: string; count: number; lastSeen: string | null }[] }>(`/incidents/stats/active-hotspots${qs ? '?' + qs : ''}`);
   }
 
   // Pattern interventions (shared log per drug+error pair)

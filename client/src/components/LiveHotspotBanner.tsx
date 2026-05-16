@@ -16,16 +16,16 @@ interface Intervention {
 }
 
 /**
- * Live mid-month repeat-pattern alert — sits above the dashboard stats
- * grid when a drug+error pair has had 3+ active incidents in the last
- * 30 days. The manager taps a row to log an intervention straight into
- * pattern_interventions, so they can act WHILE the pattern is current
- * rather than waiting for the monthly review.
+ * Repeat-pattern alert — sits above the dashboard stats grid when a
+ * drug+error pair has had 2+ active incidents inside the dashboard's
+ * selected date range. The manager taps a row to log an intervention
+ * straight into pattern_interventions so they can act WHILE the
+ * pattern is current rather than waiting for the monthly review.
  *
- * Hidden when there are no active hotspots — keeps the dashboard quiet
+ * Hidden when there are no patterns — keeps the dashboard quiet
  * during normal weeks.
  */
-export function LiveHotspotBanner() {
+export function LiveHotspotBanner({ from, to }: { from?: string; to?: string }) {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState<Hotspot | null>(null);
@@ -33,12 +33,12 @@ export function LiveHotspotBanner() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await api.getActiveHotspots();
+      const r = await api.getActiveHotspots(from, to);
       setHotspots(r.hotspots);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [from, to]);
 
   if (loading || hotspots.length === 0) return null;
 
@@ -51,10 +51,10 @@ export function LiveHotspotBanner() {
           <AlertTriangle size={18} className="text-[#BA7517] flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <h3 className="text-sm font-bold text-[#633806]">
-              {hotspots.length} repeat pattern{hotspots.length === 1 ? '' : 's'} this month — consider acting now
+              {hotspots.length} repeat pattern{hotspots.length === 1 ? '' : 's'} in this period — consider acting now
             </h3>
             <p className="text-xs text-[#633806]/70 mt-0.5">
-              Each of these has happened 3 or more times in the last 30 days. Tap <span className="font-semibold">Log action</span> to record a change you've made (or are making) so it's captured before the next review.
+              Each of these has happened 2 or more times in the date range you're reviewing. Tap <span className="font-semibold">Log action</span> to record a change you've made (or are making) so it's captured before the next review.
             </p>
           </div>
         </div>
@@ -107,7 +107,7 @@ function HotspotRow({ hotspot: h, onClickLog }: { hotspot: Hotspot; onClickLog: 
         <span className="text-sm font-semibold text-gray-900">{h.drug}</span>
         <span className="text-xs text-gray-400">·</span>
         <span className="text-xs text-gray-700">{h.errorType}</span>
-        <span className="text-xs font-semibold text-[#791F1F] ml-1">{h.count} in 30 days</span>
+        <span className="text-xs font-semibold text-[#791F1F] ml-1">{h.count} in this period</span>
         {h.lastSeen && (
           <span className="text-[11px] text-gray-400">last {fmt(h.lastSeen)}</span>
         )}
@@ -160,7 +160,7 @@ function LogActionModal({ hotspot, onClose, onSaved }: { hotspot: Hotspot; onClo
           <div>
             <h3 className="text-lg font-bold text-gray-900 leading-tight">Log an action</h3>
             <p className="text-sm text-gray-500 mt-0.5">
-              {hotspot.drug} · {hotspot.errorType} · {hotspot.count} times in 30 days
+              {hotspot.drug} · {hotspot.errorType} · {hotspot.count} times in this period
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 flex-shrink-0">

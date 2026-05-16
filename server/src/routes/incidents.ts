@@ -495,30 +495,39 @@ router.get('/stats/heatmap', requireRole('manager', 'founder'), async (req: Requ
   }
 });
 
-// ── Active hotspots — for the dashboard's mid-month repeat alert ──
-// Returns drug+error-type pairs that have hit 3+ active incidents in
-// the last 30 days. Independent of the dashboard's selected review
-// period — this is "what's happening RIGHT NOW that the manager
-// should know about". Reuses detectDrugErrorHotspots from the AI
-// service which already does the math.
+// ── Active hotspots — drug+error pairs with 2+ incidents inside the
+// caller's date range. The dashboard passes the manager's selected
+// review window via ?from=&to= so the banner stays consistent with
+// the rest of the page. When no range is given, falls back to the
+// last 30 days so the endpoint still answers "what's happening now"
+// for any caller that doesn't care about a specific period.
 router.get('/stats/active-hotspots', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
   try {
-    const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+    const fromStr = typeof req.query.from === 'string' ? req.query.from : '';
+    const toStr = typeof req.query.to === 'string' ? req.query.to : '';
+
+    const since = fromStr && /^\d{4}-\d{2}-\d{2}$/.test(fromStr)
+      ? `${fromStr}T00:00:00.000Z`
+      : new Date(Date.now() - 30 * 86400_000).toISOString();
+    const until = toStr && /^\d{4}-\d{2}-\d{2}$/.test(toStr)
+      ? `${toStr}T23:59:59.999Z`
+      : undefined;
+
     const { detectDrugErrorHotspots } = await import('../services/ai.js');
-    const hotspots = await detectDrugErrorHotspots(req.auth!.pharmacyId, since, undefined, 3);
+    const hotspots = await detectDrugErrorHotspots(req.auth!.pharmacyId, since, until, 2);
 
     // Look up the most recent submitted_at for each hotspot so the UI
     // can show "last seen 5 May" — managers care more about whether the
     // pattern is still happening than just the rolling count.
     const enriched = await Promise.all(hotspots.map(async h => {
-      const { data } = await supabase.from('incidents')
+      let q = supabase.from('incidents')
         .select('submitted_at')
         .eq('pharmacy_id', req.auth!.pharmacyId).eq('status', 'active')
         .ilike('drug_name', h.drug.replace(/[%_\\]/g, '\\$&'))
         .contains('error_types', [h.errorType])
-        .gte('submitted_at', since)
-        .order('submitted_at', { ascending: false })
-        .limit(1).single();
+        .gte('submitted_at', since);
+      if (until) q = q.lte('submitted_at', until);
+      const { data } = await q.order('submitted_at', { ascending: false }).limit(1).single();
       return {
         drug: h.drug,
         errorType: h.errorType,
