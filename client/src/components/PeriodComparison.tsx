@@ -125,6 +125,27 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
 }
 
 function ComparisonRow({ p }: { p: PatternComparison }) {
+  // Fetch any manager-logged interventions for this (drug + error type)
+  // so we can surface the most recent action note directly under the
+  // row. Closes the loop visually: pattern reduced → "here's what we
+  // did". Previously these notes only appeared in the Pattern Alerts
+  // panel, which doesn't show patterns that have since dropped below
+  // the recurring threshold — exactly the patterns the manager fixed.
+  const [latestAction, setLatestAction] = useState<{ note: string; created_at: string; count: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.listInterventions(p.drug, p.errorType)
+      .then(r => {
+        if (cancelled || r.interventions.length === 0) return;
+        const last = r.interventions[r.interventions.length - 1];
+        setLatestAction({ note: last.note, created_at: last.created_at, count: r.interventions.length });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [p.drug, p.errorType]);
+
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+
   let icon, label, tone;
   if (p.direction === 'resolved') {
     icon = <CheckCircle2 size={14} className="text-[#1D9E75]" />;
@@ -148,13 +169,21 @@ function ComparisonRow({ p }: { p: PatternComparison }) {
     label = 'Unchanged';
   }
   return (
-    <li className="flex items-center gap-2 text-sm">
-      <span className="flex-shrink-0">{icon}</span>
-      <span className="font-medium text-gray-800 truncate">{p.drug}</span>
-      <span className="text-xs text-gray-400">·</span>
-      <span className="text-xs text-gray-600 truncate">{p.errorType}</span>
-      <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">{p.previousCount} → {p.currentCount}</span>
-      <span className={`text-xs font-semibold whitespace-nowrap ${tone}`}>{label}</span>
+    <li>
+      <div className="flex items-center gap-2 text-sm">
+        <span className="flex-shrink-0">{icon}</span>
+        <span className="font-medium text-gray-800 truncate">{p.drug}</span>
+        <span className="text-xs text-gray-400">·</span>
+        <span className="text-xs text-gray-600 truncate">{p.errorType}</span>
+        <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">{p.previousCount} → {p.currentCount}</span>
+        <span className={`text-xs font-semibold whitespace-nowrap ${tone}`}>{label}</span>
+      </div>
+      {latestAction && (
+        <p className="text-xs text-gray-600 mt-0.5 ml-[22px] leading-snug">
+          <span className="font-semibold text-[#085041]">We did ({fmt(latestAction.created_at)}):</span> {latestAction.note}
+          {latestAction.count > 1 && <span className="text-gray-400"> · +{latestAction.count - 1} earlier</span>}
+        </p>
+      )}
     </li>
   );
 }
