@@ -181,6 +181,11 @@ class Api {
       method: 'POST', body: JSON.stringify({ drug, errorType, note }),
     });
   }
+  suggestIntervention(drug: string, errorType: string) {
+    return this.req<{ suggestion: string }>('/interventions/suggest', {
+      method: 'POST', body: JSON.stringify({ drug, errorType }),
+    });
+  }
 }
 
 export const api = new Api();

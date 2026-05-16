@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { AlertTriangle, X, Loader2, Plus } from 'lucide-react';
+import { AlertTriangle, X, Loader2, Plus, Sparkles } from 'lucide-react';
 
 interface Hotspot {
   drug: string;
@@ -151,6 +151,21 @@ function LogActionModal({ hotspot, onClose, onSaved }: { hotspot: Hotspot; onClo
     } finally { setSaving(false); }
   };
 
+  // AI-drafted system change for this pattern. Fills the textarea so
+  // the manager can use it as-is, tweak, or ignore — different from
+  // the per-incident recommendations (which fix a single event) since
+  // this targets the recurring pattern as a whole.
+  const [suggesting, setSuggesting] = useState(false);
+  const suggest = async () => {
+    if (suggesting) return;
+    setSuggesting(true);
+    try {
+      const r = await api.suggestIntervention(hotspot.drug, hotspot.errorType);
+      if (r.suggestion) setNote(r.suggestion.slice(0, 500));
+    } catch { /* leave textarea as-is */ }
+    finally { setSuggesting(false); }
+  };
+
   const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
 
   return (
@@ -188,7 +203,14 @@ function LogActionModal({ hotspot, onClose, onSaved }: { hotspot: Hotspot; onClo
           <p className="text-xs text-gray-400 mb-3 italic">No prior actions logged for this pattern.</p>
         )}
 
-        <label className="text-xs font-medium text-gray-600 mb-1 block">What action are you taking?</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-xs font-medium text-gray-600">What action are you taking?</label>
+          <button onClick={suggest} disabled={suggesting}
+            className="text-xs font-semibold text-[#0F6E56] hover:text-[#0B5A46] inline-flex items-center gap-1 disabled:opacity-50">
+            {suggesting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            {suggesting ? 'Thinking…' : 'Suggest with AI'}
+          </button>
+        </div>
         <textarea
           value={note}
           onChange={e => setNote(e.target.value.slice(0, 500))}
