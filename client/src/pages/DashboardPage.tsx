@@ -90,6 +90,10 @@ export function DashboardPage() {
     try {
       await api.actionRecommendation(rec.id, { managerOutcome: outcome, managerText: text, privateNote: note });
       await load();
+      // Collapse the card after a decision so the manager moves on to
+      // the next pending one instead of staring at the same expanded
+      // card with buttons that no longer mean anything.
+      setActiveId(null);
       setModText(''); setShowMod(false); setNoteText(''); setShowNote(false);
     } finally { setBusy(false); }
   };
