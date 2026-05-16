@@ -14,7 +14,7 @@ router.post('/staff/login', async (req: Request, res: Response) => {
     const { name, password } = z.object({ name: z.string().min(1), password: z.string().min(1) }).parse(req.body);
 
     const { data: pharmacy } = await supabase
-      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until, manager_pin_enabled')
+      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until')
       .ilike('name', name).single();
 
     if (!pharmacy) { res.status(401).json({ error: 'Invalid pharmacy name or password' }); return; }
@@ -39,7 +39,7 @@ router.post('/staff/login', async (req: Request, res: Response) => {
       env.jwtSecret, { expiresIn: '24h' } as jwt.SignOptions
     );
 
-    res.json({ token, role: 'staff', pharmacyName: pharmacy.name, pharmacyId: pharmacy.id, pinEnabled: pharmacy.manager_pin_enabled });
+    res.json({ token, role: 'staff', pharmacyName: pharmacy.name, pharmacyId: pharmacy.id });
   } catch (err) {
     if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
     console.error('Staff login error:', err);
@@ -47,80 +47,18 @@ router.post('/staff/login', async (req: Request, res: Response) => {
   }
 });
 
-// ── Manager access (check if PIN needed) ────────────────────
+// ── Manager access — straight upgrade from staff, no PIN gate. The
+//    PIN feature was removed because the pharmacy password already
+//    gates this; the PIN was just a speedbump that created lockout
+//    risk if forgotten. ──
 router.post('/manager/access', authenticate, async (req: Request, res: Response) => {
   try {
-    const { data: pharmacy } = await supabase
-      .from('pharmacies').select('manager_pin_enabled').eq('id', req.auth!.pharmacyId).single();
-
-    if (pharmacy?.manager_pin_enabled) {
-      res.json({ requiresPin: true }); return;
-    }
-
-    const token = jwt.sign(
-      { pharmacyId: req.auth!.pharmacyId, pharmacyName: req.auth!.pharmacyName, role: 'manager' },
-      env.jwtSecret, { expiresIn: '12h' } as jwt.SignOptions
-    );
-    res.json({ token, role: 'manager', requiresPin: false });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Access failed' }); }
-});
-
-// ── Manager PIN verify ──────────────────────────────────────
-router.post('/manager/verify-pin', authenticate, async (req: Request, res: Response) => {
-  try {
-    const { pin } = z.object({ pin: z.string().min(4).max(6) }).parse(req.body);
-    const { data: pharmacy } = await supabase
-      .from('pharmacies').select('manager_pin_hash').eq('id', req.auth!.pharmacyId).single();
-
-    if (!pharmacy?.manager_pin_hash || !(await bcrypt.compare(pin, pharmacy.manager_pin_hash))) {
-      res.status(401).json({ error: 'Invalid PIN' }); return;
-    }
-
     const token = jwt.sign(
       { pharmacyId: req.auth!.pharmacyId, pharmacyName: req.auth!.pharmacyName, role: 'manager' },
       env.jwtSecret, { expiresIn: '12h' } as jwt.SignOptions
     );
     res.json({ token, role: 'manager' });
-  } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
-    res.status(500).json({ error: 'Verification failed' });
-  }
-});
-
-// ── Manager PIN management ──────────────────────────────────
-router.post('/manager/pin/enable', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
-  try {
-    const { pin } = z.object({ pin: z.string().min(4).max(6) }).parse(req.body);
-    await supabase.from('pharmacies').update({ manager_pin_hash: await bcrypt.hash(pin, 12), manager_pin_enabled: true }).eq('id', req.auth!.pharmacyId);
-    await supabase.from('audit_log').insert({ pharmacy_id: req.auth!.pharmacyId, action: 'pin_enabled', performed_by: 'manager', details: {} });
-    res.json({ success: true });
-  } catch { res.status(500).json({ error: 'Failed' }); }
-});
-
-router.post('/manager/pin/disable', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
-  try {
-    const { currentPin } = z.object({ currentPin: z.string() }).parse(req.body);
-    const { data: p } = await supabase.from('pharmacies').select('manager_pin_hash').eq('id', req.auth!.pharmacyId).single();
-    if (!p?.manager_pin_hash || !(await bcrypt.compare(currentPin, p.manager_pin_hash))) {
-      res.status(401).json({ error: 'Invalid PIN' }); return;
-    }
-    await supabase.from('pharmacies').update({ manager_pin_hash: null, manager_pin_enabled: false }).eq('id', req.auth!.pharmacyId);
-    await supabase.from('audit_log').insert({ pharmacy_id: req.auth!.pharmacyId, action: 'pin_disabled', performed_by: 'manager', details: {} });
-    res.json({ success: true });
-  } catch { res.status(500).json({ error: 'Failed' }); }
-});
-
-router.post('/manager/pin/change', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
-  try {
-    const { currentPin, newPin } = z.object({ currentPin: z.string(), newPin: z.string().min(4).max(6) }).parse(req.body);
-    const { data: p } = await supabase.from('pharmacies').select('manager_pin_hash').eq('id', req.auth!.pharmacyId).single();
-    if (!p?.manager_pin_hash || !(await bcrypt.compare(currentPin, p.manager_pin_hash))) {
-      res.status(401).json({ error: 'Invalid current PIN' }); return;
-    }
-    await supabase.from('pharmacies').update({ manager_pin_hash: await bcrypt.hash(newPin, 12) }).eq('id', req.auth!.pharmacyId);
-    await supabase.from('audit_log').insert({ pharmacy_id: req.auth!.pharmacyId, action: 'pin_changed', performed_by: 'manager', details: {} });
-    res.json({ success: true });
-  } catch { res.status(500).json({ error: 'Failed' }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Access failed' }); }
 });
 
 // ── Manager password change ─────────────────────────────────

@@ -70,13 +70,10 @@ class Api {
 
   // Auth
   staffLogin(name: string, password: string) {
-    return this.req<{ token: string; role: string; pharmacyName: string; pharmacyId: string; pinEnabled: boolean }>('/auth/staff/login', { method: 'POST', body: JSON.stringify({ name, password }) });
+    return this.req<{ token: string; role: string; pharmacyName: string; pharmacyId: string }>('/auth/staff/login', { method: 'POST', body: JSON.stringify({ name, password }) });
   }
   managerAccess() {
-    return this.req<{ token?: string; role?: string; requiresPin: boolean }>('/auth/manager/access', { method: 'POST' });
-  }
-  verifyPin(pin: string) {
-    return this.req<{ token: string; role: string }>('/auth/manager/verify-pin', { method: 'POST', body: JSON.stringify({ pin }) });
+    return this.req<{ token: string; role: string }>('/auth/manager/access', { method: 'POST' });
   }
   founderLogin(email: string, password: string, mfaCode?: string) {
     return this.req<{ token?: string; role?: string; requiresMfa?: boolean; email?: string }>('/auth/founder/login', { method: 'POST', body: JSON.stringify({ email, password, mfaCode }) });
@@ -99,9 +96,6 @@ class Api {
   }
 
   // PIN management
-  enablePin(pin: string) { return this.req<object>('/auth/manager/pin/enable', { method: 'POST', body: JSON.stringify({ pin }) }); }
-  disablePin(currentPin: string) { return this.req<object>('/auth/manager/pin/disable', { method: 'POST', body: JSON.stringify({ currentPin }) }); }
-  changePin(currentPin: string, newPin: string) { return this.req<object>('/auth/manager/pin/change', { method: 'POST', body: JSON.stringify({ currentPin, newPin }) }); }
   changePassword(currentPassword: string, newPassword: string) { return this.req<object>('/auth/manager/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }); }
 
   // Incidents

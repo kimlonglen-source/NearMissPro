@@ -8,8 +8,7 @@ interface Auth {
   pharmacyName: string | null;
   pharmacyId: string | null;
   loading: boolean;
-  pinEnabled: boolean;
-  login: (role: Role, pharmacyName?: string, pharmacyId?: string, pinEnabled?: boolean) => void;
+  login: (role: Role, pharmacyName?: string, pharmacyId?: string) => void;
   upgradeToManager: (token: string) => void;
   logout: () => void;
 }
@@ -20,7 +19,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<Role>(null);
   const [pharmacyName, setPharmacyName] = useState<string | null>(null);
   const [pharmacyId, setPharmacyId] = useState<string | null>(null);
-  const [pinEnabled, setPinEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,17 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const r = localStorage.getItem('nmp_role') as Role;
     const n = localStorage.getItem('nmp_pharmacy');
     const id = localStorage.getItem('nmp_pharmacy_id');
-    const pin = localStorage.getItem('nmp_pin_enabled') === 'true';
-    if (token && r) { setRole(r); setPharmacyName(n); setPharmacyId(id); setPinEnabled(pin); }
+    if (token && r) { setRole(r); setPharmacyName(n); setPharmacyId(id); }
     setLoading(false);
   }, []);
 
-  const login = (r: Role, name?: string, id?: string, pin?: boolean) => {
-    setRole(r); setPharmacyName(name || null); setPharmacyId(id || null); setPinEnabled(pin || false);
+  const login = (r: Role, name?: string, id?: string) => {
+    setRole(r); setPharmacyName(name || null); setPharmacyId(id || null);
     if (r) localStorage.setItem('nmp_role', r);
     if (name) localStorage.setItem('nmp_pharmacy', name);
     if (id) localStorage.setItem('nmp_pharmacy_id', id);
-    localStorage.setItem('nmp_pin_enabled', String(pin || false));
   };
 
   const upgradeToManager = (token: string) => {
@@ -52,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ['nmp_role', 'nmp_pharmacy', 'nmp_pharmacy_id', 'nmp_pin_enabled'].forEach(k => localStorage.removeItem(k));
   };
 
-  return <Ctx.Provider value={{ role, pharmacyName, pharmacyId, loading, pinEnabled, login, upgradeToManager, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ role, pharmacyName, pharmacyId, loading, login, upgradeToManager, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

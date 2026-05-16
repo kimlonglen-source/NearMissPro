@@ -18,7 +18,7 @@ export function LoginPage() {
     try {
       const res = await api.staffLogin(name, password);
       api.setToken(res.token);
-      login('staff', res.pharmacyName, res.pharmacyId, res.pinEnabled);
+      login('staff', res.pharmacyName, res.pharmacyId);
       nav('/');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');
