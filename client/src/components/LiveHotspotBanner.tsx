@@ -107,7 +107,7 @@ function HotspotRow({ hotspot: h, onClickLog }: { hotspot: Hotspot; onClickLog: 
         <span className="text-sm font-semibold text-gray-900">{h.drug}</span>
         <span className="text-xs text-gray-400">·</span>
         <span className="text-xs text-gray-700">{h.errorType}</span>
-        <span className="text-xs font-semibold text-[#791F1F] ml-1">{h.count} times</span>
+        <span className="text-xs font-semibold text-[#791F1F] ml-1">{h.count} in 30 days</span>
         {h.lastSeen && (
           <span className="text-[11px] text-gray-400">last {fmt(h.lastSeen)}</span>
         )}
