@@ -61,21 +61,7 @@ export function LiveHotspotBanner() {
 
         <ul className="space-y-2 mt-3">
           {hotspots.map(h => (
-            <li key={`${h.drug}|${h.errorType}`}
-              className="flex items-center gap-2 flex-wrap bg-white rounded-lg px-3 py-2 border border-[#BA7517]/30">
-              <span className="text-sm font-semibold text-gray-900">{h.drug}</span>
-              <span className="text-xs text-gray-400">·</span>
-              <span className="text-xs text-gray-700">{h.errorType}</span>
-              <span className="text-xs font-semibold text-[#791F1F] ml-1">{h.count} times</span>
-              {h.lastSeen && (
-                <span className="text-[11px] text-gray-400">last {fmt(h.lastSeen)}</span>
-              )}
-              <button
-                onClick={() => setOpenModal(h)}
-                className="ml-auto text-xs font-semibold px-3 py-1 rounded-lg bg-[#BA7517] text-white hover:bg-[#9A6113] inline-flex items-center gap-1">
-                <Plus size={12} /> Log action
-              </button>
-            </li>
+            <HotspotRow key={`${h.drug}|${h.errorType}`} hotspot={h} onClickLog={() => setOpenModal(h)} />
           ))}
         </ul>
       </div>
@@ -88,6 +74,56 @@ export function LiveHotspotBanner() {
         />
       )}
     </>
+  );
+}
+
+// Hotspot row — shows the count + most recent action inline, so the
+// manager can see at a glance what's been done about this pattern
+// without having to open the modal. Closes the feedback loop visibly
+// instead of hiding it behind a click.
+function HotspotRow({ hotspot: h, onClickLog }: { hotspot: Hotspot; onClickLog: () => void }) {
+  const [latest, setLatest] = useState<Intervention | null>(null);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.listInterventions(h.drug, h.errorType)
+      .then(r => {
+        if (cancelled) return;
+        setCount(r.interventions.length);
+        // API returns oldest first — grab the last entry to show the
+        // most recently logged action on the banner.
+        setLatest(r.interventions.length > 0 ? r.interventions[r.interventions.length - 1] : null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [h.drug, h.errorType]);
+
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+
+  return (
+    <li className="bg-white rounded-lg px-3 py-2 border border-[#BA7517]/30">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-semibold text-gray-900">{h.drug}</span>
+        <span className="text-xs text-gray-400">·</span>
+        <span className="text-xs text-gray-700">{h.errorType}</span>
+        <span className="text-xs font-semibold text-[#791F1F] ml-1">{h.count} times</span>
+        {h.lastSeen && (
+          <span className="text-[11px] text-gray-400">last {fmt(h.lastSeen)}</span>
+        )}
+        <button
+          onClick={onClickLog}
+          className="ml-auto text-xs font-semibold px-3 py-1 rounded-lg bg-[#BA7517] text-white hover:bg-[#9A6113] inline-flex items-center gap-1">
+          <Plus size={12} /> {count === 0 ? 'Log action' : 'Add / view actions'}
+        </button>
+      </div>
+      {latest && (
+        <p className="text-xs text-gray-600 mt-1.5 pl-1 leading-snug">
+          <span className="font-semibold text-[#085041]">Last action ({fmt(latest.created_at)}):</span> {latest.note}
+          {count > 1 && <span className="text-gray-400"> · +{count - 1} earlier</span>}
+        </p>
+      )}
+    </li>
   );
 }
 
