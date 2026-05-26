@@ -277,7 +277,6 @@ export function RecordPage() {
       setOpenSection(1);
       return;
     }
-    const last = (() => { try { return localStorage.getItem(LAST_CAUGHT_KEY) || ''; } catch { return ''; } })();
     update({
       errorStep: label,
       errorTypes: [],
@@ -285,8 +284,12 @@ export function RecordPage() {
       prescribedStrength: '', dispensedStrength: '',
       correctFormulation: '', dispensedFormulation: '',
       prescribedQuantity: '', dispensedQuantity: '',
-      // Pre-select where-caught: last used if present, else the stage default.
-      whereCaught: last || CAUGHT_DEFAULT_BY_STAGE[label] || '',
+      // Where-caught is left BLANK on purpose. Previously we
+      // pre-filled it with the last-used value or a stage default,
+      // which made Section 3 show "Done" the moment a stage was
+      // picked — confusing because the user had never touched it
+      // and it looked like the section had auto-popped.
+      whereCaught: '',
       showMoreSub: false,
     });
     setOpenSection(2);
