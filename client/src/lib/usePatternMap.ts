@@ -48,9 +48,15 @@ export function usePatternMap(from?: string, to?: string): { map: PatternMap; lo
 }
 
 // Lookup helper — returns the pattern entry for an incident if it's
-// part of a recurring pattern (drug + primary error type), else null.
+// part of a recurring pattern (drug + ANY of its error types). Was
+// previously only checking errorTypes[0], which silently missed any
+// incident whose pattern was logged against a secondary error type
+// (the form allows multiple error types per incident).
 export function findPattern(map: PatternMap, drug: string | null | undefined, errorTypes: string[] | null | undefined): PatternEntry | null {
-  const primary = errorTypes?.[0];
-  if (!drug || !primary) return null;
-  return map.get(keyOf(drug, primary)) || null;
+  if (!drug || !errorTypes || errorTypes.length === 0) return null;
+  for (const et of errorTypes) {
+    const hit = map.get(keyOf(drug, et));
+    if (hit) return hit;
+  }
+  return null;
 }

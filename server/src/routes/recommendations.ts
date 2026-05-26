@@ -17,15 +17,20 @@ router.patch('/:id', async (req: Request, res: Response) => {
       privateNote: z.string().optional(),
     }).parse(req.body);
 
+    // Scope the update by pharmacy_id too — without it, a manager
+    // could PATCH any recommendation by guessing its UUID, including
+    // ones belonging to other pharmacies. Founders never action
+    // per-pharmacy recommendations (their pharmacyId is 'all', which
+    // won't match a real UUID), so this also correctly excludes them.
     const { data, error } = await supabase.from('recommendations').update({
       manager_outcome: body.managerOutcome,
       manager_text: body.managerText || null,
       manager_name: body.managerName || null,
       private_note: body.privateNote || null,
       reviewed_at: new Date().toISOString(),
-    }).eq('id', req.params.id).select().single();
+    }).eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId).select().single();
 
-    if (error) throw error;
+    if (error) { res.status(404).json({ error: 'Not found' }); return; }
 
     await supabase.from('audit_log').insert({
       pharmacy_id: req.auth!.pharmacyId, action: `recommendation_${body.managerOutcome}`,
