@@ -13,41 +13,48 @@ interface HighRiskCategory {
   guidance: string;
 }
 
+// Guidance is FRAMING, not how-to. The form is being filled because a
+// near miss is being recorded — by definition the event is already
+// caught, so procedural advice ("log it in the CD register before
+// dispensing") doesn't fit. Each line tells the staff member why this
+// class matters and what details to capture, so the record is useful
+// for later analysis. The per-incident AI recommendation handles the
+// "what to do next" piece.
 const CATEGORIES: HighRiskCategory[] = [
   {
     category: 'Insulin',
     patterns: ['insulin'],
-    guidance: 'Insulin needs extra care: check it\'s the right pen vs vial, units (not mL), and the brand is right. Have a second pharmacist check.',
+    guidance: 'Insulin near misses matter — wrong concentration (100 vs 300 u/mL), wrong pen vs vial, or wrong brand can cause severe harm. Capture the strength and brand carefully on this record.',
   },
   {
     category: 'Anticoagulant',
     patterns: ['warfarin', 'dabigatran', 'rivaroxaban', 'apixaban', 'enoxaparin', 'heparin', 'edoxaban'],
-    guidance: 'Anticoagulants (blood-thinners) need a careful dose check — small mistakes cause serious bleeding. Look up the dose in NZ Formulary; check for INR or kidney-related adjustments.',
+    guidance: 'Anticoagulant (blood-thinner) near misses matter — small dose differences cause serious bleeding. Capture the strength, the brand, and any dose-adjustment context (INR, kidney function) on this record.',
   },
   {
     category: 'Opioid',
     patterns: ['morphine', 'oxycodone', 'methadone', 'fentanyl', 'tramadol', 'codeine', 'buprenorphine', 'pethidine', 'hydromorphone'],
-    guidance: 'Opioid: log it in the controlled drugs (CD) register before dispensing, and have two people check (Misuse of Drugs Regulations). Confirm strength and total quantity.',
+    guidance: 'Opioid near misses matter — wrong strength, wrong quantity, or wrong patient can be fatal. Capture the strength and total quantity carefully on this record.',
   },
   {
     category: 'Methotrexate',
     patterns: ['methotrexate'],
-    guidance: 'Methotrexate: weekly-vs-daily mix-ups are the most-reported error in NZ (Medsafe alert). Confirm in writing whether it\'s daily or weekly.',
+    guidance: 'Methotrexate weekly-vs-daily mix-ups are the most-reported NZ medication error (Medsafe alert). Make sure this record clearly captures whether the prescription said daily or weekly.',
   },
   {
     category: 'Narrow therapeutic index',
     patterns: ['digoxin', 'lithium', 'phenytoin', 'theophylline', 'carbamazepine', 'cyclosporin', 'cyclosporine', 'tacrolimus'],
-    guidance: 'This drug has a narrow safety margin — small dose changes cause big effects. Check the strength and brand carefully (NZ Formulary), and look for interactions.',
+    guidance: 'This drug has a narrow safety margin — small dose changes cause big effects. Capture the strength and brand carefully on this record so any pattern shows up.',
   },
   {
     category: 'Cytotoxic',
     patterns: ['methotrexate', 'cyclophosphamide', 'azathioprine', 'fluorouracil', 'tamoxifen', 'anastrozole', 'letrozole'],
-    guidance: 'Cytotoxic medicine — handle per your pharmacy SOP. At handout, counsel the patient on safe handling and pregnancy precautions.',
+    guidance: 'Cytotoxic medicine — capture the strength, formulation, and any handout details (handling, pregnancy precautions) on this record.',
   },
   {
     category: 'Paediatric (mg/kg)',
     patterns: ['paediatric', 'pediatric'],
-    guidance: 'Paediatric dose: check the mg/kg dose against the NZ Formulary. Liquid concentrations differ — confirm the strength carefully.',
+    guidance: 'Paediatric dose — strengths and concentrations differ. Capture the mg/kg dose context on this record so it can be cross-checked against the NZ Formulary later.',
   },
 ];
 
