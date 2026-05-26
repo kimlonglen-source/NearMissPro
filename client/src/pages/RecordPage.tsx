@@ -480,16 +480,6 @@ export function RecordPage() {
 
   // ── Success screen ──────────────────────────────────────────
   if (submitted) {
-    const recordAnother = () => {
-      if (!lastDraft) return;
-      tap();
-      // Restore the just-submitted draft so staff can tweak and resubmit.
-      // They've already passed the patient-reached gate for this flow.
-      setDraft(lastDraft);
-      setGate('yes');
-      setSubmitted(false);
-      setSubmitError('');
-    };
     // Secondary options (edit / retract) available only while the edit
     // window is open and only for real submissions (not "just log it").
     const withinEditWindow = !!editableUntil && new Date(editableUntil) > new Date();
@@ -512,12 +502,6 @@ export function RecordPage() {
           </div>
         ) : (
           <>
-            {lastDraft && (
-              <button onClick={recordAnother}
-                className="w-full mt-3 bg-white text-[#0F6E56] border-2 border-[#0F6E56] font-semibold py-4 rounded-xl hover:bg-gray-50 transition-colors text-base">
-                Record another like this
-              </button>
-            )}
             {canTidy && (
               <>
                 <button onClick={fixSomething}
