@@ -476,7 +476,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // Top contributing factors this period — drives the "system causes"
   // narrative and the auto-generated agenda items.
   const factorCounts = (incidents || []).flatMap(i => i.factors || []).reduce<Record<string, number>>((acc, f) => { acc[f] = (acc[f] || 0) + 1; return acc; }, {});
-  const topFactors = Object.entries(factorCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const topFactors: [string, number][] = Object.entries(factorCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const topFactorLine = topFactors.length > 0 && topFactors[0][1] >= 2
     ? `Top contributing factor: ${topFactors[0][0]} (${topFactors[0][1]} incidents).`
     : '';
@@ -497,7 +497,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     if (i.time_of_day) acc[i.time_of_day] = (acc[i.time_of_day] || 0) + 1;
     return acc;
   }, {});
-  const timeBucketEntries = Object.entries(timeBucketCounts).sort((a, b) => b[1] - a[1]);
+  const timeBucketEntries: [string, number][] = Object.entries(timeBucketCounts).sort((a, b) => b[1] - a[1]);
   const dayCounts = (incidents || []).reduce<Record<string, number>>((acc, i) => {
     const when = i.occurred_at || i.submitted_at;
     if (!when) return acc;
@@ -507,7 +507,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     acc[day] = (acc[day] || 0) + 1;
     return acc;
   }, {});
-  const dayEntries = Object.entries(dayCounts).sort((a, b) => b[1] - a[1]);
+  const dayEntries: [string, number][] = Object.entries(dayCounts).sort((a, b) => b[1] - a[1]);
   let peakLine = '';
   if (incidentCount >= 3) {
     const topTime = timeBucketEntries[0];
@@ -601,8 +601,8 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const topPairCount = topPair?.[1].count || 0;
 
   // Distinct high-risk classes touched this period — used in agenda.
-  const highRiskClasses = [...new Set(
-    highRiskIncidents.map(i => highRiskCategoryFor(i.drug_name) || highRiskCategoryFor(i.dispensed_drug)).filter((c): c is string => !!c)
+  const highRiskClasses: string[] = [...new Set(
+    (highRiskIncidents as Array<{ drug_name?: string | null; dispensed_drug?: string | null }>).map(i => highRiskCategoryFor(i.drug_name) || highRiskCategoryFor(i.dispensed_drug)).filter((c): c is string => !!c)
   )];
 
   // Period summary — a single flowing paragraph that weaves together the
@@ -756,7 +756,7 @@ Skip preamble like "this period saw" or "it is recommended that". Don't restate 
         model: 'claude-sonnet-4-6', max_tokens: 500,
         system: summarySizeNote ? `${summarySystemBase}\n\n${summarySizeNote}` : summarySystemBase,
         messages: [{ role: 'user', content: JSON.stringify({
-          incidents: incidents?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })),
+          incidents: (incidents as Array<{ error_types?: string[]; drug_name?: string | null; factors?: string[]; recommendations?: { ai_text?: string; manager_outcome?: string }[] }> | null | undefined)?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })),
           previous_period_summary: lastReport?.period_summary,
           // Hand the AI the comparison so it can reference real outcomes
           // ("the action on Atorvastatin appears to be working") instead

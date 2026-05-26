@@ -28,7 +28,7 @@ Goal: turn anonymous near-miss logs into a regulator-friendly CQI (continuous qu
 
 - His `server/.env` may or may not exist on his Mac — the assistant cannot see it directly (different filesystem). Always have him `cat server/.env` before suggesting changes that could overwrite it.
 - Founder password is hardcoded `founder123` (dev mode). Founder email comes from `FOUNDER_EMAIL` in `server/.env`. MFA accepts any 6 digits in dev.
-- Manager access is an in-app upgrade from staff, not a separate login. Optionally PIN-gated via Settings.
+- Manager access is an in-app upgrade from staff, not a separate login. No PIN gate — the PIN feature was removed because it duplicated the pharmacy password without adding real security.
 
 ## Working branch
 
@@ -63,7 +63,7 @@ Goal: turn anonymous near-miss logs into a regulator-friendly CQI (continuous qu
   - SIGN-OFF (acknowledgement table)
 - Every editable field has a `no-print` textarea + `print:block hidden` paragraph sibling, so printing captures full text not the textarea's visible rows.
 - AI per-incident recommendations + period summary (NZ-grounded, plain language)
-- Settings tabs: Security (PIN), Password, Pharmacy size (sole/tech/multi — shapes AI prompt in `services/ai.ts`), Audit log (expandable rows with plain-English action labels)
+- Settings tabs: Password, Pharmacy size (sole/tech/multi — shapes AI prompt in `services/ai.ts`), Audit log (expandable rows with plain-English action labels)
 - Founder page (`AdminPage.tsx`): Overview / Suggestions / Pharmacies. Audit tab was removed deliberately — regulators inspect the pharmacy, not the vendor; per-pharmacy audit covers them.
 - Auto-save on blur for the three editable report fields
 

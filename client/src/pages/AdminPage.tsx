@@ -116,7 +116,7 @@ export function AdminPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card label="Active pharmacies" value={health.activePharmacies} sub={`${health.totalPharmacies} total`} hint="Pharmacies whose subscription is currently active." />
               <Card label="Near misses this month" value={health.incidentsThisMonth} hint="Total across every pharmacy this calendar month." />
-              <Card label="Reporting trend" value={`${trend >= 0 ? '+' : ''}${trend}%`} sub="vs last month" hint="Change in total near misses month-on-month. A drop can mean fewer errors — OR under-reporting." />
+              <Card label="Reporting trend" value={`${trend >= 0 ? '+' : ''}${trend}%`} sub="vs last month" hint="Change in total near misses month-on-month. A drop can mean fewer near misses actually happening — OR under-reporting." />
               <Card label="Inactive 30+ days" value={health.inactivePharmacies} alert={health.inactivePharmacies > 0} hint="Pharmacies that haven't used the app in over a month. Worth a check-in call." />
             </div>
           )}

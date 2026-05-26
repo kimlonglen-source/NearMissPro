@@ -95,7 +95,7 @@ class Api {
     return this.req<object>(`/auth/pharmacies/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
   }
 
-  // PIN management
+  // Password management
   changePassword(currentPassword: string, newPassword: string) { return this.req<object>('/auth/manager/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }); }
 
   // Incidents

@@ -45,6 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     api.setToken(null); setRole(null); setPharmacyName(null); setPharmacyId(null);
+    // nmp_pin_enabled is from a removed PIN feature — keep cleaning it
+    // up on logout so users who logged in under the old build don't
+    // carry a stale flag in localStorage.
     ['nmp_role', 'nmp_pharmacy', 'nmp_pharmacy_id', 'nmp_pin_enabled'].forEach(k => localStorage.removeItem(k));
   };
 
