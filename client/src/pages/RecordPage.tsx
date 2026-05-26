@@ -821,11 +821,6 @@ export function RecordPage() {
                 />
               )}
 
-              {hasSub && (
-                <button onClick={() => setOpenSection(3)} className="mt-1 text-sm font-medium text-[#0F6E56] flex items-center gap-1 hover:underline">
-                  Next: Where was it caught? <ArrowRight size={14} />
-                </button>
-              )}
             </div>
           )}
 
