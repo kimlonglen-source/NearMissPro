@@ -219,11 +219,26 @@ export function RecordPage() {
     return !history.some(s => s.toLowerCase() === v.toLowerCase());
   }, [draft.drugName]);
 
-  // High-risk drug detection — Medsafe-aligned. If either field matches a
-  // high-risk class, the form shows the relevant guidance so staff know
-  // to apply extra caution while logging.
-  const highRisk = useMemo(() => checkHighRisk(draft.drugName) || checkHighRisk(draft.dispensedDrug),
-    [draft.drugName, draft.dispensedDrug]);
+  // High-risk drug detection — Medsafe-aligned. Two distinct cases:
+  //   A) the prescribed drug is high-risk → standard dispensing guidance.
+  //   B) the high-risk drug appears only as the 'given in error' drug
+  //      (a wrong-drug swap) → standard dispensing advice is irrelevant.
+  //      The near miss IS the swap; what matters is preventing the next
+  //      one (shelf separation, TALLman lettering, second check).
+  const highRisk = useMemo(() => {
+    const prescribedMatch = checkHighRisk(draft.drugName);
+    const dispensedMatch = checkHighRisk(draft.dispensedDrug);
+    if (prescribedMatch) return { ...prescribedMatch, swapContext: false };
+    if (dispensedMatch) {
+      // The high-risk drug was the one almost handed out by mistake.
+      return {
+        category: dispensedMatch.category,
+        guidance: `${draft.dispensedDrug.trim() || dispensedMatch.category} is high-risk and was almost given by mistake. Even though caught, this matters — wrong-${dispensedMatch.category.toLowerCase()} swaps can be fatal. Move it away from look-alike items, use TALLman lettering on the bin, and require a second-pharmacist check at picking.`,
+        swapContext: true,
+      };
+    }
+    return null;
+  }, [draft.drugName, draft.dispensedDrug]);
 
   const visibleFactors = useMemo(
     () => draft.showMoreFactors ? FACTORS : FACTORS.slice(0, FACTORS_DEFAULT_VISIBLE),
