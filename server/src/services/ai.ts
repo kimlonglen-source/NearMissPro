@@ -577,16 +577,23 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   let comparisonNarrative = '';
   if (prevIncidents && prevIncidents.length > 0) {
     const netDelta = incidentCount - (prevIncidents.length || 0);
+    // Headline only — the per-pattern detail (Resolved / Improving /
+    // Needs attention) lives in the WHAT WORKED panel directly below
+    // the summary on the report. Listing them here just duplicated
+    // that panel and turned the summary into a wall of text.
     const headline = netDelta < 0
       ? `${Math.abs(netDelta)} fewer near misses than last period (${incidentCount} vs ${prevIncidents.length}).`
       : netDelta > 0
         ? `${netDelta} more near misses than last period (${incidentCount} vs ${prevIncidents.length}).`
         : `Same total as last period (${incidentCount}).`;
-    const parts = [headline];
-    if (wins.length > 0) parts.push(`Resolved: ${wins.slice(0, 4).join('; ')}.`);
-    if (recurring.length > 0) parts.push(`Improving: ${recurring.slice(0, 3).join('; ')}.`);
-    if (concerns.length > 0) parts.push(`Needs attention: ${concerns.slice(0, 3).join('; ')}.`);
-    comparisonNarrative = parts.join(' ');
+    let counts = '';
+    if (wins.length > 0 || concerns.length > 0) {
+      const bits: string[] = [];
+      if (wins.length > 0) bits.push(`${wins.length} pattern${wins.length > 1 ? 's' : ''} resolved`);
+      if (concerns.length > 0) bits.push(`${concerns.length} need${concerns.length === 1 ? 's' : ''} attention`);
+      counts = ` ${bits.join(', ')} — see "What worked" below.`;
+    }
+    comparisonNarrative = headline + counts;
     comparisonLines.push(comparisonNarrative);
   }
 
