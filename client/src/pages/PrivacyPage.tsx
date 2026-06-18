@@ -6,7 +6,7 @@ import { MarketingLayout } from '../components/MarketingChrome';
 // customer, particularly the data-flow specifics around AI.
 export function PrivacyPage() {
   return (
-    <MarketingLayout title="Privacy Policy" subtitle="Last updated: today">
+    <MarketingLayout title="Privacy Policy" subtitle="Last updated: 18 June 2026">
       <p><strong>Plain English first:</strong> we collect as little as we need to run the service. Near misses are anonymous to the team. We do not sell your data, ever. This is a draft (v1) being reviewed by counsel before our public launch.</p>
 
       <h2>Who we are</h2>

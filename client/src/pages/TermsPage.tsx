@@ -5,7 +5,7 @@ import { MarketingLayout } from '../components/MarketingChrome';
 // by a NZ commercial / IT lawyer before the first paying customer.
 export function TermsPage() {
   return (
-    <MarketingLayout title="Terms of Service" subtitle="Last updated: today">
+    <MarketingLayout title="Terms of Service" subtitle="Last updated: 18 June 2026">
       <p><strong>Plain English first:</strong> these are the rules for using NearMissPro. By signing up or using the service, you agree to them. This is a draft (v1) being reviewed by counsel before our public launch — when the reviewed version replaces this one we'll note the change date at the top.</p>
 
       <h2>1. Who we are</h2>

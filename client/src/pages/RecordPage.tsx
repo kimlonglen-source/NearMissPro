@@ -696,7 +696,7 @@ export function RecordPage() {
           </div>
 
           {/* ═══ Section 1: Where did this happen? ═══ */}
-          <SectionHeader num={1} title="Where did this happen?" subtitle="Pick the step where the error happened" done={hasStage} open={openSection === 1} onClick={() => toggleSection(1)} />
+          <SectionHeader num={1} title="Where did this happen?" subtitle="Pick the step where the near miss happened" done={hasStage} open={openSection === 1} onClick={() => toggleSection(1)} />
           {openSection === 1 && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
               <div className="grid grid-cols-2 gap-2">

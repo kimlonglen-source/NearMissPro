@@ -9,7 +9,7 @@ export function ReportsListPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getReports().then(r => setReports(r)).catch(console.error).finally(() => setLoading(false));
+    api.getReports().then(r => setReports(r)).catch(() => { /* keep empty list on failure */ }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin text-[#0F6E56]" size={32} /></div>;
