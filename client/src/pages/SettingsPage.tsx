@@ -274,9 +274,15 @@ export function SettingsPage() {
 
       {tab === 'network' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-          <h3 className="font-semibold">Network restrictions</h3>
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="font-semibold">Network restrictions</h3>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">Optional</span>
+          </div>
           <p className="text-sm text-gray-500">
-            Lock logins to your pharmacy's internet network so the account can't be used from home or on mobile data. Optional — leave the list empty to allow logins from anywhere.
+            Lock logins to your pharmacy's internet network so the account can't be used from home or on mobile data. <strong className="text-gray-700">Off by default</strong> — only turn this on if you specifically want to stop staff (or anyone with the password) from logging in remotely.
+          </p>
+          <p className="text-xs text-gray-500">
+            <strong>Before turning on:</strong> consider asking your ISP for a static IP — otherwise a router restart could change your IP and lock everyone out (recoverable via the founder URL, but inconvenient).
           </p>
 
           {networkMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{networkMsg}</div>}
