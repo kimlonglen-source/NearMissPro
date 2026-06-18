@@ -93,7 +93,7 @@ function ProductPreview() {
 
   useEffect(() => {
     if (paused) return;
-    const HOLDS = [4500, 3500, 4000]; // ms per stage — Record longer so the click-through sub-animation has time to play
+    const HOLDS = [7500, 3500, 4000]; // ms per stage — Record longer so the 4-step click-through has time to play
     const t = setTimeout(() => setStage(s => ((s + 1) % 3) as 0 | 1 | 2), HOLDS[stage]);
     return () => clearTimeout(t);
   }, [stage, paused]);
@@ -131,7 +131,7 @@ function ProductPreview() {
           </div>
 
           {/* Stage body — height kept consistent so the card doesn't jump */}
-          <div className="p-5 min-h-[300px]">
+          <div className="p-5 min-h-[420px]">
             {stage === 0 && <RecordStage />}
             {stage === 1 && <ReviewStage />}
             {stage === 2 && <PrintStage />}
@@ -177,34 +177,33 @@ function ProductPreview() {
 // see each click happen. Tap order: stage chip → error chip → where-
 // caught chip → submit (pulses).
 function RecordStage() {
-  // 0 = step 1 active, 1 = step 1 done & step 2 active, 2 = step 2
-  // done & step 3 active, 3 = all done & submit pulsing.
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
-  // Cursor "click" pulse — fires briefly when stepping so the visitor
-  // sees a click happen, not just a position change.
+  // 0 = section 1 active (stage), 1 = section 2 active (error type),
+  // 2 = section 3 active (where caught), 3 = section 4 active
+  // (factors), 4 = all done & submit pulsing.
+  type Step = 0 | 1 | 2 | 3 | 4;
+  const [step, setStep] = useState<Step>(0);
   const [clicking, setClicking] = useState(false);
   useEffect(() => {
-    // Slower than before so the cursor movement is followable. Each
-    // step: ~600ms cursor moves + lands → click flash → 1000ms hold
-    // showing the new selected state.
-    const HOLDS = [1600, 1600, 1600, 1200];
+    // Per-step hold. Each: ~500ms cursor lands → click flash → ~1000ms
+    // hold showing the new selected state.
+    const HOLDS = [1500, 1500, 1500, 1500, 1200];
     const clickAt = setTimeout(() => {
       setClicking(true);
       setTimeout(() => setClicking(false), 200);
     }, 500);
-    const advance = setTimeout(() => setStep(s => Math.min(3, s + 1) as 0 | 1 | 2 | 3), HOLDS[step]);
+    const advance = setTimeout(() => setStep(s => Math.min(4, s + 1) as Step), HOLDS[step]);
     return () => { clearTimeout(clickAt); clearTimeout(advance); };
   }, [step]);
 
   // Cursor target position per step. Hand-calibrated against the card
-  // layout (p-5 padding, space-y-3 between sections). Exact pixel
-  // accuracy isn't critical — the cursor lands on the right chip
-  // visually, which is what matters.
+  // layout — exact pixel accuracy isn't critical, just lands on the
+  // right chip visually.
   const CURSOR_POS = [
-    { top: 78,  left: 100 }, // Step 0: "Drug picked from shelf" chip in section 1
-    { top: 120, left: 110 }, // Step 1: "Wrong strength picked" chip in section 2
-    { top: 220, left: 105 }, // Step 2: "Final pharmacist check" chip in section 3
-    { top: 300, left: 180 }, // Step 3: Submit button
+    { top: 78,  left: 100 }, // Step 0: stage chip ("Drug picked from shelf")
+    { top: 120, left: 110 }, // Step 1: error chip ("Wrong strength picked")
+    { top: 220, left: 105 }, // Step 2: where-caught chip
+    { top: 290, left: 100 }, // Step 3: factor chip ("Interruption / distraction")
+    { top: 365, left: 180 }, // Step 4: Submit button
   ];
   const pos = CURSOR_POS[step];
 
@@ -313,8 +312,35 @@ function RecordStage() {
         </div>
       )}
 
-      {/* Submit button — pulses on step 3 (all done) */}
-      {step >= 3 && (
+      {/* Step 4 — What was happening at the time? (factors) */}
+      {step === 3 ? (
+        <div className="rounded-lg border border-gray-200 px-3 py-3 animate-[fadeIn_0.3s_ease]">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[11px] font-bold flex items-center justify-center">4</span>
+            <span className="text-sm font-medium text-gray-800">What was happening at the time?</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF8EB] border border-[#BA7517] text-[#633806] animate-[pulse_1.2s_ease-in-out_infinite]">Interruption / distraction</span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">High volume</span>
+          </div>
+        </div>
+      ) : step >= 4 ? (
+        <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2.5 flex items-center gap-2 animate-[fadeIn_0.3s_ease]">
+          <CheckCircle2 size={15} className="text-[#1D9E75]" />
+          <span className="text-sm font-medium text-gray-800 flex-1">What was happening at the time?</span>
+          <span className="text-xs font-semibold text-[#085041]">Done</span>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-gray-200 px-3 py-3 opacity-60">
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[11px] font-bold flex items-center justify-center">4</span>
+            <span className="text-sm text-gray-600">What was happening at the time?</span>
+          </div>
+        </div>
+      )}
+
+      {/* Submit button — pulses on step 4 (all done) */}
+      {step >= 4 && (
         <button className="w-full py-2.5 rounded-lg bg-[#0F6E56] text-white text-sm font-semibold animate-pulse">
           Submit near miss
         </button>
