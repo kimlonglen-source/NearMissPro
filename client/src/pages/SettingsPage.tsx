@@ -112,12 +112,34 @@ export function SettingsPage() {
   const [mgrMsg, setMgrMsg] = useState('');
   const [mgrErr, setMgrErr] = useState('');
 
+  // Pharmacy + manager details (name, email) — editable so the
+  // outgoing manager can hand over to a new one without contacting
+  // the founder.
+  const [detailsName, setDetailsName] = useState('');
+  const [detailsEmail, setDetailsEmail] = useState('');
+  const [detailsMsg, setDetailsMsg] = useState('');
+  const [detailsErr, setDetailsErr] = useState('');
+
   useEffect(() => {
     api.getMe().then(me => {
       setSize((me.pharmacySize as PharmacySize | null) || null);
       setMgrSeparate(!!me.managerPasswordIsSeparate);
+      setDetailsName(me.managerName || '');
+      setDetailsEmail(me.managerEmail || '');
     }).catch(() => {});
   }, []);
+
+  const handleSaveDetails = async () => {
+    setDetailsErr(''); setDetailsMsg('');
+    if (!detailsName.trim() || !detailsEmail.trim()) { setDetailsErr('Both fields are required'); return; }
+    if (!/.+@.+\..+/.test(detailsEmail)) { setDetailsErr('That email doesn\'t look right'); return; }
+    try {
+      await api.updatePharmacyDetails(detailsName.trim(), detailsEmail.trim());
+      setDetailsMsg('Saved — change is in the audit log');
+    } catch {
+      setDetailsErr('Could not save — try again');
+    }
+  };
 
   const handleSetManagerPassword = async () => {
     if (mgrNew.length < 8) { setMgrErr('New password must be at least 8 characters'); return; }
@@ -227,6 +249,16 @@ export function SettingsPage() {
 
       {tab === 'pharmacy' && (
         <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
+            <h3 className="font-semibold">Pharmacy &amp; manager details</h3>
+            <p className="text-xs text-gray-500">Used in the report greeting and (when email is wired up) password-reset emails. <strong>Update these when the manager role transfers to someone new</strong> — then rotate the manager password below.</p>
+            {detailsMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{detailsMsg}</div>}
+            {detailsErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{detailsErr}</div>}
+            <input type="text" placeholder="Manager name (e.g. Sarah Smith)" value={detailsName} onChange={e => { setDetailsName(e.target.value); if (detailsMsg) setDetailsMsg(''); }} className="input-field" />
+            <input type="email" placeholder="Manager email" value={detailsEmail} onChange={e => { setDetailsEmail(e.target.value); if (detailsMsg) setDetailsMsg(''); }} className="input-field" />
+            <button onClick={handleSaveDetails} disabled={!detailsName.trim() || !detailsEmail.trim()} className="btn-teal text-sm">Save details</button>
+          </div>
+
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
             <h3 className="font-semibold">Pharmacy size</h3>
             <p className="text-sm text-gray-500">This shapes the AI's advice — a sole pharmacist won't be told to "have a second pharmacist check".</p>

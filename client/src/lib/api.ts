@@ -81,16 +81,22 @@ class Api {
   founderLogin(email: string, password: string, mfaCode?: string) {
     return this.req<{ token?: string; role?: string; requiresMfa?: boolean; email?: string }>('/auth/founder/login', { method: 'POST', body: JSON.stringify({ email, password, mfaCode }) });
   }
-  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; managerPasswordIsSeparate?: boolean }>('/auth/me'); }
+  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; managerPasswordIsSeparate?: boolean; managerName?: string | null; managerEmail?: string | null }>('/auth/me'); }
   setPharmacySize(pharmacySize: 'sole' | 'pharmacist_plus_tech' | 'multi' | null) {
     return this.req<{ ok: boolean; pharmacySize: string | null }>('/auth/pharmacy/settings', { method: 'PATCH', body: JSON.stringify({ pharmacySize }) });
+  }
+  updatePharmacyDetails(managerName: string, managerEmail: string) {
+    return this.req<{ ok: boolean; managerName: string | null; managerEmail: string | null }>('/auth/pharmacy/settings', {
+      method: 'PATCH',
+      body: JSON.stringify({ managerName, managerEmail }),
+    });
   }
   getMyAuditLog(page = 1) {
     return this.req<{ entries: { id: string; action: string; performed_by: string | null; details: Record<string, unknown> | null; created_at: string }[]; total: number; page: number; limit: number }>(`/audit/log?page=${page}`);
   }
 
   // Pharmacy management
-  createPharmacy(data: { name: string; password: string; managerEmail: string; address?: string; licenceNumber?: string }) {
+  createPharmacy(data: { name: string; password: string; managerPassword: string; managerName: string; managerEmail: string; address?: string; licenceNumber?: string }) {
     return this.req<object>('/auth/pharmacies', { method: 'POST', body: JSON.stringify(data) });
   }
   listPharmacies() { return this.req<object[]>('/auth/pharmacies'); }

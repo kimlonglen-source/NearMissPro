@@ -34,7 +34,7 @@ export function AdminPage() {
   const [others, setOthers] = useState<OtherEntry[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', password: '', managerEmail: '', address: '', licenceNumber: '' });
+  const [form, setForm] = useState({ name: '', password: '', managerPassword: '', managerName: '', managerEmail: '', address: '', licenceNumber: '' });
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -66,13 +66,19 @@ export function AdminPage() {
   };
 
   const handleCreatePharmacy = async () => {
-    if (!form.name || !form.password || !form.managerEmail) return;
+    if (!form.name || !form.password || form.password.length < 8 || !form.managerPassword || form.managerPassword.length < 8 || !form.managerName || !form.managerEmail) return;
     setBusy(true);
     try {
-      await api.createPharmacy({ name: form.name, password: form.password, managerEmail: form.managerEmail,
-        ...(form.address ? { address: form.address } : {}), ...(form.licenceNumber ? { licenceNumber: form.licenceNumber } : {}),
+      await api.createPharmacy({
+        name: form.name,
+        password: form.password,
+        managerPassword: form.managerPassword,
+        managerName: form.managerName,
+        managerEmail: form.managerEmail,
+        ...(form.address ? { address: form.address } : {}),
+        ...(form.licenceNumber ? { licenceNumber: form.licenceNumber } : {}),
       });
-      setForm({ name: '', password: '', managerEmail: '', address: '', licenceNumber: '' });
+      setForm({ name: '', password: '', managerPassword: '', managerName: '', managerEmail: '', address: '', licenceNumber: '' });
       setShowCreate(false); await loadPharmacies();
     } finally { setBusy(false); }
   };
@@ -162,19 +168,39 @@ export function AdminPage() {
           </div>
 
           {showCreate && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4 space-y-3">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4 space-y-4">
               <h3 className="text-sm font-bold">New pharmacy</h3>
-              <p className="text-xs text-gray-500">All staff will use this one password to log into the app. The manager email is for your records — there's no automated email sent yet.</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input className="input-field" placeholder="Pharmacy name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-                <input className="input-field" placeholder="Pharmacy password *" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-                <input className="input-field" placeholder="Manager email *" value={form.managerEmail} onChange={e => setForm({ ...form, managerEmail: e.target.value })} />
-                <input className="input-field" placeholder="Address (optional)" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
-                <input className="input-field" placeholder="Licence number (optional)" value={form.licenceNumber} onChange={e => setForm({ ...form, licenceNumber: e.target.value })} />
+
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">Pharmacy</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input className="input-field" placeholder="Pharmacy name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                  <input className="input-field" placeholder="Address (optional)" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+                  <input className="input-field" placeholder="Licence number (optional)" value={form.licenceNumber} onChange={e => setForm({ ...form, licenceNumber: e.target.value })} />
+                </div>
               </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">Manager (pharmacist-in-charge)</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input className="input-field" placeholder="Manager name *" value={form.managerName} onChange={e => setForm({ ...form, managerName: e.target.value })} />
+                  <input className="input-field" placeholder="Manager email *" value={form.managerEmail} onChange={e => setForm({ ...form, managerEmail: e.target.value })} />
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1">Used for the report greeting and (later) password-reset emails.</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">Passwords</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input className="input-field" placeholder="Pharmacy password * (8+ chars)" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+                  <input className="input-field" placeholder="Manager password * (8+ chars)" type="password" value={form.managerPassword} onChange={e => setForm({ ...form, managerPassword: e.target.value })} />
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1">Pharmacy password is shared with all staff on the dispensing computer. Manager password is held only by the pharmacist-in-charge — required to enter manager mode.</p>
+              </div>
+
               <div className="flex gap-2 justify-end">
                 <button className="btn-grey text-xs" onClick={() => setShowCreate(false)}>Cancel</button>
-                <button className="btn-teal text-xs" disabled={busy || !form.name || !form.password || !form.managerEmail} onClick={handleCreatePharmacy}>Create pharmacy</button>
+                <button className="btn-teal text-xs" disabled={busy || !form.name || form.password.length < 8 || form.managerPassword.length < 8 || !form.managerName || !form.managerEmail} onClick={handleCreatePharmacy}>Create pharmacy</button>
               </div>
             </div>
           )}

@@ -187,31 +187,60 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
   // shared pharmacy password).
   let pharmacySize: string | null = null;
   let managerPasswordIsSeparate = false;
+  let managerName: string | null = null;
+  let managerEmail: string | null = null;
   if (req.auth!.pharmacyId) {
     const { data } = await supabase.from('pharmacies')
-      .select('pharmacy_size, manager_password_hash').eq('id', req.auth!.pharmacyId).single();
+      .select('pharmacy_size, manager_password_hash, manager_name, manager_email')
+      .eq('id', req.auth!.pharmacyId).single();
     pharmacySize = (data?.pharmacy_size as string | null) || null;
     managerPasswordIsSeparate = !!data?.manager_password_hash;
+    managerName = (data?.manager_name as string | null) || null;
+    managerEmail = (data?.manager_email as string | null) || null;
   }
-  res.json({ ...req.auth, pharmacySize, managerPasswordIsSeparate });
+  res.json({ ...req.auth, pharmacySize, managerPasswordIsSeparate, managerName, managerEmail });
 });
 
 // ── Update pharmacy-level settings (manager only) ───────────
-// Single endpoint for whatever pharmacy-level toggles we add over time.
-// Today: pharmacy_size. Returns the saved value so the client can
-// confirm the write rather than trusting its local state.
+// Single endpoint for pharmacy-level toggles + manager details
+// (name/email). Each field is optional in the body so the client
+// can save just what changed. Returns whatever was written so the
+// UI doesn't have to trust its local state.
 router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder'), async (req: Request, res: Response) => {
   try {
     const body = z.object({
       pharmacySize: z.enum(['sole', 'pharmacist_plus_tech', 'multi']).nullable().optional(),
+      managerName: z.string().trim().min(1).max(100).optional(),
+      managerEmail: z.string().trim().email().max(200).optional(),
     }).parse(req.body);
     const updates: Record<string, unknown> = {};
     if (body.pharmacySize !== undefined) updates.pharmacy_size = body.pharmacySize;
+    if (body.managerName !== undefined) updates.manager_name = body.managerName;
+    if (body.managerEmail !== undefined) updates.manager_email = body.managerEmail;
     if (Object.keys(updates).length === 0) { res.json({ ok: true }); return; }
     const { data, error } = await supabase.from('pharmacies').update(updates)
-      .eq('id', req.auth!.pharmacyId).select('pharmacy_size').single();
+      .eq('id', req.auth!.pharmacyId).select('pharmacy_size, manager_name, manager_email').single();
     if (error) throw error;
-    res.json({ ok: true, pharmacySize: data?.pharmacy_size || null });
+    // Manager-details changes are audit-logged so a handover ("who
+    // was the manager on 18 June?") is traceable. Pharmacy-size
+    // changes don't need an audit entry — they're just AI tone.
+    if (body.managerName !== undefined || body.managerEmail !== undefined) {
+      await supabase.from('audit_log').insert({
+        pharmacy_id: req.auth!.pharmacyId,
+        action: 'pharmacy_details_updated',
+        performed_by: 'manager',
+        details: {
+          ...(body.managerName !== undefined ? { manager_name: body.managerName } : {}),
+          ...(body.managerEmail !== undefined ? { manager_email: body.managerEmail } : {}),
+        },
+      });
+    }
+    res.json({
+      ok: true,
+      pharmacySize: data?.pharmacy_size || null,
+      managerName: data?.manager_name || null,
+      managerEmail: data?.manager_email || null,
+    });
   } catch (err) {
     if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
     console.error('[auth] pharmacy/settings failed:', err);
@@ -223,13 +252,23 @@ router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder
 router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Request, res: Response) => {
   try {
     const data = z.object({
-      name: z.string().min(1), password: z.string().min(8), managerEmail: z.string().email(),
-      address: z.string().optional(), licenceNumber: z.string().optional(),
+      name: z.string().min(1).max(120),
+      password: z.string().min(8).max(200),
+      managerPassword: z.string().min(8).max(200),
+      managerName: z.string().min(1).max(100),
+      managerEmail: z.string().email().max(200),
+      address: z.string().max(300).optional(),
+      licenceNumber: z.string().max(50).optional(),
     }).parse(req.body);
 
     const { data: pharmacy, error } = await supabase.from('pharmacies').insert({
-      name: data.name, password_hash: await bcrypt.hash(data.password, 12),
-      manager_email: data.managerEmail, address: data.address, licence_number: data.licenceNumber,
+      name: data.name,
+      password_hash: await bcrypt.hash(data.password, 12),
+      manager_password_hash: await bcrypt.hash(data.managerPassword, 12),
+      manager_name: data.managerName,
+      manager_email: data.managerEmail,
+      address: data.address,
+      licence_number: data.licenceNumber,
     }).select().single();
 
     if (error) {
