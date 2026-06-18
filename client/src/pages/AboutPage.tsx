@@ -5,12 +5,12 @@ import { MarketingLayout } from '../components/MarketingChrome';
 export function AboutPage() {
   return (
     <MarketingLayout title="About NearMissPro">
-      <h2>Built by a pharmacy owner, for pharmacy owners</h2>
-      <p>NearMissPro is an independent New Zealand product, built by a community pharmacy owner who got tired of the gap between the near-miss logbook on the dispensary bench and the continuous-quality-improvement (CQI) work the Pharmacy Council expects of every pharmacy.</p>
+      <h2>Built by a pharmacist, for pharmacists</h2>
+      <p>NearMissPro is an independent New Zealand product, built by a pharmacist with over twenty years of community pharmacy experience — including time as a pharmacy owner. Long enough to see the gap between the near-miss logbook on the dispensary bench and the continuous-quality-improvement (CQI) work the Pharmacy Council expects of every pharmacy.</p>
 
       <p>The problem with paper isn't paper. It's that the logbook captures incidents and then sits there. The patterns are invisible. The monthly review is rebuilt from scratch every time. And the "did our actions work?" question — the actual heart of CQI — is almost impossible to answer.</p>
 
-      <p>NearMissPro started as a tool used in one pharmacy. It works there. We're now making it available to other NZ community pharmacies who want the same closed-loop process without building it themselves.</p>
+      <p>NearMissPro is the tool I wanted on the bench for twenty years. We're now making it available to NZ community pharmacies who want the same closed-loop process without building it themselves.</p>
 
       <h2>What we believe</h2>
       <ul>
