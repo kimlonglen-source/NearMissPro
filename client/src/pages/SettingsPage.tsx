@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { Key, Building2, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Key, Building2, FileText, ChevronDown, ChevronRight, Wifi, AlertTriangle, Loader2 } from 'lucide-react';
 
-type Tab = 'password' | 'pharmacy' | 'audit';
+type Tab = 'password' | 'pharmacy' | 'audit' | 'network';
 type PharmacySize = 'sole' | 'pharmacist_plus_tech' | 'multi';
 
 const SIZE_LABELS: Record<PharmacySize, { title: string; help: string }> = {
@@ -26,6 +26,7 @@ function auditActionLabel(action: string): string {
     case 'phi_suspected': return 'Possible patient identifier in notes';
     case 'report_generated': return 'Report generated';
     case 'password_changed': return 'Password changed';
+    case 'network_settings_changed': return 'Network restrictions changed';
     case 'pharmacy_created': return 'Pharmacy created';
     default: return action.replace(/_/g, ' ');
   }
@@ -109,6 +110,40 @@ export function SettingsPage() {
     if (tab === 'audit' && auditEntries.length === 0) loadAudit(1);
   }, [tab, auditEntries.length, loadAudit]);
 
+  // Network (IP allowlist) — manager opts in to restrict logins to
+  // specific networks (e.g. only allow staff to log in from the
+  // pharmacy's own internet connection). Founder login bypasses
+  // this, so a lockout is recoverable.
+  const [networkLoading, setNetworkLoading] = useState(false);
+  const [networkSaving, setNetworkSaving] = useState(false);
+  const [networkMsg, setNetworkMsg] = useState('');
+  const [currentIp, setCurrentIp] = useState('');
+  const [allowedIps, setAllowedIps] = useState<string[]>([]);
+
+  const loadNetwork = useCallback(async () => {
+    setNetworkLoading(true);
+    try {
+      const r = await api.getNetworkSettings();
+      setCurrentIp(r.currentIp);
+      setAllowedIps(r.allowedIps);
+    } finally { setNetworkLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'network') loadNetwork();
+  }, [tab, loadNetwork]);
+
+  const saveAllowedIps = async (next: string[]) => {
+    setNetworkSaving(true); setNetworkMsg('');
+    try {
+      const r = await api.setNetworkSettings(next);
+      setAllowedIps(r.allowedIps);
+      setNetworkMsg('Saved');
+    } catch {
+      setNetworkMsg('Failed to save');
+    } finally { setNetworkSaving(false); }
+  };
+
   const handleChangePassword = async () => {
     if (newPwd.length < 8) { setPwdErr('Password must be at least 8 characters'); return; }
     try {
@@ -141,6 +176,7 @@ export function SettingsPage() {
         <button onClick={() => setTab('password')} className={`btn text-sm ${tab === 'password' ? 'btn-teal' : 'btn-grey'}`}><Key size={14} /> Password</button>
         <button onClick={() => setTab('pharmacy')} className={`btn text-sm ${tab === 'pharmacy' ? 'btn-teal' : 'btn-grey'}`}><Building2 size={14} /> Pharmacy</button>
         <button onClick={() => setTab('audit')} className={`btn text-sm ${tab === 'audit' ? 'btn-teal' : 'btn-grey'}`}><FileText size={14} /> Audit</button>
+        <button onClick={() => setTab('network')} className={`btn text-sm ${tab === 'network' ? 'btn-teal' : 'btn-grey'}`}><Wifi size={14} /> Network</button>
       </div>
 
       {tab === 'password' && (
@@ -232,6 +268,85 @@ export function SettingsPage() {
               <span className="text-xs text-gray-500">Page {auditPage} of {totalPages}</span>
               <button onClick={() => loadAudit(Math.min(totalPages, auditPage + 1))} disabled={auditPage >= totalPages || auditLoading} className="btn-grey text-xs">Next</button>
             </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'network' && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+          <h3 className="font-semibold">Network restrictions</h3>
+          <p className="text-sm text-gray-500">
+            Lock logins to your pharmacy's internet network so the account can't be used from home or on mobile data. Optional — leave the list empty to allow logins from anywhere.
+          </p>
+
+          {networkMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{networkMsg}</div>}
+
+          {networkLoading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-500"><Loader2 size={14} className="animate-spin" /> Loading…</div>
+          ) : (
+            <>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <p className="text-xs font-semibold text-gray-600 mb-1">You're currently on</p>
+                <p className="font-mono text-sm text-gray-900">{currentIp || '(unknown)'}</p>
+              </div>
+
+              {allowedIps.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-700">No restriction set — anyone with the password can log in from anywhere.</p>
+                  <button
+                    onClick={() => saveAllowedIps([currentIp])}
+                    disabled={networkSaving || !currentIp}
+                    className="btn-teal text-sm"
+                  >
+                    Lock logins to this network
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-gray-600">Allowed networks ({allowedIps.length})</p>
+                  <ul className="space-y-1.5">
+                    {allowedIps.map(ip => (
+                      <li key={ip} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                        <span className="font-mono text-sm flex-1">{ip}</span>
+                        {ip === currentIp && <span className="text-[10px] font-semibold text-[#085041] bg-[#E1F5EE] px-2 py-0.5 rounded-full">You're here</span>}
+                        <button
+                          onClick={() => saveAllowedIps(allowedIps.filter(x => x !== ip))}
+                          disabled={networkSaving}
+                          className="text-xs text-red-600 hover:text-red-800 font-medium"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {!allowedIps.includes(currentIp) && currentIp && (
+                    <button
+                      onClick={() => saveAllowedIps([...allowedIps, currentIp])}
+                      disabled={networkSaving}
+                      className="btn-outline text-sm"
+                    >
+                      + Add this network
+                    </button>
+                  )}
+                  <button
+                    onClick={() => saveAllowedIps([])}
+                    disabled={networkSaving}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline block"
+                  >
+                    Allow all networks (remove restriction)
+                  </button>
+                </div>
+              )}
+
+              <div className="border-t border-gray-200 pt-4 mt-2">
+                <p className="text-xs text-gray-500 flex items-start gap-2">
+                  <AlertTriangle size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Lockout protection:</strong> founder login (the <code className="text-[11px] bg-gray-100 px-1 rounded">/founder</code> URL) is never network-restricted. If your pharmacy's IP changes overnight and locks everyone out, log in there to fix the allowlist.
+                  </span>
+                </p>
+              </div>
+            </>
           )}
         </div>
       )}

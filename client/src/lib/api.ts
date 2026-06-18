@@ -85,6 +85,14 @@ class Api {
   getMyAuditLog(page = 1) {
     return this.req<{ entries: { id: string; action: string; performed_by: string | null; details: Record<string, unknown> | null; created_at: string }[]; total: number; page: number; limit: number }>(`/audit/log?page=${page}`);
   }
+  getNetworkSettings() {
+    return this.req<{ currentIp: string; allowedIps: string[] }>('/auth/network');
+  }
+  setNetworkSettings(allowedIps: string[]) {
+    return this.req<{ ok: boolean; allowedIps: string[] }>('/auth/network', {
+      method: 'PATCH', body: JSON.stringify({ allowedIps }),
+    });
+  }
 
   // Pharmacy management
   createPharmacy(data: { name: string; password: string; managerEmail: string; address?: string; licenceNumber?: string }) {

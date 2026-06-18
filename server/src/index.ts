@@ -15,6 +15,12 @@ import marketingRoutes from './routes/marketing.js';
 
 const app = express();
 
+// Trust the first proxy in front of us (Render, Vercel, etc.) so
+// req.ip reads the real client IP from X-Forwarded-For instead of the
+// proxy's own address. Needed for the per-pharmacy IP-allowlist
+// feature; harmless in dev where there is no proxy.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors({ origin: env.clientUrl, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
