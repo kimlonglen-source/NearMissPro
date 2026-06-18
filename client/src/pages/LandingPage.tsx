@@ -81,65 +81,56 @@ function Hero() {
   );
 }
 
-// Phone-shaped mockup of the record form mid-flow. Visitors see
-// chip-based selection, a stage already done, a high-risk warning,
-// and a "47s" timer corner-stamp. The simplicity pitch ("under 60
-// seconds, anonymous") is the main reason a pharmacist will sign up,
-// so the hero leads with it instead of the manager dashboard.
+// Clean card mockup of the record form mid-flow. Avoids the phone
+// bezel (NearMissPro runs on phone, tablet AND desktop — pharmacies
+// often have a till computer). Two corner stamps reinforce the
+// simplicity + anonymity pitch.
 function ProductPreview() {
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-br from-[#0F6E56]/20 to-[#1D9E75]/10 rounded-3xl blur-2xl" />
 
-      <div className="relative mx-auto max-w-[320px]">
-        {/* Phone frame */}
-        <div className="bg-gray-900 rounded-[2.5rem] p-2.5 shadow-2xl">
-          <div className="bg-white rounded-[2rem] overflow-hidden">
-            {/* Status bar */}
-            <div className="bg-white pt-2 pb-1 px-5 flex justify-between text-[10px] font-semibold text-gray-700">
-              <span>9:41</span>
-              <span className="flex items-center gap-1">●●●●● 5G ⚡</span>
+      <div className="relative mx-auto max-w-md">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+          {/* App header */}
+          <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-100">
+            <ShieldIcon size={20} />
+            <span className="text-sm font-bold">
+              <span className="text-[#0F6E56]">NearMiss</span> Pro
+            </span>
+            <span className="ml-auto text-[11px] text-gray-400">Record a near miss</span>
+          </div>
+
+          {/* Form body */}
+          <div className="p-5 space-y-3">
+            <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2.5 flex items-center gap-2">
+              <CheckCircle2 size={15} className="text-[#1D9E75]" />
+              <span className="text-sm font-medium text-gray-800 flex-1">Where did this happen?</span>
+              <span className="text-xs font-semibold text-[#085041]">Done</span>
             </div>
 
-            {/* App chrome */}
-            <div className="px-5 pt-3 pb-1 flex items-center gap-2 border-b border-gray-100">
-              <ShieldIcon size={18} />
-              <span className="text-sm font-bold">
-                <span className="text-[#0F6E56]">NearMiss</span> Pro
-              </span>
+            <div className="rounded-lg border border-gray-200 px-3 py-3">
+              <div className="flex items-center gap-2 mb-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[11px] font-bold flex items-center justify-center">2</span>
+                <span className="text-sm font-medium text-gray-800">What went wrong?</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D]">Wrong strength picked</span>
+                <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Look-alike</span>
+                <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Wrong drug</span>
+              </div>
             </div>
 
-            {/* Form body */}
-            <div className="p-4 space-y-3">
-              <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2 flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-[#1D9E75]" />
-                <span className="text-xs font-medium text-gray-800 flex-1">Where did this happen?</span>
-                <span className="text-[10px] font-semibold text-[#085041]">Done</span>
-              </div>
+            <div className="rounded-lg border border-[#FCEBEB] bg-[#FCEBEB] px-3 py-2">
+              <p className="text-xs font-bold text-[#791F1F] flex items-center gap-1.5">
+                <AlertTriangle size={12} /> High-risk drug — Anticoagulant
+              </p>
+            </div>
 
-              <div className="rounded-lg border border-gray-200 px-3 py-2.5">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[10px] font-bold flex items-center justify-center">2</span>
-                  <span className="text-xs font-medium text-gray-800">What went wrong?</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D]">Wrong strength picked</span>
-                  <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-300 text-gray-600">Look-alike</span>
-                  <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-300 text-gray-600">Wrong drug</span>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-[#FCEBEB] bg-[#FCEBEB] px-3 py-2">
-                <p className="text-[10px] font-bold text-[#791F1F] flex items-center gap-1">
-                  <AlertTriangle size={10} /> High-risk drug — Anticoagulant
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-gray-200 px-3 py-2.5 opacity-60">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold flex items-center justify-center">3</span>
-                  <span className="text-xs text-gray-600">Where was it caught?</span>
-                </div>
+            <div className="rounded-lg border border-gray-200 px-3 py-3 opacity-60">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[11px] font-bold flex items-center justify-center">3</span>
+                <span className="text-sm text-gray-600">Where was it caught?</span>
               </div>
             </div>
           </div>
