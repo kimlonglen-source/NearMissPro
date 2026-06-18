@@ -738,6 +738,7 @@ export function RecordPage() {
                 )}
                 <OtherChip
                   placeholder="e.g. PSO funding step"
+                  check={text => api.checkCustomOption('stage', text)}
                   onAdd={async text => {
                     const ok = await addCustomChip('stage', text);
                     if (ok) onStageTap(text);
@@ -803,6 +804,7 @@ export function RecordPage() {
                 }
                 <OtherChip
                   placeholder="e.g. PSO funding error"
+                  check={text => api.checkCustomOption('error_type', text)}
                   onAdd={async text => {
                     const ok = await addCustomChip('error_type', text);
                     if (!ok) return false;
@@ -971,6 +973,7 @@ export function RecordPage() {
                 )}
                 <OtherChip
                   placeholder="e.g. By a customer at handout"
+                  check={text => api.checkCustomOption('where_caught', text)}
                   onAdd={async text => {
                     const ok = await addCustomChip('where_caught', text);
                     if (ok) setWhereCaught(text);
@@ -1031,6 +1034,7 @@ export function RecordPage() {
                 ))}
                 <OtherChip
                   placeholder="e.g. Power outage"
+                  check={text => api.checkCustomOption('factor', text)}
                   onAdd={async text => {
                     const ok = await addCustomChip('factor', text);
                     if (!ok) return false;
@@ -1201,7 +1205,7 @@ function SharedChip({ label, selected, selectedClass, onSelect, onDelete }: {
 // audit log) treats the custom text identically to a built-in chip.
 // Capped at 80 chars to keep entries snappy enough to render in a
 // chip row.
-function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => void | boolean | Promise<void | boolean>; placeholder: string; max?: number }) {
+function OtherChip({ onAdd, placeholder, max = 80, check }: { onAdd: (text: string) => void | boolean | Promise<void | boolean>; placeholder: string; max?: number; check?: (text: string) => Promise<{ ok: boolean; reason?: string }> }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -1221,17 +1225,32 @@ function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => 
   const submit = async () => {
     const t = text.trim();
     if (!t || saving) return;
-    // Sanity check against keyboard scribbles. Skipped after the user
-    // confirms with a second click ("Save anyway").
-    if (override === null) {
-      const check = looksLikeGibberish(t);
-      if (!check.ok) {
-        setOverride(check.reason || 'looks unusual');
-        return;
-      }
-    }
+
     setSaving(true);
     try {
+      // Two-layer scribble check. Skipped entirely after the user
+      // confirms with a second click ("Save anyway").
+      if (override === null) {
+        // 1. Fast local heuristics — catches obvious junk for free.
+        const local = looksLikeGibberish(t);
+        if (!local.ok) {
+          setOverride(local.reason || 'looks unusual');
+          return;
+        }
+        // 2. AI backstop for borderline cases that pass heuristics
+        //    but aren't real words (e.g. "asopas", "qweop").
+        //    Fail-open: any network/API error lets the save proceed.
+        if (check) {
+          try {
+            const ai = await check(t);
+            if (!ai.ok) {
+              setOverride(ai.reason || "doesn't look like a real category");
+              return;
+            }
+          } catch { /* fail-open */ }
+        }
+      }
+
       const result = await onAdd(t);
       if (result === false) return;
       setText('');

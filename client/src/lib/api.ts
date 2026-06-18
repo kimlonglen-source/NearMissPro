@@ -202,6 +202,12 @@ class Api {
   deleteCustomOption(id: string) {
     return this.req<{ ok: true }>(`/custom-options/${id}`, { method: 'DELETE' });
   }
+  checkCustomOption(section: 'stage' | 'error_type' | 'where_caught' | 'factor', label: string) {
+    return this.req<{ ok: boolean; reason?: string }>('/custom-options/check', {
+      method: 'POST',
+      body: JSON.stringify({ section, label }),
+    });
+  }
 
   // Marketing — public, no auth.
   trialSignup(email: string, pharmacyName?: string, notes?: string) {
