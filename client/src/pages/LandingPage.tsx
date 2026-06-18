@@ -93,7 +93,7 @@ function ProductPreview() {
 
   useEffect(() => {
     if (paused) return;
-    const HOLDS = [3500, 3500, 4000]; // ms per stage
+    const HOLDS = [4500, 3500, 4000]; // ms per stage — Record longer so the click-through sub-animation has time to play
     const t = setTimeout(() => setStage(s => ((s + 1) % 3) as 0 | 1 | 2), HOLDS[stage]);
     return () => clearTimeout(t);
   }, [stage, paused]);
@@ -168,40 +168,112 @@ function ProductPreview() {
   );
 }
 
-// Stage 1 — staff member fills the form, chip pulses into selection.
+// Stage 1 — animated walk-through of the record flow. Cycles through
+// four micro-steps so visitors see the actual click-by-click journey
+// instead of a single frozen frame. Tap order: stage chip → error
+// chip → where-caught chip → submit (pulses).
 function RecordStage() {
+  // 0 = step 1 active, 1 = step 1 done & step 2 active, 2 = step 2
+  // done & step 3 active, 3 = all done & submit pulsing.
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
+  useEffect(() => {
+    const HOLDS = [900, 900, 900, 800];
+    const t = setTimeout(() => setStep(s => Math.min(3, s + 1) as 0 | 1 | 2 | 3), HOLDS[step]);
+    return () => clearTimeout(t);
+  }, [step]);
+
   return (
     <div className="space-y-3 animate-[fadeIn_0.4s_ease]">
-      <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2.5 flex items-center gap-2">
-        <CheckCircle2 size={15} className="text-[#1D9E75]" />
-        <span className="text-sm font-medium text-gray-800 flex-1">Where did this happen?</span>
-        <span className="text-xs font-semibold text-[#085041]">Done</span>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 px-3 py-3">
-        <div className="flex items-center gap-2 mb-2.5">
-          <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[11px] font-bold flex items-center justify-center">2</span>
-          <span className="text-sm font-medium text-gray-800">What went wrong?</span>
+      {/* Step 1 — Where did this happen? */}
+      {step === 0 ? (
+        <div className="rounded-lg border border-gray-200 px-3 py-3">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[11px] font-bold flex items-center justify-center">1</span>
+            <span className="text-sm font-medium text-gray-800">Where did this happen?</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#E1F5EE] border border-[#1D9E75] text-[#085041] animate-[pulse_1.2s_ease-in-out_infinite]">Drug picked from shelf</span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Labelling</span>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D] animate-[pulse_2s_ease-in-out_infinite]">Wrong strength picked</span>
-          <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Look-alike</span>
-          <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Wrong drug</span>
+      ) : (
+        <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2.5 flex items-center gap-2 animate-[fadeIn_0.3s_ease]">
+          <CheckCircle2 size={15} className="text-[#1D9E75]" />
+          <span className="text-sm font-medium text-gray-800 flex-1">Where did this happen?</span>
+          <span className="text-xs font-semibold text-[#085041]">Done</span>
         </div>
-      </div>
+      )}
 
-      <div className="rounded-lg border border-[#FCEBEB] bg-[#FCEBEB] px-3 py-2">
-        <p className="text-xs font-bold text-[#791F1F] flex items-center gap-1.5">
-          <AlertTriangle size={12} /> High-risk drug — Anticoagulant
-        </p>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 px-3 py-3 opacity-60">
-        <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[11px] font-bold flex items-center justify-center">3</span>
-          <span className="text-sm text-gray-600">Where was it caught?</span>
+      {/* Step 2 — What went wrong? */}
+      {step >= 1 && step <= 1 ? (
+        <div className="rounded-lg border border-gray-200 px-3 py-3 animate-[fadeIn_0.3s_ease]">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[11px] font-bold flex items-center justify-center">2</span>
+            <span className="text-sm font-medium text-gray-800">What went wrong?</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D] animate-[pulse_1.2s_ease-in-out_infinite]">Wrong strength picked</span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Look-alike</span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Wrong drug</span>
+          </div>
         </div>
-      </div>
+      ) : step >= 2 ? (
+        <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2.5 flex items-center gap-2 animate-[fadeIn_0.3s_ease]">
+          <CheckCircle2 size={15} className="text-[#1D9E75]" />
+          <span className="text-sm font-medium text-gray-800 flex-1">What went wrong?</span>
+          <span className="text-xs font-semibold text-[#085041]">Done</span>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-gray-200 px-3 py-3 opacity-60">
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[11px] font-bold flex items-center justify-center">2</span>
+            <span className="text-sm text-gray-600">What went wrong?</span>
+          </div>
+        </div>
+      )}
+
+      {/* High-risk warning appears only after step 2 picks (drug-aware) */}
+      {step >= 2 && (
+        <div className="rounded-lg border border-[#FCEBEB] bg-[#FCEBEB] px-3 py-2 animate-[fadeIn_0.3s_ease]">
+          <p className="text-xs font-bold text-[#791F1F] flex items-center gap-1.5">
+            <AlertTriangle size={12} /> High-risk drug — Anticoagulant
+          </p>
+        </div>
+      )}
+
+      {/* Step 3 — Where was it caught? */}
+      {step === 2 ? (
+        <div className="rounded-lg border border-gray-200 px-3 py-3 animate-[fadeIn_0.3s_ease]">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[11px] font-bold flex items-center justify-center">3</span>
+            <span className="text-sm font-medium text-gray-800">Where was it caught?</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#E1F5EE] border border-[#1D9E75] text-[#085041] animate-[pulse_1.2s_ease-in-out_infinite]">Final pharmacist check</span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Technician query</span>
+          </div>
+        </div>
+      ) : step >= 3 ? (
+        <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2.5 flex items-center gap-2 animate-[fadeIn_0.3s_ease]">
+          <CheckCircle2 size={15} className="text-[#1D9E75]" />
+          <span className="text-sm font-medium text-gray-800 flex-1">Where was it caught?</span>
+          <span className="text-xs font-semibold text-[#085041]">Done</span>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-gray-200 px-3 py-3 opacity-60">
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[11px] font-bold flex items-center justify-center">3</span>
+            <span className="text-sm text-gray-600">Where was it caught?</span>
+          </div>
+        </div>
+      )}
+
+      {/* Submit button — pulses on step 3 (all done) */}
+      {step >= 3 && (
+        <button className="w-full py-2.5 rounded-lg bg-[#0F6E56] text-white text-sm font-semibold animate-pulse">
+          Submit near miss
+        </button>
+      )}
     </div>
   );
 }
