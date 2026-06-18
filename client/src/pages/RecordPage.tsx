@@ -8,6 +8,7 @@ import {
 } from '../lib/taxonomy';
 import { NZ_DRUG_LIST, isKnownNzDrug, readDrugHistory, recordDrugInHistory } from '../lib/nzDrugList';
 import { checkHighRisk } from '../lib/highRiskDrugs';
+import { looksLikeGibberish } from '../lib/gibberish';
 import { CheckCircle2, AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 
 const SESSION_KEY = 'nmp_record_draft';
@@ -1204,6 +1205,11 @@ function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => 
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
+  // When the text looks like scribble, the first Add click sets this
+  // to a short reason; the button becomes "Save anyway" and a warning
+  // shows under the input. Editing the text clears it so the check
+  // re-runs on the next click.
+  const [override, setOverride] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -1215,15 +1221,30 @@ function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => 
   const submit = async () => {
     const t = text.trim();
     if (!t || saving) return;
+    // Sanity check against keyboard scribbles. Skipped after the user
+    // confirms with a second click ("Save anyway").
+    if (override === null) {
+      const check = looksLikeGibberish(t);
+      if (!check.ok) {
+        setOverride(check.reason || 'looks unusual');
+        return;
+      }
+    }
     setSaving(true);
     try {
       const result = await onAdd(t);
       if (result === false) return;
       setText('');
+      setOverride(null);
       setOpen(false);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleChange = (v: string) => {
+    setText(v.slice(0, max));
+    if (override !== null) setOverride(null);
   };
 
   if (!open) {
@@ -1237,32 +1258,40 @@ function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => 
     );
   }
   return (
-    <div className="flex items-center gap-1.5 w-full sm:w-auto">
-      <input
-        ref={inputRef}
-        type="text"
-        value={text}
-        onChange={e => setText(e.target.value.slice(0, max))}
-        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } if (e.key === 'Escape') { setText(''); setOpen(false); } }}
-        placeholder={placeholder}
-        maxLength={max}
-        disabled={saving}
-        className="input-field text-sm py-2 px-3 flex-1 min-w-[180px]"
-      />
-      <button
-        onClick={submit}
-        disabled={!text.trim() || saving}
-        className="bg-[#0F6E56] text-white text-sm font-semibold px-3 py-2 rounded-lg disabled:opacity-50"
-      >
-        {saving ? 'Saving…' : 'Add'}
-      </button>
-      <button
-        onClick={() => { setText(''); setOpen(false); }}
-        disabled={saving}
-        className="text-sm text-gray-500 px-2 py-2"
-      >
-        Cancel
-      </button>
+    <div className="flex flex-col gap-1 w-full sm:w-auto">
+      <div className="flex items-center gap-1.5">
+        <input
+          ref={inputRef}
+          type="text"
+          value={text}
+          onChange={e => handleChange(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } if (e.key === 'Escape') { setText(''); setOverride(null); setOpen(false); } }}
+          placeholder={placeholder}
+          maxLength={max}
+          disabled={saving}
+          className="input-field text-sm py-2 px-3 flex-1 min-w-[180px]"
+        />
+        <button
+          onClick={submit}
+          disabled={!text.trim() || saving}
+          className={`text-white text-sm font-semibold px-3 py-2 rounded-lg disabled:opacity-50 ${override ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#0F6E56] hover:bg-[#0B5A46]'}`}
+        >
+          {saving ? 'Saving…' : (override ? 'Save anyway' : 'Add')}
+        </button>
+        <button
+          onClick={() => { setText(''); setOverride(null); setOpen(false); }}
+          disabled={saving}
+          className="text-sm text-gray-500 px-2 py-2"
+        >
+          Cancel
+        </button>
+      </div>
+      {override && (
+        <p className="text-xs text-amber-700 px-1 flex items-start gap-1">
+          <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
+          <span>"{text.trim()}" {override}. Edit it, or tap "Save anyway" to keep it.</span>
+        </p>
+      )}
     </div>
   );
 }
