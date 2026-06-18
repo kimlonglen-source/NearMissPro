@@ -65,7 +65,7 @@ function Hero() {
             Turn near misses into a <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">quality improvement loop</span> your team actually uses.
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
-            Anonymous reporting in 60 seconds. Auto-generated meeting reports. Closed-loop tracking so you can prove your CQI actions worked.
+            Anonymous reporting in 60 seconds. Auto-generated meeting reports. Closed-loop tracking so you can see what's actually reducing errors — and what isn't.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <a href="#trial" className="bg-[#0F6E56] text-white font-semibold px-6 py-3.5 rounded-xl hover:bg-[#0B5A46] transition-colors flex items-center gap-2 group">
@@ -354,7 +354,8 @@ function ThreeSteps() {
   );
 }
 
-// "What makes this different" — speaks to the CQI compliance pain.
+// "What makes this different" — speaks to the improvement loop:
+// most logbooks capture, NearMissPro proves reduction.
 function ClosedLoop() {
   return (
     <section className="px-5 py-20">
@@ -363,7 +364,7 @@ function ClosedLoop() {
           <p className="text-sm font-semibold text-[#0F6E56] uppercase tracking-wide mb-3">The closed loop</p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-5">Prove your actions worked.</h2>
           <p className="text-gray-600 leading-relaxed mb-6">
-            Most near-miss tools are logbooks. NearMissPro closes the loop: every system change you log against a pattern is tracked against future incidents, so you (and your inspector) can see whether what you tried actually reduced the issue.
+            Most near-miss tools are logbooks. NearMissPro closes the loop: every system change you log against a pattern is tracked against future incidents, so you can see whether what you tried actually reduced the same kind of error happening again.
           </p>
           <ul className="space-y-3">
             {[
@@ -416,7 +417,7 @@ function VsPaper() {
     { paper: 'Patterns only visible if you re-read every entry', us: 'Auto-detected, flagged on the dashboard mid-month so you can act early' },
     { paper: 'Monthly meeting report written from scratch every time', us: 'Auto-generated meeting script — summary, agenda, sign-off included' },
     { paper: '"Did our actions work?" — almost impossible to answer', us: 'Pattern comparison vs prior period — built-in, on every report' },
-    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log for Pharmacy Council inspections' },
+    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log — every void, edit, and decision saved' },
   ];
   return (
     <section className="px-5 py-20 bg-gradient-to-b from-gray-50 to-white">
@@ -424,7 +425,7 @@ function VsPaper() {
         <div className="text-center mb-12">
           <p className="text-sm font-semibold text-[#0F6E56] uppercase tracking-wide mb-3">Why pharmacists switch from paper</p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Paper works — but here's what you're carrying.</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">The classic A4 logbook gets you compliant on paper. NearMissPro gets you compliant AND closes the loop your Pharmacy Council inspector actually asks about.</p>
+          <p className="text-gray-600 max-w-2xl mx-auto">The classic A4 logbook captures what happened. NearMissPro turns each near miss into a system change that actually reduces the next one.</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-5">
@@ -489,7 +490,7 @@ function Pricing() {
               {[
                 'All staff included — no per-user fees',
                 'Unlimited near misses + reports',
-                'Full audit log for Pharmacy Council inspections',
+                'Full audit log — every void, edit, and decision saved',
                 'AI-assisted recommendations',
                 'Email support direct from the founder',
               ].map(i => (
