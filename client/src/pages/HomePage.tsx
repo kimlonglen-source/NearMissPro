@@ -11,9 +11,9 @@ export function HomePage() {
   const nav = useNavigate();
 
   // Manager-mode upgrade now requires the manager password (distinct
-  // from the shared pharmacy/till password). The prompt is inline so
-  // the page doesn't need a modal library and so the till keyboard
-  // stays focused.
+  // from the shared pharmacy password used on the dispensing computer).
+  // The prompt is inline so the page doesn't need a modal library and
+  // so the dispensing-computer keyboard stays focused.
   const [showPwdPrompt, setShowPwdPrompt] = useState(false);
   const [pwd, setPwd] = useState('');
   const [pwdErr, setPwdErr] = useState('');
@@ -92,7 +92,7 @@ export function HomePage() {
             </button>
           </div>
           <p className="text-[11px] text-gray-400 mt-2 leading-snug">
-            Separate from the pharmacy/till password. Held by the pharmacist-in-charge.
+            Separate from the pharmacy password (the one all staff use on the dispensing computer). Held by the pharmacist-in-charge.
           </p>
         </div>
       )}

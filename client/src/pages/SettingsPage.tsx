@@ -203,7 +203,7 @@ export function SettingsPage() {
 
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
             <h3 className="font-semibold">Change pharmacy password</h3>
-            <p className="text-xs text-gray-500">Used by all staff to log into the till. Change it whenever someone leaves the team.</p>
+            <p className="text-xs text-gray-500">Used by all staff to log in on the dispensing computer. Change it whenever someone leaves the team.</p>
             {pwdMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{pwdMsg}</div>}
             {pwdErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{pwdErr}</div>}
             <input type="password" placeholder="Current password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} className="input-field" />

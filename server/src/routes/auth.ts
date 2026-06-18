@@ -33,11 +33,11 @@ router.post('/staff/login', async (req: Request, res: Response) => {
 
     await supabase.from('pharmacies').update({ login_attempts: 0, locked_until: null }).eq('id', pharmacy.id);
 
-    // 7-day token for staff — lets the till computer stay logged in
-    // through the working week (log in Mon, no friction until next
-    // Mon). Near-miss data is anonymous and low-value; the till is
-    // physically secured behind the dispensary counter, so the
-    // security trade is fine.
+    // 7-day token for staff — lets the dispensing computer stay
+    // logged in through the working week (log in Mon, no friction
+    // until next Mon). Near-miss data is anonymous and low-value;
+    // the dispensing computer is physically secured behind the
+    // dispensary counter, so the security trade is fine.
     const token = jwt.sign(
       { pharmacyId: pharmacy.id, pharmacyName: pharmacy.name, role: 'staff' },
       env.jwtSecret, { expiresIn: '7d' } as jwt.SignOptions
@@ -52,12 +52,13 @@ router.post('/staff/login', async (req: Request, res: Response) => {
 });
 
 // ── Manager access — requires the manager password. ──
-// The pharmacy password (shared with all staff at the till) and the
-// manager password (held by the pharmacist-in-charge) are kept
-// separate so elevated rights aren't quietly handed to whoever
-// happens to know the till password. Until a pharmacy sets a
-// dedicated manager password we fall back to accepting the pharmacy
-// password — the client shows a banner prompting them to set one.
+// The pharmacy password (shared with all staff on the dispensing
+// computer) and the manager password (held by the pharmacist-in-
+// charge) are kept separate so elevated rights aren't quietly
+// handed to whoever happens to know the pharmacy password. Until a
+// pharmacy sets a dedicated manager password we fall back to
+// accepting the pharmacy password — the client shows a banner
+// prompting them to set one.
 router.post('/manager/access', authenticate, async (req: Request, res: Response) => {
   try {
     const { managerPassword } = z.object({ managerPassword: z.string().min(1) }).parse(req.body);
