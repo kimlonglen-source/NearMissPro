@@ -417,7 +417,7 @@ function VsPaper() {
     { paper: 'Patterns only visible if you re-read every entry', us: 'Auto-detected, flagged on the dashboard mid-month so you can act early' },
     { paper: 'Monthly meeting report written from scratch every time', us: 'Auto-generated meeting script — summary, agenda, sign-off included' },
     { paper: '"Did our actions work?" — almost impossible to answer', us: 'Pattern comparison vs prior period — built-in, on every report' },
-    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log — every void, edit, and decision saved' },
+    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log — every void, edit, and decision saved. Meets your CQI audit requirements.' },
   ];
   return (
     <section className="px-5 py-20 bg-gradient-to-b from-gray-50 to-white">
@@ -491,6 +491,7 @@ function Pricing() {
                 'All staff included — no per-user fees',
                 'Unlimited near misses + reports',
                 'Full audit log — every void, edit, and decision saved',
+                'Meets Pharmacy Council CQI audit requirements',
                 'AI-assisted recommendations',
                 'Email support direct from the founder',
               ].map(i => (
