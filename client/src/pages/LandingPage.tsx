@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { ShieldIcon } from '../components/Logo';
+import { MarketingHeader, MarketingFooter } from '../components/MarketingChrome';
 import { CheckCircle2, ClipboardPlus, BarChart3, FileText, Lock, Loader2, ArrowRight, Sparkles, Shield, TrendingDown, AlertTriangle, XCircle } from 'lucide-react';
 
 // Public marketing landing page. Mounted at "/" for unauthed visitors;
@@ -13,7 +13,7 @@ import { CheckCircle2, ClipboardPlus, BarChart3, FileText, Lock, Loader2, ArrowR
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      <Header />
+      <MarketingHeader />
       <Hero />
       <ComplianceBadges />
       <ThreeSteps />
@@ -21,31 +21,8 @@ export function LandingPage() {
       <VsPaper />
       <Pricing />
       <SignupForm />
-      <Footer />
+      <MarketingFooter />
     </div>
-  );
-}
-
-function Header() {
-  return (
-    <header className="border-b border-gray-100 bg-white/80 backdrop-blur sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ShieldIcon size={28} />
-          <span className="font-bold text-lg">
-            <span className="text-[#0F6E56]">NearMiss</span>
-            <span className="text-gray-900"> Pro</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-5">
-          <a href="#pricing" className="hidden sm:inline text-sm font-medium text-gray-600 hover:text-[#0F6E56]">Pricing</a>
-          <Link to="/login" className="text-sm font-medium text-gray-700 hover:text-[#0F6E56]">Log in</Link>
-          <a href="#trial" className="bg-[#0F6E56] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#0B5A46] transition-colors">
-            Start free trial
-          </a>
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -749,21 +726,3 @@ function SignupForm() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="bg-gray-900 text-gray-400">
-      <div className="max-w-6xl mx-auto px-5 py-10 flex flex-col md:flex-row items-center justify-between gap-5 text-sm">
-        <div className="flex items-center gap-2">
-          <ShieldIcon size={22} />
-          <span className="font-semibold text-white">NearMiss <span className="text-[#1D9E75]">Pro</span></span>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-          <a href="mailto:hello@nearmisspro.co.nz" className="hover:text-white">hello@nearmisspro.co.nz</a>
-          <a href="#pricing" className="hover:text-white">Pricing</a>
-          <Link to="/login" className="hover:text-white">Log in</Link>
-        </div>
-        <div>© {new Date().getFullYear()} NearMissPro</div>
-      </div>
-    </footer>
-  );
-}

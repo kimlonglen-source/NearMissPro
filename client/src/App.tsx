@@ -5,6 +5,10 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { InstallPrompt } from './components/InstallPrompt';
 import { LandingPage } from './pages/LandingPage';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
 import { LoginPage } from './pages/LoginPage';
 import { FounderLoginPage } from './pages/FounderLoginPage';
 import { HomePage } from './pages/HomePage';
@@ -43,6 +47,10 @@ export default function App() {
     <InstallPrompt />
     <Routes>
       <Route path="/" element={<RootRoute />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/founder" element={<FounderLoginPage />} />
 
