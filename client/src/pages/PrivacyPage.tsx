@@ -30,7 +30,7 @@ export function PrivacyPage() {
 
       <h3>Technical data</h3>
       <ul>
-        <li>IP address, browser type, basic access logs (used for security, abuse prevention, and to enforce the manager-configurable network restriction in Settings → Network)</li>
+        <li>IP address, browser type, basic access logs (used for security and abuse prevention)</li>
         <li>A session token in your browser's localStorage so you stay logged in</li>
       </ul>
 

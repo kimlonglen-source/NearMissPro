@@ -8,33 +8,13 @@ import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
-// ── IP-allowlist helpers ────────────────────────────────────
-// Pharmacies can opt-in to restricting logins to specific networks
-// (e.g. only allow staff to log in from the dispensary's own internet
-// connection). Empty array = no restriction (default).
-//
-// Founder login (/founder/login) deliberately bypasses this so we
-// can always recover from a lockout if the pharmacy's IP changes.
-function getClientIp(req: Request): string {
-  let ip = req.ip || req.socket.remoteAddress || '';
-  // Strip the IPv4-mapped-IPv6 prefix so '::ffff:1.2.3.4' compares
-  // equal to '1.2.3.4'.
-  if (ip.startsWith('::ffff:')) ip = ip.slice(7);
-  return ip;
-}
-
-function isAllowedFromIp(allowedIps: string[] | null | undefined, clientIp: string): boolean {
-  if (!allowedIps || allowedIps.length === 0) return true;
-  return allowedIps.includes(clientIp);
-}
-
 // ── Staff login (pharmacy name + password) ──────────────────
 router.post('/staff/login', async (req: Request, res: Response) => {
   try {
     const { name, password } = z.object({ name: z.string().min(1), password: z.string().min(1) }).parse(req.body);
 
     const { data: pharmacy } = await supabase
-      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until, allowed_ips')
+      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until')
       .ilike('name', name).single();
 
     if (!pharmacy) { res.status(401).json({ error: 'Invalid pharmacy name or password' }); return; }
@@ -49,14 +29,6 @@ router.post('/staff/login', async (req: Request, res: Response) => {
       await supabase.from('pharmacies').update({ login_attempts: attempts, ...(lockout && { locked_until: lockout }) }).eq('id', pharmacy.id);
       if (lockout) console.log(`[EMAIL] To: manager | Subject: Account locked | Body: ${pharmacy.name} locked after 10 failed attempts.`);
       res.status(401).json({ error: 'Invalid pharmacy name or password' }); return;
-    }
-
-    // Network restriction check — only applies when the pharmacy
-    // has opted in. Runs AFTER the password check so we don't leak
-    // which networks are allowed via timing or different error.
-    if (!isAllowedFromIp(pharmacy.allowed_ips, getClientIp(req))) {
-      res.status(403).json({ error: 'This account can only be used from the pharmacy network. Contact your manager.' });
-      return;
     }
 
     await supabase.from('pharmacies').update({ login_attempts: 0, locked_until: null }).eq('id', pharmacy.id);
@@ -85,55 +57,12 @@ router.post('/staff/login', async (req: Request, res: Response) => {
 //    risk if forgotten. ──
 router.post('/manager/access', authenticate, async (req: Request, res: Response) => {
   try {
-    // Re-check IP restriction on manager upgrade so a staff session
-    // that left the pharmacy (e.g. on a laptop someone took home)
-    // can't escalate to manager privileges.
-    const { data: pharmacy } = await supabase.from('pharmacies').select('allowed_ips').eq('id', req.auth!.pharmacyId).single();
-    if (!isAllowedFromIp(pharmacy?.allowed_ips, getClientIp(req))) {
-      res.status(403).json({ error: 'Manager access is restricted to the pharmacy network.' });
-      return;
-    }
     const token = jwt.sign(
       { pharmacyId: req.auth!.pharmacyId, pharmacyName: req.auth!.pharmacyName, role: 'manager' },
       env.jwtSecret, { expiresIn: '12h' } as jwt.SignOptions
     );
     res.json({ token, role: 'manager' });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Access failed' }); }
-});
-
-// ── Network settings (per-pharmacy IP allowlist) ────────────
-// Returns the detected client IP + the pharmacy's current allowlist.
-// Manager and founder can read; only manager can update.
-router.get('/network', authenticate, requireRole('manager', 'founder'), async (req: Request, res: Response) => {
-  try {
-    const { data } = await supabase.from('pharmacies').select('allowed_ips').eq('id', req.auth!.pharmacyId).single();
-    res.json({
-      currentIp: getClientIp(req),
-      allowedIps: (data?.allowed_ips as string[] | null) || [],
-    });
-  } catch (err) {
-    console.error('[auth] network/get failed:', err);
-    res.status(500).json({ error: 'Failed' });
-  }
-});
-
-router.patch('/network', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
-  try {
-    const body = z.object({ allowedIps: z.array(z.string().max(64)).max(10) }).parse(req.body);
-    const cleaned = body.allowedIps.map(ip => ip.trim()).filter(Boolean);
-    await supabase.from('pharmacies').update({ allowed_ips: cleaned }).eq('id', req.auth!.pharmacyId);
-    await supabase.from('audit_log').insert({
-      pharmacy_id: req.auth!.pharmacyId,
-      action: 'network_settings_changed',
-      performed_by: 'manager',
-      details: { allowed_ips: cleaned },
-    });
-    res.json({ ok: true, allowedIps: cleaned });
-  } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
-    console.error('[auth] network/patch failed:', err);
-    res.status(500).json({ error: 'Failed' });
-  }
 });
 
 // ── Manager password change ─────────────────────────────────

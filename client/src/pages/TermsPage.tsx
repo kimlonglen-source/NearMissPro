@@ -19,7 +19,6 @@ export function TermsPage() {
         <li>One pharmacy account covers all staff at that pharmacy.</li>
         <li>You are responsible for keeping your pharmacy password secure and for any actions taken under your account.</li>
         <li>If you suspect unauthorised access, email <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a> and we'll reset access.</li>
-        <li>Optional: the manager can restrict logins to specific networks (e.g. only allow staff to log in from the pharmacy's own internet connection). This is configured in Settings → Network and is enforced by us at login time.</li>
       </ul>
 
       <h2>4. Free trial, subscription, and billing</h2>

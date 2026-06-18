@@ -104,6 +104,7 @@ Pharmacy Council NZ, Medsafe, HQSC, Te Whatu Ora, NZ Formulary, NZULM, Pharmac, 
 - Replace `founder123` with a real founder accounts table (security debt before any real deploy)
 - Founder-level audit-log UI (backend still records everything; tab was removed)
 - "Regenerate" button on a report (was built then removed — managers don't actually need it day-to-day)
+- Per-pharmacy IP allowlist / network restriction (was built then removed — too much friction, not legally required, and the shared-password + change-on-leave model is fine for the threats a small NZ pharmacy actually faces). The `allowed_ips` column on `pharmacies` still exists in the schema (harmless) but is no longer read or written by the app.
 
 ## Things that bit us — don't repeat
 
