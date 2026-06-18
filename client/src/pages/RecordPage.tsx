@@ -654,7 +654,7 @@ export function RecordPage() {
           {/* ═══ Section 1: Where did this happen? ═══ */}
           <SectionHeader num={1} title="Where did this happen?" subtitle="Pick the step where the error happened" done={hasStage} open={openSection === 1} onClick={() => toggleSection(1)} />
           {openSection === 1 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 {STAGES.map(s => (
                   <button
@@ -665,6 +665,20 @@ export function RecordPage() {
                     {s.label}
                   </button>
                 ))}
+              </div>
+              {/* Custom stage chip + Other input — shows the typed stage
+                  when the user has chosen one not in the built-in list. */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {draft.errorStep && !STAGES.some(s => s.label === draft.errorStep) && (
+                  <CustomChip
+                    label={draft.errorStep}
+                    onRemove={() => onStageTap(draft.errorStep)}
+                  />
+                )}
+                <OtherChip
+                  placeholder="e.g. PSO funding step"
+                  onAdd={text => onStageTap(text)}
+                />
               </div>
             </div>
           )}
@@ -692,6 +706,26 @@ export function RecordPage() {
                     More…
                   </button>
                 )}
+                {/* Custom-typed error types shown inline so they're
+                    visible AND removable. */}
+                {draft.errorTypes
+                  .filter(et => !(stage?.subErrors.some(s => s.label === et)))
+                  .map(et => (
+                    <CustomChip
+                      key={et}
+                      label={et}
+                      colour="green"
+                      onRemove={() => update({ errorTypes: draft.errorTypes.filter(x => x !== et) })}
+                    />
+                  ))
+                }
+                <OtherChip
+                  placeholder="e.g. PSO funding error"
+                  onAdd={text => {
+                    if (!draft.errorTypes.includes(text)) update({ errorTypes: [...draft.errorTypes, text] });
+                    if (draft.errorStep) pushRecent(draft.errorStep, text);
+                  }}
+                />
               </div>
 
               {/* Layer 3 — drug + intended → given fields.
@@ -827,6 +861,18 @@ export function RecordPage() {
                     {w}
                   </button>
                 ))}
+                {/* Custom typed where-caught + Other input */}
+                {draft.whereCaught && !WHERE_CAUGHT.includes(draft.whereCaught) && (
+                  <CustomChip
+                    label={draft.whereCaught}
+                    colour="blue"
+                    onRemove={() => update({ whereCaught: '' })}
+                  />
+                )}
+                <OtherChip
+                  placeholder="e.g. By a customer at handout"
+                  onAdd={text => setWhereCaught(text)}
+                />
               </div>
             </div>
           )}
@@ -853,6 +899,21 @@ export function RecordPage() {
                     More factors…
                   </button>
                 )}
+                {/* Custom-typed factors + Other input */}
+                {draft.factors.filter(f => !FACTORS.includes(f)).map(f => (
+                  <CustomChip
+                    key={f}
+                    label={f}
+                    colour="amber"
+                    onRemove={() => update({ factors: draft.factors.filter(x => x !== f) })}
+                  />
+                ))}
+                <OtherChip
+                  placeholder="e.g. Power outage"
+                  onAdd={text => {
+                    if (!draft.factors.includes(text)) update({ factors: [...draft.factors, text] });
+                  }}
+                />
               </div>
 
               {!draft.showAnythingElse ? (
@@ -946,6 +1007,97 @@ export function RecordPage() {
 }
 
 // ── Shared Layer 3 field components ──────────────────────────────
+
+// Render a user-typed custom value as a chip with an X to remove it.
+// Confirms before deleting because the user invested typing effort
+// (built-in chips don't need this — they can be re-tapped to re-add).
+function CustomChip({ label, onRemove, colour = 'green' }: { label: string; onRemove: () => void; colour?: 'green' | 'amber' | 'blue' }) {
+  const styles = {
+    green: 'bg-emerald-50 border-emerald-400 text-emerald-900',
+    amber: 'bg-amber-50 border-amber-400 text-amber-900',
+    blue:  'bg-blue-50 border-blue-400 text-blue-900',
+  }[colour];
+  return (
+    <span className={`chip text-base font-semibold py-3 px-4 border-dashed ${styles} inline-flex items-center gap-2`}>
+      <span className="text-[10px] font-bold uppercase opacity-70">custom</span>
+      <span>{label}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          tap();
+          if (window.confirm(`Remove "${label}"?`)) onRemove();
+        }}
+        className="text-current opacity-60 hover:opacity-100 ml-1 -mr-1 leading-none"
+        aria-label={`Remove ${label}`}
+      >
+        ×
+      </button>
+    </span>
+  );
+}
+
+// "+ Other" chip with an inline text input. Lets staff add a custom
+// value when none of the built-in chips fit. Whatever they type is
+// added to the same string array as the chip selections, so every
+// downstream system (pattern matching, summarizeIncident, report,
+// audit log) treats the custom text identically to a built-in chip.
+// Capped at 80 chars to keep entries snappy enough to render in a
+// chip row.
+function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => void; placeholder: string; max?: number }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  const submit = () => {
+    const t = text.trim();
+    if (!t) return;
+    onAdd(t);
+    setText('');
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => { tap(); setOpen(true); }}
+        className="chip text-base font-semibold chip-other"
+      >
+        + Other…
+      </button>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 w-full sm:w-auto">
+      <input
+        ref={inputRef}
+        type="text"
+        value={text}
+        onChange={e => setText(e.target.value.slice(0, max))}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } if (e.key === 'Escape') { setText(''); setOpen(false); } }}
+        placeholder={placeholder}
+        maxLength={max}
+        className="input-field text-sm py-2 px-3 flex-1 min-w-[180px]"
+      />
+      <button
+        onClick={submit}
+        disabled={!text.trim()}
+        className="bg-[#0F6E56] text-white text-sm font-semibold px-3 py-2 rounded-lg disabled:opacity-50"
+      >
+        Add
+      </button>
+      <button
+        onClick={() => { setText(''); setOpen(false); }}
+        className="text-sm text-gray-500 px-2 py-2"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
 
 type BoxColour = 'coral' | 'amber' | 'purple' | 'gray';
 
