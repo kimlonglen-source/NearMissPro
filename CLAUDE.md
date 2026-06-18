@@ -49,6 +49,7 @@ Goal: turn anonymous near-miss logs into a regulator-friendly CQI (continuous qu
 - Patient-reached gate at start of recording
 - Smart drug autocomplete (pharmacy history + bundled ~200 NZ Pharmac drugs)
 - **Drug name now required for almost every error type** unless the error is genuinely not about a medicine (wrong patient, NHI mismatch, register not signed, bag mix-up, PSO paperwork). Logic in `client/src/lib/taxonomy.ts:isNonDrugError`.
+- **Pharmacy-wide custom chips.** Each of the four record-form sections (stage, error type, where caught, factor) has a "+ Other…" chip. The typed value is saved server-side per pharmacy (`pharmacy_custom_options` table, see `migrate_custom_options.sql`) and appears as a normal chip on every staff device from then on. Capped at 8 per section. Anyone can add, anyone can delete (× on chip → confirm). Bulk-tidy UI lives in Settings → Pharmacy → "Custom chips".
 - High-risk drug warnings (insulin, warfarin, methotrexate, opioids, NTI drugs)
 - Hotspot panel + mid-month repeat-pattern banner with one-tap action logging
 - PHI scanner on the notes field (flags NHI, DOB, phone, full names)

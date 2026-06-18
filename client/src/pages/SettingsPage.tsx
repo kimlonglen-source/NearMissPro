@@ -81,6 +81,19 @@ export function SettingsPage() {
   const [sizeMsg, setSizeMsg] = useState('');
   const [sizeLoading, setSizeLoading] = useState(false);
 
+  // Pharmacy-wide custom chips — managed here so the manager can tidy
+  // typos or outdated entries without touching the record form.
+  type CustomSection = 'stage' | 'error_type' | 'where_caught' | 'factor';
+  const SECTION_LABELS: Record<CustomSection, string> = {
+    stage: 'Where it happened (step)',
+    error_type: 'What went wrong',
+    where_caught: 'Where it was caught',
+    factor: 'What was happening at the time',
+  };
+  const [customChips, setCustomChips] = useState<Record<CustomSection, { id: string; label: string }[]>>({
+    stage: [], error_type: [], where_caught: [], factor: [],
+  });
+
   // Audit log
   const [auditEntries, setAuditEntries] = useState<{ id: string; action: string; performed_by: string | null; details: Record<string, unknown> | null; created_at: string }[]>([]);
   const [auditTotal, setAuditTotal] = useState(0);
@@ -92,6 +105,17 @@ export function SettingsPage() {
   useEffect(() => {
     api.getMe().then(me => setSize((me.pharmacySize as PharmacySize | null) || null)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (tab !== 'pharmacy') return;
+    api.listCustomOptions().then(r => setCustomChips(r)).catch(() => {});
+  }, [tab]);
+
+  const deleteCustomChip = async (section: CustomSection, id: string, label: string) => {
+    if (!window.confirm(`Remove "${label}" from the pharmacy's chips? Other staff won't see it any more.`)) return;
+    setCustomChips(prev => ({ ...prev, [section]: prev[section].filter(c => c.id !== id) }));
+    try { await api.deleteCustomOption(id); } catch { /* optimistic; reappears on reload if it failed */ }
+  };
 
   const loadAudit = useCallback(async (page: number) => {
     setAuditLoading(true);
@@ -155,23 +179,59 @@ export function SettingsPage() {
       )}
 
       {tab === 'pharmacy' && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-          <h3 className="font-semibold">Pharmacy size</h3>
-          <p className="text-sm text-gray-500">This shapes the AI's advice — a sole pharmacist won't be told to "have a second pharmacist check".</p>
-          {sizeMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{sizeMsg}</div>}
-          <div className="space-y-2">
-            {(Object.keys(SIZE_LABELS) as PharmacySize[]).map(key => {
-              const selected = size === key;
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+            <h3 className="font-semibold">Pharmacy size</h3>
+            <p className="text-sm text-gray-500">This shapes the AI's advice — a sole pharmacist won't be told to "have a second pharmacist check".</p>
+            {sizeMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{sizeMsg}</div>}
+            <div className="space-y-2">
+              {(Object.keys(SIZE_LABELS) as PharmacySize[]).map(key => {
+                const selected = size === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleSetSize(key)}
+                    disabled={sizeLoading}
+                    className={`w-full text-left p-4 rounded-lg border transition ${selected ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'}`}
+                  >
+                    <div className="font-medium text-gray-900">{SIZE_LABELS[key].title}</div>
+                    <div className="text-sm text-gray-500">{SIZE_LABELS[key].help}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+            <h3 className="font-semibold">Custom chips</h3>
+            <p className="text-sm text-gray-500">Anything your team typed via "+ Other" on the recording form. Tidy typos or outdated entries here. Limit 8 per section.</p>
+            {(Object.keys(SECTION_LABELS) as CustomSection[]).map(section => {
+              const chips = customChips[section];
               return (
-                <button
-                  key={key}
-                  onClick={() => handleSetSize(key)}
-                  disabled={sizeLoading}
-                  className={`w-full text-left p-4 rounded-lg border transition ${selected ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'}`}
-                >
-                  <div className="font-medium text-gray-900">{SIZE_LABELS[key].title}</div>
-                  <div className="text-sm text-gray-500">{SIZE_LABELS[key].help}</div>
-                </button>
+                <div key={section} className="border border-gray-100 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">{SECTION_LABELS[section]}</span>
+                    <span className="text-xs text-gray-400">{chips.length}/8</span>
+                  </div>
+                  {chips.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic">No custom chips yet.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {chips.map(c => (
+                        <span key={c.id} className="inline-flex items-center gap-1.5 text-xs bg-gray-100 border border-dashed border-gray-300 rounded-full px-2.5 py-1 text-gray-800">
+                          {c.label}
+                          <button
+                            onClick={() => deleteCustomChip(section, c.id, c.label)}
+                            className="text-gray-400 hover:text-red-600 leading-none"
+                            aria-label={`Remove ${c.label}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

@@ -111,6 +111,42 @@ export function RecordPage() {
   // Snapshot of the last-submitted time block, so "Fix something" can restore it.
   const [lastOccurred, setLastOccurred] = useState<{ date: string; time: string } | null>(null);
 
+  // Pharmacy-wide custom chips loaded from the server. When the user
+  // taps "+ Other" we POST the typed label so it sticks around as a
+  // normal chip for every staff member on every device. Deleted via the
+  // × on the chip OR via the management UI in Settings → Pharmacy.
+  type CustomItem = { id: string; label: string };
+  const [customChips, setCustomChips] = useState<{
+    stage: CustomItem[]; error_type: CustomItem[]; where_caught: CustomItem[]; factor: CustomItem[];
+  }>({ stage: [], error_type: [], where_caught: [], factor: [] });
+  const [customLimitMsg, setCustomLimitMsg] = useState('');
+  useEffect(() => {
+    api.listCustomOptions()
+      .then(r => setCustomChips(r))
+      .catch(() => { /* not fatal — form still works with built-in chips */ });
+  }, []);
+  const addCustomChip = useCallback(async (section: 'stage' | 'error_type' | 'where_caught' | 'factor', label: string): Promise<boolean> => {
+    setCustomLimitMsg('');
+    try {
+      const saved = await api.addCustomOption(section, label);
+      setCustomChips(prev => {
+        if (prev[section].some(c => c.label === saved.label)) return prev;
+        return { ...prev, [section]: [...prev[section], { id: saved.id, label: saved.label }] };
+      });
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not save';
+      setCustomLimitMsg(msg);
+      return false;
+    }
+  }, []);
+  const removeCustomChip = useCallback(async (section: 'stage' | 'error_type' | 'where_caught' | 'factor', id: string) => {
+    // Optimistic — pop it out, then call delete. If delete fails the
+    // worst case is it reappears next time the page is opened.
+    setCustomChips(prev => ({ ...prev, [section]: prev[section].filter(c => c.id !== id) }));
+    try { await api.deleteCustomOption(id); } catch { /* silent */ }
+  }, []);
+
   // Patient-reached gate — the form's opening question. A near miss is by
   // definition caught BEFORE the medication reaches the patient. If it
   // reached them, this is a dispensing error and belongs in a different
@@ -628,6 +664,13 @@ export function RecordPage() {
               <AlertTriangle size={16} /> {submitError}
             </div>
           )}
+          {customLimitMsg && (
+            <div className="p-3 bg-amber-50 text-amber-700 rounded-xl text-sm flex items-center gap-2">
+              <AlertTriangle size={16} />
+              <span className="flex-1">{customLimitMsg}</span>
+              <button onClick={() => setCustomLimitMsg('')} className="text-amber-700 opacity-60 hover:opacity-100">×</button>
+            </div>
+          )}
 
           {editingIncidentId && (
             <div className="p-3 bg-[#EEEDFE] border border-[#7F77DD] rounded-xl text-sm text-[#3C3489] flex items-center gap-2">
@@ -666,10 +709,27 @@ export function RecordPage() {
                   </button>
                 ))}
               </div>
-              {/* Custom stage chip + Other input — shows the typed stage
-                  when the user has chosen one not in the built-in list. */}
+              {/* Pharmacy-wide custom stages (saved server-side) +
+                  Other input. The orphan CustomChip below covers the
+                  rare case where the draft holds a value that's since
+                  been removed from the pharmacy list. */}
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {draft.errorStep && !STAGES.some(s => s.label === draft.errorStep) && (
+                {customChips.stage.map(c => (
+                  <SharedChip
+                    key={c.id}
+                    label={c.label}
+                    selected={draft.errorStep === c.label}
+                    selectedClass="chip-teal"
+                    onSelect={() => onStageTap(c.label)}
+                    onDelete={() => {
+                      if (draft.errorStep === c.label) onStageTap(c.label);
+                      removeCustomChip('stage', c.id);
+                    }}
+                  />
+                ))}
+                {draft.errorStep
+                  && !STAGES.some(s => s.label === draft.errorStep)
+                  && !customChips.stage.some(c => c.label === draft.errorStep) && (
                   <CustomChip
                     label={draft.errorStep}
                     onRemove={() => onStageTap(draft.errorStep)}
@@ -677,7 +737,11 @@ export function RecordPage() {
                 )}
                 <OtherChip
                   placeholder="e.g. PSO funding step"
-                  onAdd={text => onStageTap(text)}
+                  onAdd={async text => {
+                    const ok = await addCustomChip('stage', text);
+                    if (ok) onStageTap(text);
+                    return ok;
+                  }}
                 />
               </div>
             </div>
@@ -706,10 +770,27 @@ export function RecordPage() {
                     More…
                   </button>
                 )}
-                {/* Custom-typed error types shown inline so they're
-                    visible AND removable. */}
+                {/* Pharmacy-wide custom error types — tap to add/remove
+                    from this incident; × to remove from the pharmacy. */}
+                {customChips.error_type.map(c => {
+                  const selected = draft.errorTypes.includes(c.label);
+                  return (
+                    <SharedChip
+                      key={c.id}
+                      label={c.label}
+                      selected={selected}
+                      selectedClass="chip-green"
+                      onSelect={() => toggleSub(c.label)}
+                      onDelete={() => {
+                        if (selected) update({ errorTypes: draft.errorTypes.filter(x => x !== c.label) });
+                        removeCustomChip('error_type', c.id);
+                      }}
+                    />
+                  );
+                })}
+                {/* Orphan: selected custom value no longer in either list */}
                 {draft.errorTypes
-                  .filter(et => !(stage?.subErrors.some(s => s.label === et)))
+                  .filter(et => !(stage?.subErrors.some(s => s.label === et)) && !customChips.error_type.some(c => c.label === et))
                   .map(et => (
                     <CustomChip
                       key={et}
@@ -721,9 +802,12 @@ export function RecordPage() {
                 }
                 <OtherChip
                   placeholder="e.g. PSO funding error"
-                  onAdd={text => {
+                  onAdd={async text => {
+                    const ok = await addCustomChip('error_type', text);
+                    if (!ok) return false;
                     if (!draft.errorTypes.includes(text)) update({ errorTypes: [...draft.errorTypes, text] });
                     if (draft.errorStep) pushRecent(draft.errorStep, text);
+                    return true;
                   }}
                 />
               </div>
@@ -861,8 +945,23 @@ export function RecordPage() {
                     {w}
                   </button>
                 ))}
-                {/* Custom typed where-caught + Other input */}
-                {draft.whereCaught && !WHERE_CAUGHT.includes(draft.whereCaught) && (
+                {/* Pharmacy-wide custom where-caught chips */}
+                {customChips.where_caught.map(c => (
+                  <SharedChip
+                    key={c.id}
+                    label={c.label}
+                    selected={draft.whereCaught === c.label}
+                    selectedClass="chip-blue"
+                    onSelect={() => setWhereCaught(c.label)}
+                    onDelete={() => {
+                      if (draft.whereCaught === c.label) update({ whereCaught: '' });
+                      removeCustomChip('where_caught', c.id);
+                    }}
+                  />
+                ))}
+                {draft.whereCaught
+                  && !WHERE_CAUGHT.includes(draft.whereCaught)
+                  && !customChips.where_caught.some(c => c.label === draft.whereCaught) && (
                   <CustomChip
                     label={draft.whereCaught}
                     colour="blue"
@@ -871,7 +970,11 @@ export function RecordPage() {
                 )}
                 <OtherChip
                   placeholder="e.g. By a customer at handout"
-                  onAdd={text => setWhereCaught(text)}
+                  onAdd={async text => {
+                    const ok = await addCustomChip('where_caught', text);
+                    if (ok) setWhereCaught(text);
+                    return ok;
+                  }}
                 />
               </div>
             </div>
@@ -899,8 +1002,25 @@ export function RecordPage() {
                     More factors…
                   </button>
                 )}
-                {/* Custom-typed factors + Other input */}
-                {draft.factors.filter(f => !FACTORS.includes(f)).map(f => (
+                {/* Pharmacy-wide custom factors */}
+                {customChips.factor.map(c => {
+                  const selected = draft.factors.includes(c.label);
+                  return (
+                    <SharedChip
+                      key={c.id}
+                      label={c.label}
+                      selected={selected}
+                      selectedClass="chip-amber"
+                      onSelect={() => toggleFactor(c.label)}
+                      onDelete={() => {
+                        if (selected) update({ factors: draft.factors.filter(x => x !== c.label) });
+                        removeCustomChip('factor', c.id);
+                      }}
+                    />
+                  );
+                })}
+                {/* Orphan: selected custom factor no longer in either list */}
+                {draft.factors.filter(f => !FACTORS.includes(f) && !customChips.factor.some(c => c.label === f)).map(f => (
                   <CustomChip
                     key={f}
                     label={f}
@@ -910,8 +1030,11 @@ export function RecordPage() {
                 ))}
                 <OtherChip
                   placeholder="e.g. Power outage"
-                  onAdd={text => {
+                  onAdd={async text => {
+                    const ok = await addCustomChip('factor', text);
+                    if (!ok) return false;
                     if (!draft.factors.includes(text)) update({ factors: [...draft.factors, text] });
+                    return true;
                   }}
                 />
               </div>
@@ -1036,6 +1159,40 @@ function CustomChip({ label, onRemove, colour = 'green' }: { label: string; onRe
   );
 }
 
+// Pharmacy-wide custom chip — looks like a built-in chip but with a
+// dashed border (so it's visually distinct as "we added this") and a
+// small × at the right edge for pharmacy-wide removal. Tap the chip
+// body to select/deselect for this incident.
+function SharedChip({ label, selected, selectedClass, onSelect, onDelete }: {
+  label: string;
+  selected: boolean;
+  selectedClass: string;
+  onSelect: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <button
+      onClick={onSelect}
+      className={`chip text-base font-semibold py-3 px-4 border-dashed ${selected ? selectedClass : 'chip-off'} inline-flex items-center gap-2`}
+    >
+      <span>{label}</span>
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          tap();
+          if (window.confirm(`Remove "${label}" from the pharmacy's chips? Other staff won't see it any more.`)) onDelete();
+        }}
+        className="opacity-50 hover:opacity-100 -mr-1 leading-none px-1 cursor-pointer"
+        aria-label={`Remove ${label}`}
+      >
+        ×
+      </span>
+    </button>
+  );
+}
+
 // "+ Other" chip with an inline text input. Lets staff add a custom
 // value when none of the built-in chips fit. Whatever they type is
 // added to the same string array as the chip selections, so every
@@ -1043,21 +1200,30 @@ function CustomChip({ label, onRemove, colour = 'green' }: { label: string; onRe
 // audit log) treats the custom text identically to a built-in chip.
 // Capped at 80 chars to keep entries snappy enough to render in a
 // chip row.
-function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => void; placeholder: string; max?: number }) {
+function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => void | boolean | Promise<void | boolean>; placeholder: string; max?: number }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const submit = () => {
+  // If onAdd returns false (e.g. cap hit, server rejected) keep the
+  // input open so the user's typed text isn't lost.
+  const submit = async () => {
     const t = text.trim();
-    if (!t) return;
-    onAdd(t);
-    setText('');
-    setOpen(false);
+    if (!t || saving) return;
+    setSaving(true);
+    try {
+      const result = await onAdd(t);
+      if (result === false) return;
+      setText('');
+      setOpen(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!open) {
@@ -1080,17 +1246,19 @@ function OtherChip({ onAdd, placeholder, max = 80 }: { onAdd: (text: string) => 
         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } if (e.key === 'Escape') { setText(''); setOpen(false); } }}
         placeholder={placeholder}
         maxLength={max}
+        disabled={saving}
         className="input-field text-sm py-2 px-3 flex-1 min-w-[180px]"
       />
       <button
         onClick={submit}
-        disabled={!text.trim()}
+        disabled={!text.trim() || saving}
         className="bg-[#0F6E56] text-white text-sm font-semibold px-3 py-2 rounded-lg disabled:opacity-50"
       >
-        Add
+        {saving ? 'Saving…' : 'Add'}
       </button>
       <button
         onClick={() => { setText(''); setOpen(false); }}
+        disabled={saving}
         className="text-sm text-gray-500 px-2 py-2"
       >
         Cancel

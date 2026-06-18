@@ -187,6 +187,22 @@ class Api {
     });
   }
 
+  // Custom chips — pharmacy-wide additions to the four record-form
+  // sections. Saved server-side so they're the same across every staff
+  // member's device. Capped at 8 per section by the server.
+  listCustomOptions() {
+    return this.req<{ stage: { id: string; label: string }[]; error_type: { id: string; label: string }[]; where_caught: { id: string; label: string }[]; factor: { id: string; label: string }[] }>('/custom-options');
+  }
+  addCustomOption(section: 'stage' | 'error_type' | 'where_caught' | 'factor', label: string) {
+    return this.req<{ id: string; section: string; label: string }>('/custom-options', {
+      method: 'POST',
+      body: JSON.stringify({ section, label }),
+    });
+  }
+  deleteCustomOption(id: string) {
+    return this.req<{ ok: true }>(`/custom-options/${id}`, { method: 'DELETE' });
+  }
+
   // Marketing — public, no auth.
   trialSignup(email: string, pharmacyName?: string, notes?: string) {
     return this.req<{ ok: boolean }>('/marketing/trial-signup', {
