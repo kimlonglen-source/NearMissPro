@@ -685,7 +685,7 @@ export function RecordPage() {
 
           {/* ═══ Section 2: What went wrong? ═══ */}
           <SectionHeader num={2} title="What went wrong?" subtitle={hasStage ? 'Pick one or more that apply' : 'Choose a step first'} done={hasSub} open={openSection === 2} onClick={() => { if (hasStage) toggleSection(2); }} />
-          {openSection === 2 && stage && (
+          {openSection === 2 && hasStage && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3" ref={l2Ref}>
               <div className="flex flex-wrap gap-1.5">
                 {visibleSubs.map(s => (
