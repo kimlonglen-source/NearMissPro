@@ -33,10 +33,14 @@ router.post('/staff/login', async (req: Request, res: Response) => {
 
     await supabase.from('pharmacies').update({ login_attempts: 0, locked_until: null }).eq('id', pharmacy.id);
 
-    // 24-hour token for staff
+    // 7-day token for staff — lets the till computer stay logged in
+    // through the working week (log in Mon, no friction until next
+    // Mon). Near-miss data is anonymous and low-value; the till is
+    // physically secured behind the dispensary counter, so the
+    // security trade is fine.
     const token = jwt.sign(
       { pharmacyId: pharmacy.id, pharmacyName: pharmacy.name, role: 'staff' },
-      env.jwtSecret, { expiresIn: '24h' } as jwt.SignOptions
+      env.jwtSecret, { expiresIn: '7d' } as jwt.SignOptions
     );
 
     res.json({ token, role: 'staff', pharmacyName: pharmacy.name, pharmacyId: pharmacy.id });
