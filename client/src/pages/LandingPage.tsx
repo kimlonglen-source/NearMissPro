@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { ShieldIcon } from '../components/Logo';
-import { CheckCircle2, ClipboardPlus, BarChart3, FileText, Lock, Loader2, ArrowRight, Sparkles, Shield, TrendingDown, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, ClipboardPlus, BarChart3, FileText, Lock, Loader2, ArrowRight, Sparkles, Shield, TrendingDown, AlertTriangle, XCircle } from 'lucide-react';
 
 // Public marketing landing page. Mounted at "/" for unauthed visitors;
 // logged-in users skip past to /app via the RootRoute in App.tsx.
@@ -18,6 +18,7 @@ export function LandingPage() {
       <ComplianceBadges />
       <ThreeSteps />
       <ClosedLoop />
+      <VsPaper />
       <Pricing />
       <SignupForm />
       <Footer />
@@ -397,6 +398,68 @@ function ClosedLoop() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Side-by-side "paper logbook vs NearMissPro" comparison. Honest in
+// tone — paper works, but it carries overhead the pharmacist may not
+// have weighed. Sits right before pricing so the switch argument
+// lands before the visitor sees the price.
+function VsPaper() {
+  const rows = [
+    { paper: '5+ minutes of handwriting per near miss', us: 'Under 60 seconds — structured form, drug autocomplete' },
+    { paper: 'Handwriting identifies the staff member', us: 'Truly anonymous — the team sees the event, not the writer' },
+    { paper: 'Hours of flipping through pages to review the month', us: 'Manager review in minutes — auto-grouped, AI suggestion on every incident' },
+    { paper: 'Patterns only visible if you re-read every entry', us: 'Auto-detected, flagged on the dashboard mid-month so you can act early' },
+    { paper: 'Monthly meeting report written from scratch every time', us: 'Auto-generated meeting script — summary, agenda, sign-off included' },
+    { paper: '"Did our actions work?" — almost impossible to answer', us: 'Pattern comparison vs prior period — built-in, on every report' },
+    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log for Pharmacy Council inspections' },
+  ];
+  return (
+    <section className="px-5 py-20 bg-gradient-to-b from-gray-50 to-white">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <p className="text-sm font-semibold text-[#0F6E56] uppercase tracking-wide mb-3">Why pharmacists switch from paper</p>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Paper works — but here's what you're carrying.</h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">The classic A4 logbook gets you compliant on paper. NearMissPro gets you compliant AND closes the loop your Pharmacy Council inspector actually asks about.</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-5">
+          {/* Paper column — muted */}
+          <div className="bg-white rounded-2xl p-7 border border-gray-200">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-5">Paper logbook today</p>
+            <ul className="space-y-3.5">
+              {rows.map((r, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-gray-700 leading-snug">
+                  <XCircle size={16} className="text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span>{r.paper}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* NearMissPro column — accented */}
+          <div className="bg-white rounded-2xl p-7 border-2 border-[#0F6E56]/30 shadow-md">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#0F6E56] mb-5">With NearMissPro</p>
+            <ul className="space-y-3.5">
+              {rows.map((r, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-gray-800 leading-snug">
+                  <CheckCircle2 size={16} className="text-[#1D9E75] flex-shrink-0 mt-0.5" />
+                  <span>{r.us}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 text-center">
+          <a href="#trial" className="inline-flex items-center gap-2 bg-[#0F6E56] text-white font-semibold px-6 py-3 rounded-xl hover:bg-[#0B5A46] transition-colors group">
+            Start your 3-month free trial
+            <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+          </a>
         </div>
       </div>
     </section>
