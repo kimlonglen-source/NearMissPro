@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -19,6 +20,21 @@ import { ReportsListPage } from './pages/ReportsListPage';
 import { VoidedIncidentsPage } from './pages/VoidedIncidentsPage';
 import { AdminPage } from './pages/AdminPage';
 import { SettingsPage } from './pages/SettingsPage';
+
+// Scroll the window to the top whenever the route path changes.
+// React Router preserves scroll position by default, which means
+// clicking Terms / Privacy from the footer (a long page) would
+// land the user partway down the new page. This puts them at the
+// top — except for in-page anchor jumps (#trial, #pricing), which
+// we let the browser handle natively by checking for a hash.
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) return;
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [pathname, hash]);
+  return null;
+}
 
 function HomeRedirect() {
   const { role } = useAuth();
@@ -43,6 +59,7 @@ function RootRoute() {
 export default function App() {
   return (
     <>
+    <ScrollToTop />
     <OfflineIndicator />
     <InstallPrompt />
     <Routes>

@@ -12,6 +12,16 @@ export function AboutPage() {
 
       <p>NearMissPro is the tool I wanted on the bench for twenty years. We're now making it available to NZ community pharmacies who want the same closed-loop process without building it themselves.</p>
 
+      <h2>The time it gives back</h2>
+      <p>The real win isn't capture — it's the monthly review. Under the old paper workflow, the reviewing pharmacist sets aside half a Sunday afternoon to flip through the book, group similar incidents by hand, draft the meeting agenda, and write a summary nobody re-reads.</p>
+      <p>With NearMissPro:</p>
+      <ul>
+        <li><strong>Recording:</strong> under 60 seconds per near miss, structured so the data is useful later.</li>
+        <li><strong>Reviewing:</strong> typically 15–20 minutes for a month's worth — patterns are pre-grouped, AI drafts a recommendation on each incident, and the manager just clicks Accept, Modify, or No change.</li>
+        <li><strong>Generating the meeting report:</strong> one click. Summary, agenda, sign-off table all auto-filled.</li>
+      </ul>
+      <p>The time you save isn't theoretical — it's the half-day every month you were going to lose to admin.</p>
+
       <h2>What we believe</h2>
       <ul>
         <li><strong>Anonymous reporting is non-negotiable.</strong> Staff won't surface what they're worried about being blamed for. The whole product is built around this.</li>
