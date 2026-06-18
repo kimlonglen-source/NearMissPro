@@ -81,7 +81,14 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (err) {
     if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
     console.error('[customOptions] create failed:', err);
-    res.status(500).json({ error: 'Failed' });
+    // Surface the most common deploy mistake — table not yet created —
+    // so the user sees a useful hint instead of a bare "Failed".
+    const msg = err instanceof Error ? err.message : '';
+    if (/relation .*pharmacy_custom_options.* does not exist/i.test(msg)) {
+      res.status(500).json({ error: 'Database not ready — run supabase/migrate_custom_options.sql in Supabase SQL Editor.' });
+      return;
+    }
+    res.status(500).json({ error: 'Could not save the chip — try again.' });
   }
 });
 
@@ -100,7 +107,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[customOptions] delete failed:', err);
-    res.status(500).json({ error: 'Failed' });
+    res.status(500).json({ error: 'Could not delete the chip — try again.' });
   }
 });
 
