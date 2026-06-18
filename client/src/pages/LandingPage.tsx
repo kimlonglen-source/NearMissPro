@@ -81,63 +81,80 @@ function Hero() {
   );
 }
 
-// Fake mini-dashboard so visitors see what they'd actually be using.
-// All static — no real data wired up — and the chrome (date row, banner,
-// stat cards) mirrors the actual review screen.
+// Phone-shaped mockup of the record form mid-flow. Visitors see
+// chip-based selection, a stage already done, a high-risk warning,
+// and a "47s" timer corner-stamp. The simplicity pitch ("under 60
+// seconds, anonymous") is the main reason a pharmacist will sign up,
+// so the hero leads with it instead of the manager dashboard.
 function ProductPreview() {
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-br from-[#0F6E56]/20 to-[#1D9E75]/10 rounded-3xl blur-2xl" />
-      <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 p-5 overflow-hidden">
-        <div className="flex items-center gap-1.5 mb-4">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-          <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-          <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-          <span className="ml-2 text-[11px] text-gray-400 font-mono">nearmisspro.co.nz/dashboard</span>
-        </div>
 
-        {/* Repeat-pattern banner */}
-        <div className="rounded-xl border-2 border-[#BA7517] bg-[#FDF8EB] p-3 mb-3">
-          <div className="flex items-start gap-2">
-            <AlertTriangle size={14} className="text-[#BA7517] flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-xs font-bold text-[#633806]">1 repeat pattern — consider acting now</p>
-              <p className="text-[11px] text-[#633806]/70 mt-0.5">Pantoprazole · Wrong drug picked · 5 in this period</p>
+      <div className="relative mx-auto max-w-[320px]">
+        {/* Phone frame */}
+        <div className="bg-gray-900 rounded-[2.5rem] p-2.5 shadow-2xl">
+          <div className="bg-white rounded-[2rem] overflow-hidden">
+            {/* Status bar */}
+            <div className="bg-white pt-2 pb-1 px-5 flex justify-between text-[10px] font-semibold text-gray-700">
+              <span>9:41</span>
+              <span className="flex items-center gap-1">●●●●● 5G ⚡</span>
+            </div>
+
+            {/* App chrome */}
+            <div className="px-5 pt-3 pb-1 flex items-center gap-2 border-b border-gray-100">
+              <ShieldIcon size={18} />
+              <span className="text-sm font-bold">
+                <span className="text-[#0F6E56]">NearMiss</span> Pro
+              </span>
+            </div>
+
+            {/* Form body */}
+            <div className="p-4 space-y-3">
+              <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2 flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-[#1D9E75]" />
+                <span className="text-xs font-medium text-gray-800 flex-1">Where did this happen?</span>
+                <span className="text-[10px] font-semibold text-[#085041]">Done</span>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 px-3 py-2.5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[10px] font-bold flex items-center justify-center">2</span>
+                  <span className="text-xs font-medium text-gray-800">What went wrong?</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D]">Wrong strength picked</span>
+                  <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-300 text-gray-600">Look-alike</span>
+                  <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-300 text-gray-600">Wrong drug</span>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-[#FCEBEB] bg-[#FCEBEB] px-3 py-2">
+                <p className="text-[10px] font-bold text-[#791F1F] flex items-center gap-1">
+                  <AlertTriangle size={10} /> High-risk drug — Anticoagulant
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 px-3 py-2.5 opacity-60">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold flex items-center justify-center">3</span>
+                  <span className="text-xs text-gray-600">Where was it caught?</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          {[
-            { v: '14', l: 'Active' },
-            { v: '14', l: 'Reviewed' },
-            { v: '2–6pm', l: 'Peak time' },
-          ].map(s => (
-            <div key={s.l} className="bg-gray-50 rounded-lg p-2.5 text-center">
-              <div className="text-base font-bold text-gray-900">{s.v}</div>
-              <div className="text-[10px] text-gray-500">{s.l}</div>
-            </div>
-          ))}
+        {/* Floating timer stamp */}
+        <div className="absolute -top-3 -right-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 rotate-3">
+          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Recorded in</p>
+          <p className="text-xl font-bold text-[#0F6E56]">47<span className="text-sm">s</span></p>
         </div>
 
-        {/* Trend strip */}
-        <div className="bg-gray-50 rounded-lg p-3 mb-3">
-          <p className="text-[10px] font-semibold text-gray-500 mb-2">TREND — LAST 8W</p>
-          <div className="flex items-end gap-1 h-12">
-            {[3, 4, 2, 5, 7, 6, 5, 4].map((h, i) => (
-              <div key={i} className="flex-1 bg-[#1D9E75] rounded-sm" style={{ height: `${h * 12}%` }} />
-            ))}
-          </div>
-        </div>
-
-        {/* Incident row sample */}
-        <div className="border border-gray-200 rounded-lg p-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold text-gray-900 truncate">Wrong strength picked — Atorvastatin</p>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E1F5EE] text-[#085041] flex-shrink-0">✓ Accepted</span>
-          </div>
-          <p className="text-[10px] text-gray-500 mt-0.5">Final pharmacist check · Lunch 12–2pm</p>
+        {/* Floating anonymous stamp */}
+        <div className="absolute -bottom-3 -left-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 -rotate-3 flex items-center gap-1.5">
+          <Lock size={12} className="text-[#0F6E56]" />
+          <p className="text-xs font-semibold text-gray-700">Anonymous</p>
         </div>
       </div>
     </div>
