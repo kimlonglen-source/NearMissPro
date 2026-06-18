@@ -72,13 +72,16 @@ class Api {
   staffLogin(name: string, password: string) {
     return this.req<{ token: string; role: string; pharmacyName: string; pharmacyId: string }>('/auth/staff/login', { method: 'POST', body: JSON.stringify({ name, password }) });
   }
-  managerAccess() {
-    return this.req<{ token: string; role: string }>('/auth/manager/access', { method: 'POST' });
+  managerAccess(managerPassword: string) {
+    return this.req<{ token: string; role: string; managerPasswordIsSeparate: boolean }>('/auth/manager/access', {
+      method: 'POST',
+      body: JSON.stringify({ managerPassword }),
+    });
   }
   founderLogin(email: string, password: string, mfaCode?: string) {
     return this.req<{ token?: string; role?: string; requiresMfa?: boolean; email?: string }>('/auth/founder/login', { method: 'POST', body: JSON.stringify({ email, password, mfaCode }) });
   }
-  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null }>('/auth/me'); }
+  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; managerPasswordIsSeparate?: boolean }>('/auth/me'); }
   setPharmacySize(pharmacySize: 'sole' | 'pharmacist_plus_tech' | 'multi' | null) {
     return this.req<{ ok: boolean; pharmacySize: string | null }>('/auth/pharmacy/settings', { method: 'PATCH', body: JSON.stringify({ pharmacySize }) });
   }
@@ -97,6 +100,12 @@ class Api {
 
   // Password management
   changePassword(currentPassword: string, newPassword: string) { return this.req<object>('/auth/manager/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }); }
+  setManagerPassword(currentPassword: string, newPassword: string) {
+    return this.req<{ success: true }>('/auth/manager/set-manager-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
 
   // Incidents
   createIncident(data: object) { return this.req<Record<string, unknown>>('/incidents', { method: 'POST', body: JSON.stringify(data) }); }

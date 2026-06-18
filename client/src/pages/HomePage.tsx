@@ -3,20 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { ShieldIcon } from '../components/Logo';
-import { ClipboardPlus, LayoutDashboard } from 'lucide-react';
+import { ClipboardPlus, LayoutDashboard, Lock } from 'lucide-react';
 
 export function HomePage() {
   const { pharmacyName, upgradeToManager } = useAuth();
   const [count, setCount] = useState(0);
   const nav = useNavigate();
 
+  // Manager-mode upgrade now requires the manager password (distinct
+  // from the shared pharmacy/till password). The prompt is inline so
+  // the page doesn't need a modal library and so the till keyboard
+  // stays focused.
+  const [showPwdPrompt, setShowPwdPrompt] = useState(false);
+  const [pwd, setPwd] = useState('');
+  const [pwdErr, setPwdErr] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => { api.getMonthlyCount().then(r => setCount(r.count)).catch(() => {}); }, []);
 
-  const handleManager = async () => {
+  const submit = async () => {
+    if (!pwd || submitting) return;
+    setSubmitting(true); setPwdErr('');
     try {
-      const res = await api.managerAccess();
+      const res = await api.managerAccess(pwd);
       if (res.token) { upgradeToManager(res.token); nav('/dashboard'); }
-    } catch { /* ignore */ }
+    } catch {
+      setPwdErr('Manager password incorrect');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -42,11 +57,45 @@ export function HomePage() {
       </button>
       <p className="text-xs text-gray-400 mt-2 max-w-xs text-center">Takes under 60 seconds. Your report is anonymous.</p>
 
-      <button onClick={handleManager}
-        className="mt-6 w-full max-w-xs bg-white text-gray-700 text-sm font-medium py-3 rounded-xl border border-gray-300 flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
-        <LayoutDashboard size={16} /> Manager dashboard
-      </button>
-      <p className="text-xs text-gray-400 mt-1">Review incidents and generate reports</p>
+      {!showPwdPrompt ? (
+        <>
+          <button onClick={() => setShowPwdPrompt(true)}
+            className="mt-6 w-full max-w-xs bg-white text-gray-700 text-sm font-medium py-3 rounded-xl border border-gray-300 flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
+            <LayoutDashboard size={16} /> Manager dashboard
+          </button>
+          <p className="text-xs text-gray-400 mt-1">Review incidents and generate reports</p>
+        </>
+      ) : (
+        <div className="mt-6 w-full max-w-xs bg-white border border-gray-300 rounded-xl p-4 text-left">
+          <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5 mb-2">
+            <Lock size={12} /> Manager password
+          </label>
+          <input
+            type="password"
+            value={pwd}
+            onChange={e => { setPwd(e.target.value); if (pwdErr) setPwdErr(''); }}
+            onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') { setShowPwdPrompt(false); setPwd(''); setPwdErr(''); } }}
+            placeholder="Enter manager password"
+            autoFocus
+            className="input-field text-sm w-full mb-2"
+            disabled={submitting}
+          />
+          {pwdErr && <p className="text-xs text-red-600 mb-2">{pwdErr}</p>}
+          <div className="flex gap-2">
+            <button onClick={submit} disabled={!pwd || submitting}
+              className="flex-1 bg-[#0F6E56] text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-50">
+              {submitting ? 'Checking…' : 'Continue'}
+            </button>
+            <button onClick={() => { setShowPwdPrompt(false); setPwd(''); setPwdErr(''); }} disabled={submitting}
+              className="text-sm text-gray-500 px-3 py-2">
+              Cancel
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2 leading-snug">
+            Separate from the pharmacy/till password. Held by the pharmacist-in-charge.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

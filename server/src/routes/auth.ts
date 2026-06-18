@@ -51,21 +51,42 @@ router.post('/staff/login', async (req: Request, res: Response) => {
   }
 });
 
-// ── Manager access — straight upgrade from staff, no PIN gate. The
-//    PIN feature was removed because the pharmacy password already
-//    gates this; the PIN was just a speedbump that created lockout
-//    risk if forgotten. ──
+// ── Manager access — requires the manager password. ──
+// The pharmacy password (shared with all staff at the till) and the
+// manager password (held by the pharmacist-in-charge) are kept
+// separate so elevated rights aren't quietly handed to whoever
+// happens to know the till password. Until a pharmacy sets a
+// dedicated manager password we fall back to accepting the pharmacy
+// password — the client shows a banner prompting them to set one.
 router.post('/manager/access', authenticate, async (req: Request, res: Response) => {
   try {
+    const { managerPassword } = z.object({ managerPassword: z.string().min(1) }).parse(req.body);
+    const { data: p } = await supabase.from('pharmacies')
+      .select('password_hash, manager_password_hash')
+      .eq('id', req.auth!.pharmacyId).single();
+    if (!p) { res.status(401).json({ error: 'Pharmacy not found' }); return; }
+    const expected = p.manager_password_hash || p.password_hash;
+    const isSeparate = !!p.manager_password_hash;
+    if (!(await bcrypt.compare(managerPassword, expected))) {
+      res.status(401).json({ error: 'Manager password incorrect' });
+      return;
+    }
     const token = jwt.sign(
       { pharmacyId: req.auth!.pharmacyId, pharmacyName: req.auth!.pharmacyName, role: 'manager' },
       env.jwtSecret, { expiresIn: '12h' } as jwt.SignOptions
     );
-    res.json({ token, role: 'manager' });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Access failed' }); }
+    res.json({ token, role: 'manager', managerPasswordIsSeparate: isSeparate });
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
+    console.error('Manager access error:', err);
+    res.status(500).json({ error: 'Access failed' });
+  }
 });
 
-// ── Manager password change ─────────────────────────────────
+// ── Manager pharmacy-password change ───────────────────────
+// Changes the shared password used by all staff to log into the
+// app. Manager-only. The separate manager password is changed by
+// /manager/set-manager-password below.
 router.post('/manager/change-password', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword } = z.object({ currentPassword: z.string(), newPassword: z.string().min(8) }).parse(req.body);
@@ -77,6 +98,41 @@ router.post('/manager/change-password', authenticate, requireRole('manager'), as
     await supabase.from('audit_log').insert({ pharmacy_id: req.auth!.pharmacyId, action: 'password_changed', performed_by: 'manager', details: {} });
     res.json({ success: true });
   } catch { res.status(500).json({ error: 'Failed' }); }
+});
+
+// ── Set / change the manager password ──────────────────────
+// First-time set: currentPassword is the pharmacy password (since
+// manager_password_hash is NULL). After that: currentPassword is
+// the existing manager password.
+router.post('/manager/set-manager-password', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = z.object({
+      currentPassword: z.string().min(1),
+      newPassword: z.string().min(8),
+    }).parse(req.body);
+    const { data: p } = await supabase.from('pharmacies')
+      .select('password_hash, manager_password_hash')
+      .eq('id', req.auth!.pharmacyId).single();
+    if (!p) { res.status(404).json({ error: 'Pharmacy not found' }); return; }
+    const expected = p.manager_password_hash || p.password_hash;
+    if (!(await bcrypt.compare(currentPassword, expected))) {
+      res.status(401).json({ error: 'Current password incorrect' }); return;
+    }
+    await supabase.from('pharmacies')
+      .update({ manager_password_hash: await bcrypt.hash(newPassword, 12) })
+      .eq('id', req.auth!.pharmacyId);
+    await supabase.from('audit_log').insert({
+      pharmacy_id: req.auth!.pharmacyId,
+      action: 'manager_password_set',
+      performed_by: 'manager',
+      details: { first_time: !p.manager_password_hash },
+    });
+    res.json({ success: true });
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
+    console.error('Set manager password error:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
 });
 
 // ── Founder login (email + password + MFA) ──────────────────
@@ -125,13 +181,18 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
   // Enrich with pharmacy-level settings the client wants on first load
   // so it doesn't have to make a second round-trip. pharmacy_size drives
   // the AI's tone in recommendations and summaries.
+  // managerPasswordIsSeparate tells the UI whether to nag the manager
+  // to set a dedicated manager password (vs. still falling back to the
+  // shared pharmacy password).
   let pharmacySize: string | null = null;
+  let managerPasswordIsSeparate = false;
   if (req.auth!.pharmacyId) {
     const { data } = await supabase.from('pharmacies')
-      .select('pharmacy_size').eq('id', req.auth!.pharmacyId).single();
+      .select('pharmacy_size, manager_password_hash').eq('id', req.auth!.pharmacyId).single();
     pharmacySize = (data?.pharmacy_size as string | null) || null;
+    managerPasswordIsSeparate = !!data?.manager_password_hash;
   }
-  res.json({ ...req.auth, pharmacySize });
+  res.json({ ...req.auth, pharmacySize, managerPasswordIsSeparate });
 });
 
 // ── Update pharmacy-level settings (manager only) ───────────
