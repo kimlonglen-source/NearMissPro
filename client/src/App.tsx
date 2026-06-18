@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { InstallPrompt } from './components/InstallPrompt';
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { FounderLoginPage } from './pages/FounderLoginPage';
 import { HomePage } from './pages/HomePage';
@@ -18,7 +19,21 @@ import { SettingsPage } from './pages/SettingsPage';
 function HomeRedirect() {
   const { role } = useAuth();
   if (role === 'founder') return <Navigate to="/admin" replace />;
+  if (role) return <Navigate to="/app" replace />;
   return <Navigate to="/" replace />;
+}
+
+// "/" — landing page for visitors, in-app home for logged-in users.
+// Keeps the marketing site and the app on the same domain
+// (nearmisspro.co.nz) so a pharmacist who logs in lands straight on
+// the app, while a Stripe reviewer or Pharmacy Council member visiting
+// the same URL sees what the product is.
+function RootRoute() {
+  const { role, loading } = useAuth();
+  if (loading) return null;
+  if (role === 'founder') return <Navigate to="/admin" replace />;
+  if (role) return <Navigate to="/app" replace />;
+  return <LandingPage />;
 }
 
 export default function App() {
@@ -27,11 +42,12 @@ export default function App() {
     <OfflineIndicator />
     <InstallPrompt />
     <Routes>
+      <Route path="/" element={<RootRoute />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/founder" element={<FounderLoginPage />} />
 
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route path="/" element={<ProtectedRoute allow={['staff', 'manager']}><HomePage /></ProtectedRoute>} />
+        <Route path="/app" element={<ProtectedRoute allow={['staff', 'manager']}><HomePage /></ProtectedRoute>} />
         <Route path="/record" element={<ProtectedRoute allow={['staff', 'manager']}><RecordPage /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute allow={['manager']}><DashboardPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute allow={['manager']}><ReportsListPage /></ProtectedRoute>} />

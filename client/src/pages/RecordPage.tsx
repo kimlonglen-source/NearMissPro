@@ -454,7 +454,7 @@ export function RecordPage() {
   // which cancels via the cleanup below.
   useEffect(() => {
     if (!submitted || retracted) return;
-    const t = setTimeout(() => nav('/'), 30000);
+    const t = setTimeout(() => nav('/app'), 30000);
     return () => clearTimeout(t);
   }, [submitted, retracted, nav]);
 
@@ -492,7 +492,7 @@ export function RecordPage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-1">Near miss recorded</h2>
         <p className="text-sm text-gray-500 mb-1">Logged at {submittedAt}</p>
         <p className="text-sm text-gray-500 mb-8">Thank you — your report helps keep patients safe.</p>
-        <button onClick={() => nav('/')}
+        <button onClick={() => nav('/app')}
           className="w-full bg-[#0F6E56] text-white font-bold py-5 rounded-xl hover:bg-[#0B5A46] transition-colors text-base">
           Done
         </button>

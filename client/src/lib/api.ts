@@ -186,6 +186,14 @@ class Api {
       method: 'POST', body: JSON.stringify({ drug, errorType }),
     });
   }
+
+  // Marketing — public, no auth.
+  trialSignup(email: string, pharmacyName?: string, notes?: string) {
+    return this.req<{ ok: boolean }>('/marketing/trial-signup', {
+      method: 'POST',
+      body: JSON.stringify({ email, pharmacyName, notes }),
+    });
+  }
 }
 
 export const api = new Api();

@@ -11,6 +11,7 @@ import reportRoutes from './routes/reports.js';
 import adminRoutes from './routes/admin.js';
 import interventionRoutes from './routes/interventions.js';
 import auditRoutes from './routes/audit.js';
+import marketingRoutes from './routes/marketing.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/interventions', interventionRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/marketing', authLimiter, marketingRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', version: '2.0.0' }));
 

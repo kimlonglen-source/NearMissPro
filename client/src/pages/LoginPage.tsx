@@ -19,7 +19,7 @@ export function LoginPage() {
       const res = await api.staffLogin(name, password);
       api.setToken(res.token);
       login('staff', res.pharmacyName, res.pharmacyId);
-      nav('/');
+      nav('/app');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally { setLoading(false); }
