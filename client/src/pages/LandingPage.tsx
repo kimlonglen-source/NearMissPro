@@ -442,12 +442,13 @@ function ComplianceBadges() {
   return (
     <section className="px-5 py-8 border-y border-gray-100 bg-white">
       <div className="max-w-5xl mx-auto">
-        <p className="text-center text-xs uppercase tracking-widest text-gray-400 font-semibold mb-4">Aligned with</p>
+        <p className="text-center text-xs uppercase tracking-widest text-gray-400 font-semibold mb-4">Built on guidance from</p>
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
           {items.map(i => (
             <span key={i} className="text-sm font-medium text-gray-500">{i}</span>
           ))}
         </div>
+        <p className="text-center text-[11px] italic text-gray-400 mt-4">References, not endorsements — NearMissPro has not been certified by any of these bodies.</p>
       </div>
     </section>
   );
@@ -568,7 +569,7 @@ function VsPaper() {
     { paper: 'Patterns only visible if you re-read every entry', us: 'Auto-detected, flagged on the dashboard mid-month so you can act early' },
     { paper: 'Monthly meeting report written from scratch every time', us: 'Auto-generated meeting script — summary, agenda, sign-off included' },
     { paper: '"Did our actions work?" — almost impossible to answer', us: 'Pattern comparison vs prior period — built-in, on every report' },
-    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log — every void, edit, and decision saved. Meets your CQI audit requirements.' },
+    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log — every void, edit, and decision saved. Designed to support your CQI audit work.' },
   ];
   return (
     <section className="px-5 py-20 bg-gradient-to-b from-gray-50 to-white">
@@ -642,7 +643,7 @@ function Pricing() {
                 'All staff included — no per-user fees',
                 'Unlimited near misses + reports',
                 'Full audit log — every void, edit, and decision saved',
-                'Meets Pharmacy Council CQI audit requirements',
+                'Designed to support your CQI audit work',
                 'AI-assisted recommendations',
                 'Email support direct from the founder',
               ].map(i => (
