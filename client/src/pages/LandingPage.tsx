@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { ShieldIcon } from '../components/Logo';
@@ -81,16 +81,44 @@ function Hero() {
   );
 }
 
-// Clean card mockup of the record form mid-flow. Avoids the phone
-// bezel (NearMissPro runs on phone, tablet AND desktop — pharmacies
-// often have a till computer). Two corner stamps reinforce the
-// simplicity + anonymity pitch.
+// Animated 3-stage demo that loops: Record → Review → Print. Each
+// stage holds for a few seconds with a subtle fade between. The
+// step indicator at the top tells the visitor it's a story, not a
+// glitch. Pauses on hover so they can read whichever stage is
+// onscreen.
 function ProductPreview() {
+  const [stage, setStage] = useState<0 | 1 | 2>(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const HOLDS = [3500, 3500, 4000]; // ms per stage
+    const t = setTimeout(() => setStage(s => ((s + 1) % 3) as 0 | 1 | 2), HOLDS[stage]);
+    return () => clearTimeout(t);
+  }, [stage, paused]);
+
+  const stages = ['Record', 'Review', 'Print'];
+
   return (
-    <div className="relative">
+    <div className="relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div className="absolute inset-0 bg-gradient-to-br from-[#0F6E56]/20 to-[#1D9E75]/10 rounded-3xl blur-2xl" />
 
       <div className="relative mx-auto max-w-md">
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-2 mb-4">
+          {stages.map((s, i) => (
+            <div key={s} className="flex items-center gap-2">
+              <button
+                onClick={() => setStage(i as 0 | 1 | 2)}
+                className={`text-xs font-semibold transition-colors ${stage === i ? 'text-[#0F6E56]' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                {i + 1}. {s}
+              </button>
+              {i < stages.length - 1 && <div className="w-6 h-px bg-gray-300" />}
+            </div>
+          ))}
+        </div>
+
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
           {/* App header */}
           <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-100">
@@ -98,55 +126,160 @@ function ProductPreview() {
             <span className="text-sm font-bold">
               <span className="text-[#0F6E56]">NearMiss</span> Pro
             </span>
-            <span className="ml-auto text-[11px] text-gray-400">Record a near miss</span>
+            <span className="ml-auto text-[11px] text-gray-400">{stages[stage]}</span>
           </div>
 
-          {/* Form body */}
-          <div className="p-5 space-y-3">
-            <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2.5 flex items-center gap-2">
-              <CheckCircle2 size={15} className="text-[#1D9E75]" />
-              <span className="text-sm font-medium text-gray-800 flex-1">Where did this happen?</span>
-              <span className="text-xs font-semibold text-[#085041]">Done</span>
-            </div>
-
-            <div className="rounded-lg border border-gray-200 px-3 py-3">
-              <div className="flex items-center gap-2 mb-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[11px] font-bold flex items-center justify-center">2</span>
-                <span className="text-sm font-medium text-gray-800">What went wrong?</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D]">Wrong strength picked</span>
-                <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Look-alike</span>
-                <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Wrong drug</span>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-[#FCEBEB] bg-[#FCEBEB] px-3 py-2">
-              <p className="text-xs font-bold text-[#791F1F] flex items-center gap-1.5">
-                <AlertTriangle size={12} /> High-risk drug — Anticoagulant
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-gray-200 px-3 py-3 opacity-60">
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[11px] font-bold flex items-center justify-center">3</span>
-                <span className="text-sm text-gray-600">Where was it caught?</span>
-              </div>
-            </div>
+          {/* Stage body — height kept consistent so the card doesn't jump */}
+          <div className="p-5 min-h-[300px]">
+            {stage === 0 && <RecordStage />}
+            {stage === 1 && <ReviewStage />}
+            {stage === 2 && <PrintStage />}
           </div>
         </div>
 
-        {/* Floating timer stamp */}
-        <div className="absolute -top-3 -right-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 rotate-3">
-          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Recorded in</p>
-          <p className="text-xl font-bold text-[#0F6E56]">47<span className="text-sm">s</span></p>
-        </div>
+        {/* Floating stamps — different per stage */}
+        {stage === 0 && (
+          <div className="absolute top-12 -right-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 rotate-3 animate-[fadeIn_0.4s_ease]">
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Recorded in</p>
+            <p className="text-xl font-bold text-[#0F6E56]">47<span className="text-sm">s</span></p>
+          </div>
+        )}
+        {stage === 1 && (
+          <div className="absolute top-12 -right-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 rotate-3 animate-[fadeIn_0.4s_ease] flex items-center gap-1.5">
+            <Sparkles size={12} className="text-[#0F6E56]" />
+            <p className="text-xs font-semibold text-gray-700">AI suggested</p>
+          </div>
+        )}
+        {stage === 2 && (
+          <div className="absolute top-12 -right-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 rotate-3 animate-[fadeIn_0.4s_ease]">
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Ready to print</p>
+            <p className="text-base font-bold text-[#0F6E56]">May report</p>
+          </div>
+        )}
 
-        {/* Floating anonymous stamp */}
+        {/* Bottom-left stamp stays constant — anonymity is true at every stage */}
         <div className="absolute -bottom-3 -left-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 -rotate-3 flex items-center gap-1.5">
           <Lock size={12} className="text-[#0F6E56]" />
           <p className="text-xs font-semibold text-gray-700">Anonymous</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Stage 1 — staff member fills the form, chip pulses into selection.
+function RecordStage() {
+  return (
+    <div className="space-y-3 animate-[fadeIn_0.4s_ease]">
+      <div className="rounded-lg bg-[#F0FAF5] border border-[#C8E6D8] px-3 py-2.5 flex items-center gap-2">
+        <CheckCircle2 size={15} className="text-[#1D9E75]" />
+        <span className="text-sm font-medium text-gray-800 flex-1">Where did this happen?</span>
+        <span className="text-xs font-semibold text-[#085041]">Done</span>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 px-3 py-3">
+        <div className="flex items-center gap-2 mb-2.5">
+          <span className="w-5 h-5 rounded-full bg-[#0F6E56] text-white text-[11px] font-bold flex items-center justify-center">2</span>
+          <span className="text-sm font-medium text-gray-800">What went wrong?</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D] animate-[pulse_2s_ease-in-out_infinite]">Wrong strength picked</span>
+          <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Look-alike</span>
+          <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Wrong drug</span>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-[#FCEBEB] bg-[#FCEBEB] px-3 py-2">
+        <p className="text-xs font-bold text-[#791F1F] flex items-center gap-1.5">
+          <AlertTriangle size={12} /> High-risk drug — Anticoagulant
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 px-3 py-3 opacity-60">
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[11px] font-bold flex items-center justify-center">3</span>
+          <span className="text-sm text-gray-600">Where was it caught?</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Stage 2 — manager reviews. The Accept button pulses then becomes "accepted".
+function ReviewStage() {
+  const [accepted, setAccepted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setAccepted(true), 1800);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div className="space-y-3 animate-[fadeIn_0.4s_ease]">
+      <div className="border border-gray-200 rounded-xl p-3">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <p className="text-sm font-semibold text-gray-900">Wrong strength: Warfarin 1mg → 3mg</p>
+          {accepted && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E1F5EE] text-[#085041] flex-shrink-0 animate-[fadeIn_0.3s_ease]">✓ Accepted</span>
+          )}
+        </div>
+        <p className="text-[11px] text-gray-500 mb-2.5">12 May · Final pharmacist check · Communication gap</p>
+
+        <div className="bg-[#F0FAF5] border border-[#C8E6D8] rounded-lg p-2.5 mb-2.5">
+          <p className="text-[10px] font-bold text-[#085041] uppercase tracking-wider mb-1">AI Recommendation</p>
+          <p className="text-xs text-gray-800 leading-snug">Use colour-coded bins on the shelf to separate Warfarin strengths. Make the strength bigger on the dispensing label.</p>
+        </div>
+
+        {!accepted ? (
+          <button className="w-full py-2 rounded-lg bg-[#0F6E56] text-white text-xs font-semibold flex items-center justify-center gap-1.5 animate-[pulse_1.5s_ease-in-out_infinite]">
+            <CheckCircle2 size={14} /> Accept recommendation
+          </button>
+        ) : (
+          <button className="w-full py-2 rounded-lg bg-gray-100 text-gray-500 text-xs font-medium" disabled>
+            Card collapsing…
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Stage 3 — paper-style report sliding in from the right.
+function PrintStage() {
+  return (
+    <div className="animate-[fadeIn_0.4s_ease]">
+      <div className="bg-white border border-gray-300 rounded-lg shadow-sm p-4 relative overflow-hidden">
+        {/* "Watermark" corner */}
+        <div className="absolute top-3 right-3 text-[8px] text-gray-300 font-semibold uppercase tracking-widest">May 2026</div>
+
+        <div className="flex items-center gap-1.5 mb-2">
+          <ShieldIcon size={14} />
+          <span className="text-[10px] font-bold">
+            <span className="text-[#0F6E56]">NearMiss</span> Pro
+          </span>
+        </div>
+        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">Period summary</p>
+        <p className="text-[9px] text-gray-700 leading-relaxed mb-3">
+          6 fewer near misses than last period (17 vs 23). 4 patterns resolved, 2 need attention. The biggest cause was high-volume periods…
+        </p>
+
+        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">What worked</p>
+        <div className="space-y-1 mb-3">
+          {[
+            { d: 'Amoxicillin · Allergy missed', s: '4 → 0', tone: 'text-[#085041]' },
+            { d: 'Atorvastatin · Wrong strength', s: '5 → 2', tone: 'text-[#085041]' },
+            { d: 'Pantoprazole · Wrong drug', s: '1 → 3', tone: 'text-[#791F1F]' },
+          ].map((r, i) => (
+            <div key={i} className="flex items-center justify-between text-[9px]">
+              <span className="text-gray-700">{r.d}</span>
+              <span className={`font-semibold ${r.tone}`}>{r.s}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">What we'll do</p>
+        <ol className="text-[9px] text-gray-700 space-y-1 list-decimal list-inside">
+          <li>Open the meeting — read this summary aloud…</li>
+          <li>Walk through the log — start with Pantoprazole…</li>
+        </ol>
       </div>
     </div>
   );
