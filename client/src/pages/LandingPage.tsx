@@ -158,32 +158,77 @@ function ProductPreview() {
           </div>
         )}
 
-        {/* Bottom-left stamp stays constant — anonymity is true at every stage */}
-        <div className="absolute -bottom-3 -left-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 -rotate-3 flex items-center gap-1.5">
-          <Lock size={12} className="text-[#0F6E56]" />
-          <p className="text-xs font-semibold text-gray-700">Anonymous</p>
-        </div>
+        {/* Anonymous stamp shows ONLY on the Record stage. The Review
+            and Print stages are managerial — anonymity has already
+            been promised, repeating it there feels like over-claiming. */}
+        {stage === 0 && (
+          <div className="absolute -bottom-3 -left-3 bg-white rounded-2xl shadow-lg border border-gray-200 px-3 py-2 -rotate-3 flex items-center gap-1.5 animate-[fadeIn_0.4s_ease]">
+            <Lock size={12} className="text-[#0F6E56]" />
+            <p className="text-xs font-semibold text-gray-700">Anonymous</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Stage 1 — animated walk-through of the record flow. Cycles through
-// four micro-steps so visitors see the actual click-by-click journey
-// instead of a single frozen frame. Tap order: stage chip → error
-// chip → where-caught chip → submit (pulses).
+// Stage 1 — animated walk-through of the record flow with a visible
+// mouse cursor. Cycles through four micro-steps so visitors literally
+// see each click happen. Tap order: stage chip → error chip → where-
+// caught chip → submit (pulses).
 function RecordStage() {
   // 0 = step 1 active, 1 = step 1 done & step 2 active, 2 = step 2
   // done & step 3 active, 3 = all done & submit pulsing.
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
+  // Cursor "click" pulse — fires briefly when stepping so the visitor
+  // sees a click happen, not just a position change.
+  const [clicking, setClicking] = useState(false);
   useEffect(() => {
-    const HOLDS = [900, 900, 900, 800];
-    const t = setTimeout(() => setStep(s => Math.min(3, s + 1) as 0 | 1 | 2 | 3), HOLDS[step]);
-    return () => clearTimeout(t);
+    // Slower than before so the cursor movement is followable. Each
+    // step: ~600ms cursor moves + lands → click flash → 1000ms hold
+    // showing the new selected state.
+    const HOLDS = [1600, 1600, 1600, 1200];
+    const clickAt = setTimeout(() => {
+      setClicking(true);
+      setTimeout(() => setClicking(false), 200);
+    }, 500);
+    const advance = setTimeout(() => setStep(s => Math.min(3, s + 1) as 0 | 1 | 2 | 3), HOLDS[step]);
+    return () => { clearTimeout(clickAt); clearTimeout(advance); };
   }, [step]);
 
+  // Cursor target position per step. Hand-calibrated against the card
+  // layout (p-5 padding, space-y-3 between sections). Exact pixel
+  // accuracy isn't critical — the cursor lands on the right chip
+  // visually, which is what matters.
+  const CURSOR_POS = [
+    { top: 78,  left: 100 }, // Step 0: "Drug picked from shelf" chip in section 1
+    { top: 120, left: 110 }, // Step 1: "Wrong strength picked" chip in section 2
+    { top: 220, left: 105 }, // Step 2: "Final pharmacist check" chip in section 3
+    { top: 300, left: 180 }, // Step 3: Submit button
+  ];
+  const pos = CURSOR_POS[step];
+
   return (
-    <div className="space-y-3 animate-[fadeIn_0.4s_ease]">
+    <div className="space-y-3 animate-[fadeIn_0.4s_ease] relative">
+      {/* Floating cursor — moves between chips via CSS transition,
+          briefly scales down on each click. Pointer-events disabled
+          so it doesn't intercept hover/clicks on the demo. */}
+      <div
+        className="absolute pointer-events-none z-20 transition-all duration-500 ease-out"
+        style={{
+          top: `${pos.top}px`,
+          left: `${pos.left}px`,
+          transform: clicking ? 'scale(0.85)' : 'scale(1)',
+        }}
+      >
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" className="drop-shadow-md">
+          <path d="M3 2L19 11L11 13L9 19L3 2Z" fill="white" stroke="#111" strokeWidth="1.3" strokeLinejoin="round"/>
+        </svg>
+        {clicking && (
+          <span className="absolute -top-1 -left-1 w-6 h-6 rounded-full border-2 border-[#0F6E56] animate-ping" />
+        )}
+      </div>
+
       {/* Step 1 — Where did this happen? */}
       {step === 0 ? (
         <div className="rounded-lg border border-gray-200 px-3 py-3">
