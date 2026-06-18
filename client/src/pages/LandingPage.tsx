@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { ShieldIcon } from '../components/Logo';
@@ -195,20 +195,28 @@ function RecordStage() {
     return () => { clearTimeout(clickAt); clearTimeout(advance); };
   }, [step]);
 
-  // Cursor target position per step. Hand-calibrated against the card
-  // layout — exact pixel accuracy isn't critical, just lands on the
-  // right chip visually.
-  const CURSOR_POS = [
-    { top: 78,  left: 100 }, // Step 0: stage chip ("Drug picked from shelf")
-    { top: 120, left: 110 }, // Step 1: error chip ("Wrong strength picked")
-    { top: 220, left: 105 }, // Step 2: where-caught chip
-    { top: 290, left: 100 }, // Step 3: factor chip ("Interruption / distraction")
-    { top: 365, left: 180 }, // Step 4: Submit button
-  ];
-  const pos = CURSOR_POS[step];
+  // Cursor target — measured live from the DOM so it always lands on
+  // the actual chip the demo is "clicking", even as the layout shifts
+  // (sections collapsing, high-risk warning appearing, etc).
+  const containerRef = useRef<HTMLDivElement>(null);
+  const targetRefs = useRef<(HTMLElement | null)[]>([]);
+  const [pos, setPos] = useState({ top: 60, left: 60 });
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const target = targetRefs.current[step];
+    if (!container || !target) return;
+    const c = container.getBoundingClientRect();
+    const t = target.getBoundingClientRect();
+    // Land the cursor tip slightly above-left of centre, like a real
+    // pointer about to click — feels more natural than dead-centre.
+    setPos({
+      top: t.top - c.top + t.height * 0.4,
+      left: t.left - c.left + t.width * 0.55,
+    });
+  }, [step]);
 
   return (
-    <div className="space-y-3 animate-[fadeIn_0.4s_ease] relative">
+    <div ref={containerRef} className="space-y-3 animate-[fadeIn_0.4s_ease] relative">
       {/* Floating cursor — moves between chips via CSS transition,
           briefly scales down on each click. Pointer-events disabled
           so it doesn't intercept hover/clicks on the demo. */}
@@ -236,7 +244,7 @@ function RecordStage() {
             <span className="text-sm font-medium text-gray-800">Where did this happen?</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#E1F5EE] border border-[#1D9E75] text-[#085041] animate-[pulse_1.2s_ease-in-out_infinite]">Drug picked from shelf</span>
+            <span ref={el => { targetRefs.current[0] = el; }} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#E1F5EE] border border-[#1D9E75] text-[#085041] animate-[pulse_1.2s_ease-in-out_infinite]">Drug picked from shelf</span>
             <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Labelling</span>
           </div>
         </div>
@@ -256,7 +264,7 @@ function RecordStage() {
             <span className="text-sm font-medium text-gray-800">What went wrong?</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D] animate-[pulse_1.2s_ease-in-out_infinite]">Wrong strength picked</span>
+            <span ref={el => { targetRefs.current[1] = el; }} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF1E8] border border-[#F0A36D] text-[#9A3F0D] animate-[pulse_1.2s_ease-in-out_infinite]">Wrong strength picked</span>
             <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Look-alike</span>
             <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Wrong drug</span>
           </div>
@@ -293,7 +301,7 @@ function RecordStage() {
             <span className="text-sm font-medium text-gray-800">Where was it caught?</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#E1F5EE] border border-[#1D9E75] text-[#085041] animate-[pulse_1.2s_ease-in-out_infinite]">Final pharmacist check</span>
+            <span ref={el => { targetRefs.current[2] = el; }} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#E1F5EE] border border-[#1D9E75] text-[#085041] animate-[pulse_1.2s_ease-in-out_infinite]">Final pharmacist check</span>
             <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Technician query</span>
           </div>
         </div>
@@ -320,7 +328,7 @@ function RecordStage() {
             <span className="text-sm font-medium text-gray-800">What was happening at the time?</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF8EB] border border-[#BA7517] text-[#633806] animate-[pulse_1.2s_ease-in-out_infinite]">Interruption / distraction</span>
+            <span ref={el => { targetRefs.current[3] = el; }} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF8EB] border border-[#BA7517] text-[#633806] animate-[pulse_1.2s_ease-in-out_infinite]">Interruption / distraction</span>
             <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">High volume</span>
           </div>
         </div>
@@ -341,7 +349,7 @@ function RecordStage() {
 
       {/* Submit button — pulses on step 4 (all done) */}
       {step >= 4 && (
-        <button className="w-full py-2.5 rounded-lg bg-[#0F6E56] text-white text-sm font-semibold animate-pulse">
+        <button ref={el => { targetRefs.current[4] = el; }} className="w-full py-2.5 rounded-lg bg-[#0F6E56] text-white text-sm font-semibold animate-pulse">
           Submit near miss
         </button>
       )}
