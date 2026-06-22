@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
@@ -45,6 +45,9 @@ export function LoginPage() {
           <button type="submit" disabled={loading || !name || !password} className="btn-teal w-full">{loading ? 'Logging in...' : 'Login'}</button>
         </form>
         <div className="mt-4 text-center">
+          <Link to="/forgot-password?type=pharmacy" className="text-sm text-[#0F6E56] hover:underline">Forgot pharmacy password?</Link>
+        </div>
+        <div className="mt-3 text-center">
           <a href="/founder" className="text-xs text-gray-400 hover:text-gray-600">Founder login →</a>
         </div>
       </div>

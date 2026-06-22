@@ -22,7 +22,8 @@ Goal: turn anonymous near-miss logs into a regulator-friendly CQI (continuous qu
 - Express + TypeScript (server/)
 - Supabase Postgres (database)
 - Anthropic Claude API for per-incident recommendations and period summary
-- PWA — no email/SMS infrastructure
+- PWA — no SMS infrastructure
+- **Transactional email** via Zoho SMTP (host `smtp.zoho.com.au`, port 587, user = the Zoho mailbox e.g. `hello@nearmisspro.co.nz`, password = a Zoho **app password** generated under Zoho My Account → Security → App Passwords). Env vars: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`. When `SMTP_HOST` is empty the `sendEmail()` utility falls back to `console.log` so local dev keeps working without burning sends.
 
 ## Setup quirks specific to this user
 

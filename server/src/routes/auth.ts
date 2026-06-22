@@ -1,10 +1,12 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { env } from '../config/env.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
+import { sendEmail, escapeHtml } from '../services/email.js';
 
 const router = Router();
 
@@ -304,6 +306,115 @@ router.patch('/pharmacies/:id/status', authenticate, requireRole('founder'), asy
     await supabase.from('audit_log').insert({ pharmacy_id: req.params.id, action: `pharmacy_${status}`, performed_by: 'founder', details: {} });
     res.json({ success: true });
   } catch { res.status(500).json({ error: 'Failed' }); }
+});
+
+// ── Forgot password ────────────────────────────────────────
+// Generates a one-time reset token, stores its hash, emails the
+// reset link to the manager_email on file. Always returns 200 so
+// an attacker can't probe whether a pharmacy name exists by
+// watching response times or status codes.
+const forgotSchema = z.object({
+  pharmacyName: z.string().min(1).max(120),
+  passwordType: z.enum(['pharmacy', 'manager']),
+});
+
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  // Respond OK regardless of outcome to avoid enumeration. Errors are
+  // logged server-side for our own debugging.
+  res.json({ ok: true });
+  try {
+    const { pharmacyName, passwordType } = forgotSchema.parse(req.body);
+    const { data: pharmacy } = await supabase.from('pharmacies')
+      .select('id, name, manager_email, manager_name')
+      .ilike('name', pharmacyName).single();
+    if (!pharmacy || !pharmacy.manager_email) {
+      console.log('[forgot-password] no pharmacy or no manager_email:', pharmacyName);
+      return;
+    }
+    // 32-byte URL-safe token; only the hash is stored.
+    const token = crypto.randomBytes(32).toString('base64url');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60_000).toISOString(); // 60 min
+    await supabase.from('password_reset_tokens').insert({
+      pharmacy_id: pharmacy.id,
+      password_type: passwordType,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+    });
+    const resetUrl = `${env.clientUrl}/reset-password?token=${token}&type=${passwordType}`;
+    const which = passwordType === 'pharmacy' ? 'pharmacy/staff' : 'manager';
+    const greeting = pharmacy.manager_name ? `Hi ${escapeHtml(pharmacy.manager_name)},` : 'Hi,';
+    await sendEmail({
+      to: pharmacy.manager_email,
+      subject: `Reset your NearMissPro ${which} password`,
+      text: `${pharmacy.manager_name ? `Hi ${pharmacy.manager_name},` : 'Hi,'}
+
+We received a request to reset the ${which} password for ${pharmacy.name}.
+
+Set a new password using this link (expires in 60 minutes):
+${resetUrl}
+
+If you didn't ask to reset, ignore this email — your current password is unchanged.
+
+— NearMissPro`,
+      html: `<p>${greeting}</p>
+<p>We received a request to reset the <strong>${which}</strong> password for ${escapeHtml(pharmacy.name)}.</p>
+<p><a href="${resetUrl}" style="display:inline-block;background:#0F6E56;color:white;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Set a new password</a></p>
+<p style="color:#666;font-size:13px">This link expires in 60 minutes. If you didn't ask to reset, ignore this email — your current password is unchanged.</p>
+<p style="color:#999;font-size:12px">— NearMissPro</p>`,
+    });
+    await supabase.from('audit_log').insert({
+      pharmacy_id: pharmacy.id,
+      action: 'password_reset_requested',
+      performed_by: 'self-service',
+      details: { password_type: passwordType },
+    });
+  } catch (err) {
+    console.error('[forgot-password] failed:', err);
+  }
+});
+
+// ── Reset password ─────────────────────────────────────────
+// Consumes the one-time token, updates the chosen password.
+const resetSchema = z.object({
+  token: z.string().min(20).max(200),
+  newPassword: z.string().min(8).max(200),
+});
+
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = resetSchema.parse(req.body);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const { data: row } = await supabase.from('password_reset_tokens')
+      .select('id, pharmacy_id, password_type, expires_at, used_at')
+      .eq('token_hash', tokenHash).single();
+    if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
+      res.status(400).json({ error: 'This reset link is no longer valid. Request a new one.' });
+      return;
+    }
+    const hashed = await bcrypt.hash(newPassword, 12);
+    const column = row.password_type === 'manager' ? 'manager_password_hash' : 'password_hash';
+    await supabase.from('pharmacies').update({ [column]: hashed }).eq('id', row.pharmacy_id);
+    // Also clear lockout so a forgotten password doesn't leave staff
+    // stuck after a fresh reset.
+    if (row.password_type === 'pharmacy') {
+      await supabase.from('pharmacies')
+        .update({ login_attempts: 0, locked_until: null })
+        .eq('id', row.pharmacy_id);
+    }
+    await supabase.from('password_reset_tokens').update({ used_at: new Date().toISOString() }).eq('id', row.id);
+    await supabase.from('audit_log').insert({
+      pharmacy_id: row.pharmacy_id,
+      action: row.password_type === 'manager' ? 'manager_password_reset' : 'pharmacy_password_reset',
+      performed_by: 'self-service',
+      details: {},
+    });
+    res.json({ ok: true, passwordType: row.password_type });
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
+    console.error('[reset-password] failed:', err);
+    res.status(500).json({ error: 'Reset failed — try requesting a new link.' });
+  }
 });
 
 export default router;

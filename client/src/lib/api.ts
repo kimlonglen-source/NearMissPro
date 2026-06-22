@@ -112,6 +112,18 @@ class Api {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
   }
+  forgotPassword(pharmacyName: string, passwordType: 'pharmacy' | 'manager') {
+    return this.req<{ ok: true }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ pharmacyName, passwordType }),
+    });
+  }
+  resetPassword(token: string, newPassword: string) {
+    return this.req<{ ok: true; passwordType: 'pharmacy' | 'manager' }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
 
   // Incidents
   createIncident(data: object) { return this.req<Record<string, unknown>>('/incidents', { method: 'POST', body: JSON.stringify(data) }); }

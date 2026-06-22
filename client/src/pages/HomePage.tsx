@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { ShieldIcon } from '../components/Logo';
@@ -94,6 +94,9 @@ export function HomePage() {
           <p className="text-[11px] text-gray-400 mt-2 leading-snug">
             Separate from the pharmacy password (the one all staff use on the dispensing computer). Held by the pharmacist-in-charge.
           </p>
+          <div className="mt-2 text-center">
+            <Link to="/forgot-password?type=manager" className="text-[11px] text-[#0F6E56] hover:underline">Forgot manager password?</Link>
+          </div>
         </div>
       )}
     </div>
