@@ -58,10 +58,19 @@ class Api {
 
     const res = await fetch(`${BASE}${path}`, { ...opts, headers });
     if (res.status === 401) {
-      this.setToken(null);
-      localStorage.removeItem('nmp_role');
-      window.location.href = '/login';
-      throw new Error('Session expired');
+      // Only treat 401 as a session expiration when we actually sent a
+      // token — otherwise this is a login attempt with a bad password
+      // (or any other unauthenticated request), and we should let the
+      // caller surface the real error message instead of bouncing the
+      // user to /login with a misleading "Session expired" banner.
+      if (token) {
+        this.setToken(null);
+        localStorage.removeItem('nmp_role');
+        window.location.href = '/login';
+        throw new Error('Session expired');
+      }
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Invalid pharmacy name or password');
     }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Request failed');

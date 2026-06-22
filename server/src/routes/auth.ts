@@ -335,12 +335,20 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const token = crypto.randomBytes(32).toString('base64url');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date(Date.now() + 60 * 60_000).toISOString(); // 60 min
-    await supabase.from('password_reset_tokens').insert({
+    const { error: insertErr } = await supabase.from('password_reset_tokens').insert({
       pharmacy_id: pharmacy.id,
       password_type: passwordType,
       token_hash: tokenHash,
       expires_at: expiresAt,
     });
+    if (insertErr) {
+      // Most common cause: migrate_password_reset_tokens.sql wasn't
+      // run on the target database. Surfacing this loudly so the
+      // server log shows the cause rather than silently sending an
+      // email with a token that won't validate.
+      console.error('[forgot-password] could not insert reset token — has migrate_password_reset_tokens.sql been run?', insertErr);
+      return;
+    }
     const resetUrl = `${env.clientUrl}/reset-password?token=${token}&type=${passwordType}`;
     const which = passwordType === 'pharmacy' ? 'pharmacy/staff' : 'manager';
     const greeting = pharmacy.manager_name ? `Hi ${escapeHtml(pharmacy.manager_name)},` : 'Hi,';
