@@ -78,7 +78,10 @@ router.post('/manager/change-password', authenticate, requireRole('manager'), as
     const { currentPassword, newPassword } = z.object({ currentPassword: z.string(), newPassword: z.string().min(8) }).parse(req.body);
     const { data: p } = await supabase.from('pharmacies').select('password_hash').eq('id', req.auth!.pharmacyId).single();
     if (!p || !(await bcrypt.compare(currentPassword, p.password_hash))) {
-      res.status(401).json({ error: 'Current password incorrect' }); return;
+      // 400, NOT 401. The session is fine — the wrong thing was a
+      // form field. Returning 401 would trigger the api helper's
+      // session-expired bounce and kick the manager back to /login.
+      res.status(400).json({ error: 'Current password incorrect' }); return;
     }
     await supabase.from('pharmacies').update({ password_hash: await bcrypt.hash(newPassword, 12) }).eq('id', req.auth!.pharmacyId);
     await supabase.from('audit_log').insert({ pharmacy_id: req.auth!.pharmacyId, action: 'password_changed', performed_by: 'manager', details: {} });
