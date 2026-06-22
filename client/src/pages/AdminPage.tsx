@@ -185,7 +185,7 @@ export function AdminPage() {
                   <input className="input-field" placeholder="Manager name *" value={form.managerName} onChange={e => setForm({ ...form, managerName: e.target.value })} />
                   <input className="input-field" placeholder="Manager email *" value={form.managerEmail} onChange={e => setForm({ ...form, managerEmail: e.target.value })} />
                 </div>
-                <p className="text-[11px] text-gray-400 mt-1">Used for the report greeting and (later) password-reset emails.</p>
+                <p className="text-[11px] text-gray-400 mt-1">Used for the report greeting and password-reset emails. Should be the pharmacist-in-charge's own inbox — not a shared one.</p>
               </div>
 
               <div>
