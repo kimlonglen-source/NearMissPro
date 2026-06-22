@@ -90,6 +90,11 @@ export function ResetPasswordPage() {
             {loading ? 'Updating…' : 'Update password'}
           </button>
         </form>
+        <div className="mt-4 text-center">
+          <Link to={`/forgot-password${which ? `?type=${which}` : ''}`} className="text-xs text-gray-500 hover:text-gray-700">
+            Link expired? Request a new one →
+          </Link>
+        </div>
       </div>
     </div>
   );
