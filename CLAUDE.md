@@ -29,7 +29,7 @@ Goal: turn anonymous near-miss logs into a regulator-friendly CQI (continuous qu
 
 - His `server/.env` may or may not exist on his Mac — the assistant cannot see it directly (different filesystem). Always have him `cat server/.env` before suggesting changes that could overwrite it.
 - Founder password is hardcoded `founder123` (dev mode). Founder email comes from `FOUNDER_EMAIL` in `server/.env`. MFA accepts any 6 digits in dev.
-- Manager access is an in-app upgrade from staff, not a separate login. Requires a **separate manager password** (column: `manager_password_hash`) — distinct from the shared pharmacy password used on the dispensing computer. Until that's set, the server falls back to accepting the pharmacy password and the Settings → Password tab shows a nag banner. Held only by the pharmacist-in-charge. The old PIN gate was removed earlier; the manager password replaces it with something stronger.
+- Manager access is an in-app upgrade from staff, not a separate login. **One-click upgrade — no second password.** A separate manager-password feature was built and then removed because the friction outweighed the security benefit in a small NZ pharmacy where roles are known and the dispensing computer is physically secured. The pharmacy password (already used to log in as staff) is the only credential. The `manager_password_hash` column still exists in the schema (harmless legacy) but is no longer read or written.
 
 ## Working branch
 

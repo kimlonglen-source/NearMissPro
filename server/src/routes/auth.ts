@@ -53,43 +53,26 @@ router.post('/staff/login', async (req: Request, res: Response) => {
   }
 });
 
-// ── Manager access — requires the manager password. ──
-// The pharmacy password (shared with all staff on the dispensing
-// computer) and the manager password (held by the pharmacist-in-
-// charge) are kept separate so elevated rights aren't quietly
-// handed to whoever happens to know the pharmacy password. Until a
-// pharmacy sets a dedicated manager password we fall back to
-// accepting the pharmacy password — the client shows a banner
-// prompting them to set one.
+// ── Manager access — one-click upgrade from staff. ──
+// No second password: the pharmacy password (which the manager just
+// used to log in as staff) already gated entry. A separate manager
+// password was tried and removed because the friction outweighed
+// the security benefit in a small NZ pharmacy where roles are
+// known and the dispensing computer is physically secured.
 router.post('/manager/access', authenticate, async (req: Request, res: Response) => {
   try {
-    const { managerPassword } = z.object({ managerPassword: z.string().min(1) }).parse(req.body);
-    const { data: p } = await supabase.from('pharmacies')
-      .select('password_hash, manager_password_hash')
-      .eq('id', req.auth!.pharmacyId).single();
-    if (!p) { res.status(401).json({ error: 'Pharmacy not found' }); return; }
-    const expected = p.manager_password_hash || p.password_hash;
-    const isSeparate = !!p.manager_password_hash;
-    if (!(await bcrypt.compare(managerPassword, expected))) {
-      res.status(401).json({ error: 'Manager password incorrect' });
-      return;
-    }
     const token = jwt.sign(
       { pharmacyId: req.auth!.pharmacyId, pharmacyName: req.auth!.pharmacyName, role: 'manager' },
       env.jwtSecret, { expiresIn: '12h' } as jwt.SignOptions
     );
-    res.json({ token, role: 'manager', managerPasswordIsSeparate: isSeparate });
+    res.json({ token, role: 'manager' });
   } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
     console.error('Manager access error:', err);
     res.status(500).json({ error: 'Access failed' });
   }
 });
 
-// ── Manager pharmacy-password change ───────────────────────
-// Changes the shared password used by all staff to log into the
-// app. Manager-only. The separate manager password is changed by
-// /manager/set-manager-password below.
+// ── Change the pharmacy password (manager only) ───────────
 router.post('/manager/change-password', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword } = z.object({ currentPassword: z.string(), newPassword: z.string().min(8) }).parse(req.body);
@@ -101,41 +84,6 @@ router.post('/manager/change-password', authenticate, requireRole('manager'), as
     await supabase.from('audit_log').insert({ pharmacy_id: req.auth!.pharmacyId, action: 'password_changed', performed_by: 'manager', details: {} });
     res.json({ success: true });
   } catch { res.status(500).json({ error: 'Failed' }); }
-});
-
-// ── Set / change the manager password ──────────────────────
-// First-time set: currentPassword is the pharmacy password (since
-// manager_password_hash is NULL). After that: currentPassword is
-// the existing manager password.
-router.post('/manager/set-manager-password', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
-  try {
-    const { currentPassword, newPassword } = z.object({
-      currentPassword: z.string().min(1),
-      newPassword: z.string().min(8),
-    }).parse(req.body);
-    const { data: p } = await supabase.from('pharmacies')
-      .select('password_hash, manager_password_hash')
-      .eq('id', req.auth!.pharmacyId).single();
-    if (!p) { res.status(404).json({ error: 'Pharmacy not found' }); return; }
-    const expected = p.manager_password_hash || p.password_hash;
-    if (!(await bcrypt.compare(currentPassword, expected))) {
-      res.status(401).json({ error: 'Current password incorrect' }); return;
-    }
-    await supabase.from('pharmacies')
-      .update({ manager_password_hash: await bcrypt.hash(newPassword, 12) })
-      .eq('id', req.auth!.pharmacyId);
-    await supabase.from('audit_log').insert({
-      pharmacy_id: req.auth!.pharmacyId,
-      action: 'manager_password_set',
-      performed_by: 'manager',
-      details: { first_time: !p.manager_password_hash },
-    });
-    res.json({ success: true });
-  } catch (err) {
-    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
-    console.error('Set manager password error:', err);
-    res.status(500).json({ error: 'Failed' });
-  }
 });
 
 // ── Founder login (email + password + MFA) ──────────────────
@@ -183,24 +131,20 @@ router.post('/founder/login', async (req: Request, res: Response) => {
 router.get('/me', authenticate, async (req: Request, res: Response) => {
   // Enrich with pharmacy-level settings the client wants on first load
   // so it doesn't have to make a second round-trip. pharmacy_size drives
-  // the AI's tone in recommendations and summaries.
-  // managerPasswordIsSeparate tells the UI whether to nag the manager
-  // to set a dedicated manager password (vs. still falling back to the
-  // shared pharmacy password).
+  // the AI's tone in recommendations and summaries; manager name/email
+  // drive the report greeting and password-reset destination.
   let pharmacySize: string | null = null;
-  let managerPasswordIsSeparate = false;
   let managerName: string | null = null;
   let managerEmail: string | null = null;
   if (req.auth!.pharmacyId) {
     const { data } = await supabase.from('pharmacies')
-      .select('pharmacy_size, manager_password_hash, manager_name, manager_email')
+      .select('pharmacy_size, manager_name, manager_email')
       .eq('id', req.auth!.pharmacyId).single();
     pharmacySize = (data?.pharmacy_size as string | null) || null;
-    managerPasswordIsSeparate = !!data?.manager_password_hash;
     managerName = (data?.manager_name as string | null) || null;
     managerEmail = (data?.manager_email as string | null) || null;
   }
-  res.json({ ...req.auth, pharmacySize, managerPasswordIsSeparate, managerName, managerEmail });
+  res.json({ ...req.auth, pharmacySize, managerName, managerEmail });
 });
 
 // ── Update pharmacy-level settings (manager only) ───────────
@@ -256,7 +200,6 @@ router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Req
     const data = z.object({
       name: z.string().min(1).max(120),
       password: z.string().min(8).max(200),
-      managerPassword: z.string().min(8).max(200),
       managerName: z.string().min(1).max(100),
       managerEmail: z.string().email().max(200),
       address: z.string().max(300).optional(),
@@ -266,7 +209,6 @@ router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Req
     const { data: pharmacy, error } = await supabase.from('pharmacies').insert({
       name: data.name,
       password_hash: await bcrypt.hash(data.password, 12),
-      manager_password_hash: await bcrypt.hash(data.managerPassword, 12),
       manager_name: data.managerName,
       manager_email: data.managerEmail,
       address: data.address,
@@ -315,7 +257,6 @@ router.patch('/pharmacies/:id/status', authenticate, requireRole('founder'), asy
 // watching response times or status codes.
 const forgotSchema = z.object({
   pharmacyName: z.string().min(1).max(120),
-  passwordType: z.enum(['pharmacy', 'manager']),
 });
 
 router.post('/forgot-password', async (req: Request, res: Response) => {
@@ -323,7 +264,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
   // logged server-side for our own debugging.
   res.json({ ok: true });
   try {
-    const { pharmacyName, passwordType } = forgotSchema.parse(req.body);
+    const { pharmacyName } = forgotSchema.parse(req.body);
     const { data: pharmacy } = await supabase.from('pharmacies')
       .select('id, name, manager_email, manager_name')
       .ilike('name', pharmacyName).single();
@@ -337,7 +278,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 60 * 60_000).toISOString(); // 60 min
     const { error: insertErr } = await supabase.from('password_reset_tokens').insert({
       pharmacy_id: pharmacy.id,
-      password_type: passwordType,
+      password_type: 'pharmacy',
       token_hash: tokenHash,
       expires_at: expiresAt,
     });
@@ -349,15 +290,14 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       console.error('[forgot-password] could not insert reset token — has migrate_password_reset_tokens.sql been run?', insertErr);
       return;
     }
-    const resetUrl = `${env.clientUrl}/reset-password?token=${token}&type=${passwordType}`;
-    const which = passwordType === 'pharmacy' ? 'pharmacy/staff' : 'manager';
+    const resetUrl = `${env.clientUrl}/reset-password?token=${token}`;
     const greeting = pharmacy.manager_name ? `Hi ${escapeHtml(pharmacy.manager_name)},` : 'Hi,';
     await sendEmail({
       to: pharmacy.manager_email,
-      subject: `Reset your NearMissPro ${which} password`,
+      subject: `Reset your NearMissPro password`,
       text: `${pharmacy.manager_name ? `Hi ${pharmacy.manager_name},` : 'Hi,'}
 
-We received a request to reset the ${which} password for ${pharmacy.name}.
+We received a request to reset the password for ${pharmacy.name}.
 
 Set a new password using this link (expires in 60 minutes):
 ${resetUrl}
@@ -366,7 +306,7 @@ If you didn't ask to reset, ignore this email — your current password is uncha
 
 — NearMissPro`,
       html: `<p>${greeting}</p>
-<p>We received a request to reset the <strong>${which}</strong> password for ${escapeHtml(pharmacy.name)}.</p>
+<p>We received a request to reset the password for ${escapeHtml(pharmacy.name)}.</p>
 <p><a href="${resetUrl}" style="display:inline-block;background:#0F6E56;color:white;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Set a new password</a></p>
 <p style="color:#666;font-size:13px">This link expires in 60 minutes. If you didn't ask to reset, ignore this email — your current password is unchanged.</p>
 <p style="color:#999;font-size:12px">— NearMissPro</p>`,
@@ -375,7 +315,7 @@ If you didn't ask to reset, ignore this email — your current password is uncha
       pharmacy_id: pharmacy.id,
       action: 'password_reset_requested',
       performed_by: 'self-service',
-      details: { password_type: passwordType },
+      details: {},
     });
   } catch (err) {
     console.error('[forgot-password] failed:', err);
@@ -394,30 +334,28 @@ router.post('/reset-password', async (req: Request, res: Response) => {
     const { token, newPassword } = resetSchema.parse(req.body);
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const { data: row } = await supabase.from('password_reset_tokens')
-      .select('id, pharmacy_id, password_type, expires_at, used_at')
+      .select('id, pharmacy_id, expires_at, used_at')
       .eq('token_hash', tokenHash).single();
     if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
       res.status(400).json({ error: 'This reset link is no longer valid. Request a new one.' });
       return;
     }
     const hashed = await bcrypt.hash(newPassword, 12);
-    const column = row.password_type === 'manager' ? 'manager_password_hash' : 'password_hash';
-    await supabase.from('pharmacies').update({ [column]: hashed }).eq('id', row.pharmacy_id);
     // Also clear lockout so a forgotten password doesn't leave staff
     // stuck after a fresh reset.
-    if (row.password_type === 'pharmacy') {
-      await supabase.from('pharmacies')
-        .update({ login_attempts: 0, locked_until: null })
-        .eq('id', row.pharmacy_id);
-    }
+    await supabase.from('pharmacies').update({
+      password_hash: hashed,
+      login_attempts: 0,
+      locked_until: null,
+    }).eq('id', row.pharmacy_id);
     await supabase.from('password_reset_tokens').update({ used_at: new Date().toISOString() }).eq('id', row.id);
     await supabase.from('audit_log').insert({
       pharmacy_id: row.pharmacy_id,
-      action: row.password_type === 'manager' ? 'manager_password_reset' : 'pharmacy_password_reset',
+      action: 'pharmacy_password_reset',
       performed_by: 'self-service',
       details: {},
     });
-    res.json({ ok: true, passwordType: row.password_type });
+    res.json({ ok: true });
   } catch (err) {
     if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
     console.error('[reset-password] failed:', err);

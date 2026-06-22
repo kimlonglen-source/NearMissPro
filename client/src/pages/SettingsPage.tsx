@@ -102,16 +102,6 @@ export function SettingsPage() {
   const [auditExpanded, setAuditExpanded] = useState<Record<string, boolean>>({});
   const auditLimit = 50;
 
-  // Manager-password state — separate from the shared pharmacy
-  // password. `mgrSeparate` tracks whether a dedicated manager
-  // password has been set yet (false on legacy pharmacies until they
-  // run this through Settings), which drives the nag banner.
-  const [mgrSeparate, setMgrSeparate] = useState<boolean>(true);
-  const [mgrCurrent, setMgrCurrent] = useState('');
-  const [mgrNew, setMgrNew] = useState('');
-  const [mgrMsg, setMgrMsg] = useState('');
-  const [mgrErr, setMgrErr] = useState('');
-
   // Pharmacy + manager details (name, email) — editable so the
   // outgoing manager can hand over to a new one without contacting
   // the founder.
@@ -123,7 +113,6 @@ export function SettingsPage() {
   useEffect(() => {
     api.getMe().then(me => {
       setSize((me.pharmacySize as PharmacySize | null) || null);
-      setMgrSeparate(!!me.managerPasswordIsSeparate);
       setDetailsName(me.managerName || '');
       setDetailsEmail(me.managerEmail || '');
     }).catch(() => {});
@@ -138,18 +127,6 @@ export function SettingsPage() {
       setDetailsMsg('Saved — change is in the audit log');
     } catch {
       setDetailsErr('Could not save — try again');
-    }
-  };
-
-  const handleSetManagerPassword = async () => {
-    if (mgrNew.length < 8) { setMgrErr('New password must be at least 8 characters'); return; }
-    setMgrErr(''); setMgrMsg('');
-    try {
-      await api.setManagerPassword(mgrCurrent, mgrNew);
-      setMgrMsg(mgrSeparate ? 'Manager password updated' : 'Manager password set — now separate from the pharmacy password');
-      setMgrCurrent(''); setMgrNew(''); setMgrSeparate(true);
-    } catch {
-      setMgrErr('Current password incorrect');
     }
   };
 
@@ -215,35 +192,14 @@ export function SettingsPage() {
       </div>
 
       {tab === 'password' && (
-        <div className="space-y-4">
-          {!mgrSeparate && (
-            <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 text-sm text-amber-900">
-              <p className="font-semibold mb-1">Set a separate manager password</p>
-              <p className="text-amber-800 leading-snug">Right now anyone with the shared pharmacy password can become manager. Set a separate password below — only you (the pharmacist-in-charge) should know it.</p>
-            </div>
-          )}
-
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-            <h3 className="font-semibold">Change pharmacy password</h3>
-            <p className="text-xs text-gray-500">Used by all staff to log in on the dispensing computer. Change it whenever someone leaves the team.</p>
-            {pwdMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{pwdMsg}</div>}
-            {pwdErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{pwdErr}</div>}
-            <input type="password" placeholder="Current password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} className="input-field" />
-            <input type="password" placeholder="New password (min 8 characters)" value={newPwd} onChange={e => setNewPwd(e.target.value)} className="input-field" />
-            <button onClick={handleChangePassword} disabled={!currentPwd || newPwd.length < 8} className="btn-teal text-sm">Change password</button>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-            <h3 className="font-semibold">{mgrSeparate ? 'Change manager password' : 'Set manager password'}</h3>
-            <p className="text-xs text-gray-500">{mgrSeparate
-              ? 'Held by the pharmacist-in-charge. Required to enter manager mode (void incidents, accept recommendations, generate reports).'
-              : 'You\'re currently using the shared pharmacy password as your manager password. Set a separate one here — only you should know it.'}</p>
-            {mgrMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{mgrMsg}</div>}
-            {mgrErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{mgrErr}</div>}
-            <input type="password" placeholder={mgrSeparate ? 'Current manager password' : 'Current pharmacy password'} value={mgrCurrent} onChange={e => setMgrCurrent(e.target.value)} className="input-field" />
-            <input type="password" placeholder="New manager password (min 8 characters)" value={mgrNew} onChange={e => setMgrNew(e.target.value)} className="input-field" />
-            <button onClick={handleSetManagerPassword} disabled={!mgrCurrent || mgrNew.length < 8} className="btn-teal text-sm">{mgrSeparate ? 'Change manager password' : 'Set manager password'}</button>
-          </div>
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+          <h3 className="font-semibold">Change pharmacy password</h3>
+          <p className="text-xs text-gray-500">Used by all staff to log in on the dispensing computer. Change it whenever someone leaves the team.</p>
+          {pwdMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{pwdMsg}</div>}
+          {pwdErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{pwdErr}</div>}
+          <input type="password" placeholder="Current password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} className="input-field" />
+          <input type="password" placeholder="New password (min 8 characters)" value={newPwd} onChange={e => setNewPwd(e.target.value)} className="input-field" />
+          <button onClick={handleChangePassword} disabled={!currentPwd || newPwd.length < 8} className="btn-teal text-sm">Change password</button>
         </div>
       )}
 
@@ -251,7 +207,7 @@ export function SettingsPage() {
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
             <h3 className="font-semibold">Pharmacy &amp; manager details</h3>
-            <p className="text-xs text-gray-500">Used in the report greeting and (when email is wired up) password-reset emails. <strong>Update these when the manager role transfers to someone new</strong> — then rotate the manager password below.</p>
+            <p className="text-xs text-gray-500">Used in the report greeting and for password-reset emails. <strong>Update these when the manager role transfers to someone new</strong> — then rotate the pharmacy password from the Password tab.</p>
             {detailsMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{detailsMsg}</div>}
             {detailsErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{detailsErr}</div>}
             <input type="text" placeholder="Manager name (e.g. Sarah Smith)" value={detailsName} onChange={e => { setDetailsName(e.target.value); if (detailsMsg) setDetailsMsg(''); }} className="input-field" />

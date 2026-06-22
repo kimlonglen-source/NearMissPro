@@ -45,7 +45,7 @@ export function LoginPage() {
           <button type="submit" disabled={loading || !name || !password} className="btn-teal w-full">{loading ? 'Logging in...' : 'Login'}</button>
         </form>
         <div className="mt-4 text-center">
-          <Link to="/forgot-password?type=pharmacy" className="text-sm text-[#0F6E56] hover:underline">Forgot pharmacy password?</Link>
+          <Link to="/forgot-password" className="text-sm text-[#0F6E56] hover:underline">Forgot password?</Link>
         </div>
         <div className="mt-3 text-center">
           <a href="/founder" className="text-xs text-gray-400 hover:text-gray-600">Founder login →</a>

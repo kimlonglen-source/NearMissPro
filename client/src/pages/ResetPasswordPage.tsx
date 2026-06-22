@@ -10,14 +10,13 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 export function ResetPasswordPage() {
   const [params] = useSearchParams();
   const token = params.get('token') || '';
-  const typeHint = params.get('type'); // 'pharmacy' | 'manager' | null
   const nav = useNavigate();
 
   const [pwd, setPwd] = useState('');
   const [confirm, setConfirm] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState<null | 'pharmacy' | 'manager'>(null);
+  const [done, setDone] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +26,8 @@ export function ResetPasswordPage() {
     if (!token) { setErr('Reset link is missing its token. Request a new email.'); return; }
     setLoading(true);
     try {
-      const res = await api.resetPassword(token, pwd);
-      setDone(res.passwordType);
+      await api.resetPassword(token, pwd);
+      setDone(true);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Reset failed — request a new link.');
     } finally {
@@ -53,7 +52,6 @@ export function ResetPasswordPage() {
   }
 
   if (done) {
-    const which = done === 'manager' ? 'manager password' : 'pharmacy password';
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-b from-white to-gray-100">
         <div className="mb-8"><Logo size="lg" /></div>
@@ -61,26 +59,19 @@ export function ResetPasswordPage() {
           <div className="w-12 h-12 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto">
             <CheckCircle2 size={22} className="text-[#0F6E56]" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{which.charAt(0).toUpperCase() + which.slice(1)} updated</h2>
-          <p className="text-sm text-gray-600">
-            {done === 'manager'
-              ? 'Log in as staff, then use your new manager password from the home screen.'
-              : 'Use your new pharmacy password to log in.'}
-          </p>
+          <h2 className="text-lg font-bold text-gray-900">Password updated</h2>
+          <p className="text-sm text-gray-600">Use your new password to log in.</p>
           <button onClick={() => nav('/login')} className="btn-teal w-full mt-2">Go to login</button>
         </div>
       </div>
     );
   }
 
-  const which = typeHint === 'manager' ? 'manager' : typeHint === 'pharmacy' ? 'pharmacy' : null;
-  const heading = which === 'manager' ? 'Set new manager password' : which === 'pharmacy' ? 'Set new pharmacy password' : 'Set new password';
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-b from-white to-gray-100">
       <div className="mb-8"><Logo size="lg" /></div>
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-1">{heading}</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-1">Set new password</h2>
         <p className="text-sm text-gray-500 mb-4">Pick something at least 8 characters long.</p>
         {err && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-sm">{err}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -91,7 +82,7 @@ export function ResetPasswordPage() {
           </button>
         </form>
         <div className="mt-4 text-center">
-          <Link to={`/forgot-password${which ? `?type=${which}` : ''}`} className="text-xs text-gray-500 hover:text-gray-700">
+          <Link to="/forgot-password" className="text-xs text-gray-500 hover:text-gray-700">
             Link expired? Request a new one →
           </Link>
         </div>

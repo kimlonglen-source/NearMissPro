@@ -1,32 +1,24 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { api } from '../lib/api';
 import { Mail } from 'lucide-react';
 
-// Reached from two places:
-//   - Login page → for resetting the shared pharmacy/staff password
-//   - HomePage manager prompt → for resetting the manager password
-// The ?type=pharmacy or ?type=manager query param picks which.
-// The success message is deliberately vague ("if that pharmacy
+// Reached from the login page via "Forgot password?". The success
+// message is deliberately vague ("if a pharmacy by that name
 // exists...") so an attacker can't enumerate registered pharmacy
 // names by watching response messages.
 export function ForgotPasswordPage() {
-  const [params] = useSearchParams();
-  const passwordType: 'pharmacy' | 'manager' = params.get('type') === 'manager' ? 'manager' : 'pharmacy';
   const [pharmacyName, setPharmacyName] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const which = passwordType === 'manager' ? 'manager' : 'pharmacy';
-  const heading = passwordType === 'manager' ? 'Reset manager password' : 'Reset pharmacy password';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pharmacyName.trim() || loading) return;
     setLoading(true);
     try {
-      await api.forgotPassword(pharmacyName.trim(), passwordType);
+      await api.forgotPassword(pharmacyName.trim());
     } catch { /* swallowed — server always 200s to prevent enumeration */ }
     setSubmitted(true);
     setLoading(false);
@@ -52,9 +44,9 @@ export function ForgotPasswordPage() {
           </div>
         ) : (
           <>
-            <h2 className="text-lg font-bold text-gray-900 mb-1">{heading}</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Reset password</h2>
             <p className="text-sm text-gray-500 mb-4">
-              We'll email a reset link to the {which === 'manager' ? "manager's email on file" : "manager's email"}.
+              We'll email a reset link to the manager's email on file.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

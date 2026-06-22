@@ -81,16 +81,13 @@ class Api {
   staffLogin(name: string, password: string) {
     return this.req<{ token: string; role: string; pharmacyName: string; pharmacyId: string }>('/auth/staff/login', { method: 'POST', body: JSON.stringify({ name, password }) });
   }
-  managerAccess(managerPassword: string) {
-    return this.req<{ token: string; role: string; managerPasswordIsSeparate: boolean }>('/auth/manager/access', {
-      method: 'POST',
-      body: JSON.stringify({ managerPassword }),
-    });
+  managerAccess() {
+    return this.req<{ token: string; role: string }>('/auth/manager/access', { method: 'POST' });
   }
   founderLogin(email: string, password: string, mfaCode?: string) {
     return this.req<{ token?: string; role?: string; requiresMfa?: boolean; email?: string }>('/auth/founder/login', { method: 'POST', body: JSON.stringify({ email, password, mfaCode }) });
   }
-  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; managerPasswordIsSeparate?: boolean; managerName?: string | null; managerEmail?: string | null }>('/auth/me'); }
+  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; managerName?: string | null; managerEmail?: string | null }>('/auth/me'); }
   setPharmacySize(pharmacySize: 'sole' | 'pharmacist_plus_tech' | 'multi' | null) {
     return this.req<{ ok: boolean; pharmacySize: string | null }>('/auth/pharmacy/settings', { method: 'PATCH', body: JSON.stringify({ pharmacySize }) });
   }
@@ -105,7 +102,7 @@ class Api {
   }
 
   // Pharmacy management
-  createPharmacy(data: { name: string; password: string; managerPassword: string; managerName: string; managerEmail: string; address?: string; licenceNumber?: string }) {
+  createPharmacy(data: { name: string; password: string; managerName: string; managerEmail: string; address?: string; licenceNumber?: string }) {
     return this.req<object>('/auth/pharmacies', { method: 'POST', body: JSON.stringify(data) });
   }
   listPharmacies() { return this.req<object[]>('/auth/pharmacies'); }
@@ -115,20 +112,14 @@ class Api {
 
   // Password management
   changePassword(currentPassword: string, newPassword: string) { return this.req<object>('/auth/manager/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }); }
-  setManagerPassword(currentPassword: string, newPassword: string) {
-    return this.req<{ success: true }>('/auth/manager/set-manager-password', {
-      method: 'POST',
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-  }
-  forgotPassword(pharmacyName: string, passwordType: 'pharmacy' | 'manager') {
+  forgotPassword(pharmacyName: string) {
     return this.req<{ ok: true }>('/auth/forgot-password', {
       method: 'POST',
-      body: JSON.stringify({ pharmacyName, passwordType }),
+      body: JSON.stringify({ pharmacyName }),
     });
   }
   resetPassword(token: string, newPassword: string) {
-    return this.req<{ ok: true; passwordType: 'pharmacy' | 'manager' }>('/auth/reset-password', {
+    return this.req<{ ok: true }>('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ token, newPassword }),
     });
