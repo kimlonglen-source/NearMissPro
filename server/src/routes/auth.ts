@@ -10,13 +10,43 @@ import { sendEmail, escapeHtml } from '../services/email.js';
 
 const router = Router();
 
+// Parse a User-Agent string into a short human label for the
+// device-verification email. Best-effort — covers the common cases
+// (Chrome / Safari / Edge / Firefox on macOS / Windows / iOS /
+// Android) and falls back to "Unknown browser" for the rest.
+function describeDevice(userAgent: string | undefined): string {
+  if (!userAgent) return 'Unknown browser';
+  const ua = userAgent;
+  let browser = 'Browser';
+  if (/Edg\//.test(ua)) browser = 'Edge';
+  else if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) browser = 'Chrome';
+  else if (/Firefox\//.test(ua)) browser = 'Firefox';
+  else if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) browser = 'Safari';
+  let os = 'unknown OS';
+  if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+  else if (/Android/.test(ua)) os = 'Android';
+  else if (/Mac OS X|Macintosh/.test(ua)) os = 'macOS';
+  else if (/Windows/.test(ua)) os = 'Windows';
+  else if (/Linux/.test(ua)) os = 'Linux';
+  return `${browser} on ${os}`;
+}
+
 // ── Staff login (pharmacy name + password) ──────────────────
+// Includes device-verification: a deviceId from the browser is
+// hashed and looked up in trusted_devices. If the device isn't
+// trusted, we DON'T issue a token — we send an approval email to
+// the pharmacy email instead. The user has to wait for someone
+// with access to that inbox to click the approval link.
 router.post('/staff/login', async (req: Request, res: Response) => {
   try {
-    const { name, password } = z.object({ name: z.string().min(1), password: z.string().min(1) }).parse(req.body);
+    const { name, password, deviceId } = z.object({
+      name: z.string().min(1),
+      password: z.string().min(1),
+      deviceId: z.string().min(20).max(200).optional(),
+    }).parse(req.body);
 
     const { data: pharmacy } = await supabase
-      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until')
+      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until, manager_email')
       .ilike('name', name).single();
 
     if (!pharmacy) { res.status(401).json({ error: 'Invalid pharmacy name or password' }); return; }
@@ -35,6 +65,80 @@ router.post('/staff/login', async (req: Request, res: Response) => {
 
     await supabase.from('pharmacies').update({ login_attempts: 0, locked_until: null }).eq('id', pharmacy.id);
 
+    // Device-verification check. If the deviceId hash exists in
+    // trusted_devices for this pharmacy, this is a known device —
+    // log in normally. Otherwise, send an approval email and tell
+    // the client to wait. The client always generates a deviceId
+    // if it doesn't have one, so the optional case here is for
+    // very old clients pre-rollout — those still get treated as
+    // "untrusted" and trigger the email path.
+    const effectiveDeviceId = deviceId || crypto.randomBytes(24).toString('base64url');
+    const deviceIdHash = crypto.createHash('sha256').update(effectiveDeviceId).digest('hex');
+    const { data: trusted } = await supabase.from('trusted_devices')
+      .select('id').eq('pharmacy_id', pharmacy.id).eq('device_id_hash', deviceIdHash).maybeSingle();
+
+    if (!trusted) {
+      // Untrusted device — generate an approval token and send email.
+      const approvalToken = crypto.randomBytes(32).toString('base64url');
+      const approvalTokenHash = crypto.createHash('sha256').update(approvalToken).digest('hex');
+      const deviceLabel = describeDevice(req.headers['user-agent'] as string | undefined);
+      await supabase.from('device_verification_requests').insert({
+        pharmacy_id: pharmacy.id,
+        device_id_hash: deviceIdHash,
+        device_label: deviceLabel,
+        token_hash: approvalTokenHash,
+        expires_at: new Date(Date.now() + 60 * 60_000).toISOString(),
+      });
+      if (pharmacy.manager_email) {
+        const approveUrl = `${env.clientUrl}/verify-device?token=${approvalToken}`;
+        const ip = req.ip || 'unknown IP';
+        const when = new Date().toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' });
+        sendEmail({
+          to: pharmacy.manager_email,
+          subject: `Approve a new device on ${pharmacy.name}`,
+          text: `Hi,
+
+Someone just tried to log in to NearMissPro for ${pharmacy.name}:
+
+Device: ${deviceLabel}
+IP address: ${ip}
+Time: ${when}
+
+If this was you or a member of your team using a new device, click here to approve it (the device is then remembered and won't need approval again):
+${approveUrl}
+
+If you DON'T recognise this attempt, do nothing — the request expires in 60 minutes and the device stays locked out. You may also want to change your pharmacy password if you suspect it's been shared with someone who shouldn't have it.
+
+— NearMissPro`,
+          html: `<p>Hi,</p>
+<p>Someone just tried to log in to NearMissPro for <strong>${escapeHtml(pharmacy.name)}</strong>:</p>
+<ul>
+<li><strong>Device:</strong> ${escapeHtml(deviceLabel)}</li>
+<li><strong>IP address:</strong> ${escapeHtml(ip)}</li>
+<li><strong>Time:</strong> ${escapeHtml(when)}</li>
+</ul>
+<p>If this was you or a member of your team on a new device, click below to approve it. The device is then remembered and won't need approval again.</p>
+<p><a href="${approveUrl}" style="display:inline-block;background:#0F6E56;color:white;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Approve this device</a></p>
+<p style="color:#791F1F"><strong>If you DON'T recognise this attempt</strong>, do nothing — the request expires in 60 minutes and the device stays locked out. You may also want to change your pharmacy password if you suspect it's been shared.</p>
+<p style="color:#999;font-size:12px">— NearMissPro</p>`,
+        }).catch(err => console.error('[staff/login] device approval email failed:', err));
+      }
+      await supabase.from('audit_log').insert({
+        pharmacy_id: pharmacy.id,
+        action: 'device_verification_requested',
+        performed_by: 'self-service',
+        details: { device_label: deviceLabel },
+      });
+      // Hand the deviceId back so the client stores it — same id is
+      // sent next time, and the same email approval applies.
+      res.json({ needsVerification: true, deviceId: effectiveDeviceId });
+      return;
+    }
+
+    // Trusted device — refresh last_used_at and issue token as normal.
+    await supabase.from('trusted_devices').update({ last_used_at: new Date().toISOString() })
+      .eq('id', trusted.id);
+
     // 7-day token for staff — lets the dispensing computer stay
     // logged in through the working week (log in Mon, no friction
     // until next Mon). Near-miss data is anonymous and low-value;
@@ -45,11 +149,52 @@ router.post('/staff/login', async (req: Request, res: Response) => {
       env.jwtSecret, { expiresIn: '7d' } as jwt.SignOptions
     );
 
-    res.json({ token, role: 'staff', pharmacyName: pharmacy.name, pharmacyId: pharmacy.id });
+    res.json({ token, role: 'staff', pharmacyName: pharmacy.name, pharmacyId: pharmacy.id, deviceId: effectiveDeviceId });
   } catch (err) {
     if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
     console.error('Staff login error:', err);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// ── Verify (approve) a new device ────────────────────────
+// Consumes the one-time token in the email link and promotes the
+// pending device into trusted_devices. After this, any login
+// attempt from that device's browser succeeds normally.
+router.post('/verify-device', async (req: Request, res: Response) => {
+  try {
+    const { token } = z.object({ token: z.string().min(20).max(200) }).parse(req.body);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const { data: row } = await supabase.from('device_verification_requests')
+      .select('id, pharmacy_id, device_id_hash, device_label, expires_at, used_at')
+      .eq('token_hash', tokenHash).single();
+    if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
+      res.status(400).json({ error: 'This approval link is no longer valid. Have the person try logging in again to generate a fresh one.' });
+      return;
+    }
+    // Promote to trusted_devices (UNIQUE on pharmacy_id+device_id_hash
+    // prevents duplicates if someone clicks the link twice).
+    const { error: upsertErr } = await supabase.from('trusted_devices').upsert({
+      pharmacy_id: row.pharmacy_id,
+      device_id_hash: row.device_id_hash,
+      device_label: row.device_label,
+      first_approved_at: new Date().toISOString(),
+      last_used_at: new Date().toISOString(),
+    }, { onConflict: 'pharmacy_id,device_id_hash' });
+    if (upsertErr) throw upsertErr;
+    await supabase.from('device_verification_requests').update({ used_at: new Date().toISOString() })
+      .eq('id', row.id);
+    await supabase.from('audit_log').insert({
+      pharmacy_id: row.pharmacy_id,
+      action: 'device_approved',
+      performed_by: 'self-service',
+      details: { device_label: row.device_label },
+    });
+    res.json({ ok: true, deviceLabel: row.device_label });
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
+    console.error('[verify-device] failed:', err);
+    res.status(500).json({ error: 'Could not approve device — try the link again.' });
   }
 });
 

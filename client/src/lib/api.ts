@@ -1,5 +1,23 @@
 const BASE = '/api';
 
+// Per-browser device identifier for the trusted-device login flow.
+// Generated once per browser and persisted in localStorage. The
+// server only ever stores its SHA-256 hash, so reading this value
+// from a browser doesn't let an attacker reuse it elsewhere — they
+// also need the password AND for that hash to already be in the
+// pharmacy's trusted_devices table.
+function getOrCreateDeviceId(): string {
+  const existing = localStorage.getItem('nmp_device_id');
+  if (existing && existing.length >= 20) return existing;
+  // crypto.randomUUID is supported on every modern browser; fallback
+  // to base36 randomness if for some reason it isn't available.
+  const fresh = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : Array.from({ length: 4 }, () => Math.random().toString(36).slice(2)).join('-');
+  localStorage.setItem('nmp_device_id', fresh);
+  return fresh;
+}
+
 export interface PatternComparison {
   drug: string;
   errorType: string;
@@ -78,8 +96,30 @@ class Api {
   }
 
   // Auth
+  // Device verification: every staff login sends a deviceId that
+  // identifies the browser. If the server has seen it approved
+  // before, login proceeds; otherwise the server emails the
+  // pharmacy email asking someone to approve, and the response
+  // tells the client to wait (needsVerification: true). The
+  // deviceId either comes from localStorage (returning device) or
+  // is generated fresh by the browser for first-time devices.
   staffLogin(name: string, password: string) {
-    return this.req<{ token: string; role: string; pharmacyName: string; pharmacyId: string }>('/auth/staff/login', { method: 'POST', body: JSON.stringify({ name, password }) });
+    const deviceId = getOrCreateDeviceId();
+    return this.req<{ token?: string; role?: string; pharmacyName?: string; pharmacyId?: string; needsVerification?: boolean; deviceId?: string }>('/auth/staff/login', {
+      method: 'POST',
+      body: JSON.stringify({ name, password, deviceId }),
+    }).then(r => {
+      // Persist whichever deviceId the server confirmed/echoed so
+      // the next login from this browser uses the same one.
+      if (r.deviceId) localStorage.setItem('nmp_device_id', r.deviceId);
+      return r;
+    });
+  }
+  verifyDevice(token: string) {
+    return this.req<{ ok: true; deviceLabel: string | null }>('/auth/verify-device', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
   }
   managerAccess() {
     return this.req<{ token: string; role: string }>('/auth/manager/access', { method: 'POST' });
