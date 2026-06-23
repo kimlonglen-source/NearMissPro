@@ -34,7 +34,7 @@ export function AdminPage() {
   const [others, setOthers] = useState<OtherEntry[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', password: '', managerName: '', managerEmail: '', address: '', licenceNumber: '' });
+  const [form, setForm] = useState({ name: '', password: '', pharmacyEmail: '', address: '', licenceNumber: '' });
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -66,18 +66,17 @@ export function AdminPage() {
   };
 
   const handleCreatePharmacy = async () => {
-    if (!form.name || !form.password || form.password.length < 8 || !form.managerName || !form.managerEmail) return;
+    if (!form.name || !form.password || form.password.length < 8 || !form.pharmacyEmail) return;
     setBusy(true);
     try {
       await api.createPharmacy({
         name: form.name,
         password: form.password,
-        managerName: form.managerName,
-        managerEmail: form.managerEmail,
+        pharmacyEmail: form.pharmacyEmail,
         ...(form.address ? { address: form.address } : {}),
         ...(form.licenceNumber ? { licenceNumber: form.licenceNumber } : {}),
       });
-      setForm({ name: '', password: '', managerName: '', managerEmail: '', address: '', licenceNumber: '' });
+      setForm({ name: '', password: '', pharmacyEmail: '', address: '', licenceNumber: '' });
       setShowCreate(false); await loadPharmacies();
     } finally { setBusy(false); }
   };
@@ -180,12 +179,9 @@ export function AdminPage() {
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-gray-700 mb-1.5">Manager (pharmacist-in-charge)</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <input className="input-field" placeholder="Manager name *" value={form.managerName} onChange={e => setForm({ ...form, managerName: e.target.value })} />
-                  <input className="input-field" placeholder="Manager email *" value={form.managerEmail} onChange={e => setForm({ ...form, managerEmail: e.target.value })} />
-                </div>
-                <p className="text-[11px] text-gray-400 mt-1">Used for the report greeting and password-reset emails. Should be the pharmacist-in-charge's own inbox — not a shared one.</p>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">Pharmacy email</p>
+                <input className="input-field" placeholder="Pharmacy email *" value={form.pharmacyEmail} onChange={e => setForm({ ...form, pharmacyEmail: e.target.value })} />
+                <p className="text-[11px] text-gray-400 mt-1">Where password-reset links and other product emails will be sent. Use the pharmacy's own inbox — when a manager leaves, the new manager will use this email to reset the password.</p>
               </div>
 
               <div>
@@ -196,7 +192,7 @@ export function AdminPage() {
 
               <div className="flex gap-2 justify-end">
                 <button className="btn-grey text-xs" onClick={() => setShowCreate(false)}>Cancel</button>
-                <button className="btn-teal text-xs" disabled={busy || !form.name || form.password.length < 8 || !form.managerName || !form.managerEmail} onClick={handleCreatePharmacy}>Create pharmacy</button>
+                <button className="btn-teal text-xs" disabled={busy || !form.name || form.password.length < 8 || !form.pharmacyEmail} onClick={handleCreatePharmacy}>Create pharmacy</button>
               </div>
             </div>
           )}

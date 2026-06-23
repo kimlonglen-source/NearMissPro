@@ -102,31 +102,29 @@ export function SettingsPage() {
   const [auditExpanded, setAuditExpanded] = useState<Record<string, boolean>>({});
   const auditLimit = 50;
 
-  // Pharmacy + manager details (name, email) — editable so the
-  // outgoing manager can hand over to a new one without contacting
-  // the founder.
-  const [detailsName, setDetailsName] = useState('');
-  const [detailsEmail, setDetailsEmail] = useState('');
-  const [detailsMsg, setDetailsMsg] = useState('');
-  const [detailsErr, setDetailsErr] = useState('');
+  // Pharmacy email — destination for password resets and product
+  // emails. Editable so the pharmacy can keep it pointing at the
+  // right inbox without contacting the founder.
+  const [pharmacyEmail, setPharmacyEmail] = useState('');
+  const [emailMsg, setEmailMsg] = useState('');
+  const [emailErr, setEmailErr] = useState('');
 
   useEffect(() => {
     api.getMe().then(me => {
       setSize((me.pharmacySize as PharmacySize | null) || null);
-      setDetailsName(me.managerName || '');
-      setDetailsEmail(me.managerEmail || '');
+      setPharmacyEmail(me.pharmacyEmail || '');
     }).catch(() => {});
   }, []);
 
-  const handleSaveDetails = async () => {
-    setDetailsErr(''); setDetailsMsg('');
-    if (!detailsName.trim() || !detailsEmail.trim()) { setDetailsErr('Both fields are required'); return; }
-    if (!/.+@.+\..+/.test(detailsEmail)) { setDetailsErr('That email doesn\'t look right'); return; }
+  const handleSaveEmail = async () => {
+    setEmailErr(''); setEmailMsg('');
+    if (!pharmacyEmail.trim()) { setEmailErr('Email is required'); return; }
+    if (!/.+@.+\..+/.test(pharmacyEmail)) { setEmailErr('That email doesn\'t look right'); return; }
     try {
-      await api.updatePharmacyDetails(detailsName.trim(), detailsEmail.trim());
-      setDetailsMsg('Saved — change is in the audit log');
+      await api.updatePharmacyEmail(pharmacyEmail.trim());
+      setEmailMsg('Saved — change is in the audit log');
     } catch {
-      setDetailsErr('Could not save — try again');
+      setEmailErr('Could not save — try again');
     }
   };
 
@@ -206,13 +204,12 @@ export function SettingsPage() {
       {tab === 'pharmacy' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
-            <h3 className="font-semibold">Pharmacy &amp; manager details</h3>
-            <p className="text-xs text-gray-500">Used in the report greeting and for password-reset emails. <strong>Update these when the manager role transfers to someone new</strong> — then rotate the pharmacy password from the Password tab.</p>
-            {detailsMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{detailsMsg}</div>}
-            {detailsErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{detailsErr}</div>}
-            <input type="text" placeholder="Manager name (e.g. Sarah Smith)" value={detailsName} onChange={e => { setDetailsName(e.target.value); if (detailsMsg) setDetailsMsg(''); }} className="input-field" />
-            <input type="email" placeholder="Manager email" value={detailsEmail} onChange={e => { setDetailsEmail(e.target.value); if (detailsMsg) setDetailsMsg(''); }} className="input-field" />
-            <button onClick={handleSaveDetails} disabled={!detailsName.trim() || !detailsEmail.trim()} className="btn-teal text-sm">Save details</button>
+            <h3 className="font-semibold">Pharmacy email</h3>
+            <p className="text-xs text-gray-500">Where password-reset links land. When a manager leaves, the new manager uses "Forgot password?" on the login screen — the link comes here.</p>
+            {emailMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{emailMsg}</div>}
+            {emailErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{emailErr}</div>}
+            <input type="email" placeholder="hello@your-pharmacy.co.nz" value={pharmacyEmail} onChange={e => { setPharmacyEmail(e.target.value); if (emailMsg) setEmailMsg(''); }} className="input-field" />
+            <button onClick={handleSaveEmail} disabled={!pharmacyEmail.trim()} className="btn-teal text-sm">Save email</button>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">

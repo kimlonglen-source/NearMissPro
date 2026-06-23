@@ -133,62 +133,52 @@ router.post('/founder/login', async (req: Request, res: Response) => {
 // ── Current auth ────────────────────────────────────────────
 router.get('/me', authenticate, async (req: Request, res: Response) => {
   // Enrich with pharmacy-level settings the client wants on first load
-  // so it doesn't have to make a second round-trip. pharmacy_size drives
-  // the AI's tone in recommendations and summaries; manager name/email
-  // drive the report greeting and password-reset destination.
+  // so it doesn't have to make a second round-trip. pharmacy_size
+  // drives the AI's tone in recommendations and summaries; pharmacy
+  // email is where password-reset and product emails are delivered.
   let pharmacySize: string | null = null;
-  let managerName: string | null = null;
-  let managerEmail: string | null = null;
+  let pharmacyEmail: string | null = null;
   if (req.auth!.pharmacyId) {
     const { data } = await supabase.from('pharmacies')
-      .select('pharmacy_size, manager_name, manager_email')
+      .select('pharmacy_size, manager_email')
       .eq('id', req.auth!.pharmacyId).single();
     pharmacySize = (data?.pharmacy_size as string | null) || null;
-    managerName = (data?.manager_name as string | null) || null;
-    managerEmail = (data?.manager_email as string | null) || null;
+    pharmacyEmail = (data?.manager_email as string | null) || null;
   }
-  res.json({ ...req.auth, pharmacySize, managerName, managerEmail });
+  res.json({ ...req.auth, pharmacySize, pharmacyEmail });
 });
 
 // ── Update pharmacy-level settings (manager only) ───────────
-// Single endpoint for pharmacy-level toggles + manager details
-// (name/email). Each field is optional in the body so the client
-// can save just what changed. Returns whatever was written so the
-// UI doesn't have to trust its local state.
+// Single endpoint for pharmacy-level toggles + the pharmacy email
+// (used for password resets + future product emails). Each field
+// is optional in the body so the client can save just what
+// changed. The DB column is historically named manager_email but
+// the UI presents it as the pharmacy email.
 router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder'), async (req: Request, res: Response) => {
   try {
     const body = z.object({
       pharmacySize: z.enum(['sole', 'pharmacist_plus_tech', 'multi']).nullable().optional(),
-      managerName: z.string().trim().min(1).max(100).optional(),
-      managerEmail: z.string().trim().email().max(200).optional(),
+      pharmacyEmail: z.string().trim().email().max(200).optional(),
     }).parse(req.body);
     const updates: Record<string, unknown> = {};
     if (body.pharmacySize !== undefined) updates.pharmacy_size = body.pharmacySize;
-    if (body.managerName !== undefined) updates.manager_name = body.managerName;
-    if (body.managerEmail !== undefined) updates.manager_email = body.managerEmail;
+    if (body.pharmacyEmail !== undefined) updates.manager_email = body.pharmacyEmail;
     if (Object.keys(updates).length === 0) { res.json({ ok: true }); return; }
     const { data, error } = await supabase.from('pharmacies').update(updates)
-      .eq('id', req.auth!.pharmacyId).select('pharmacy_size, manager_name, manager_email').single();
+      .eq('id', req.auth!.pharmacyId).select('pharmacy_size, manager_email').single();
     if (error) throw error;
-    // Manager-details changes are audit-logged so a handover ("who
-    // was the manager on 18 June?") is traceable. Pharmacy-size
-    // changes don't need an audit entry — they're just AI tone.
-    if (body.managerName !== undefined || body.managerEmail !== undefined) {
+    if (body.pharmacyEmail !== undefined) {
       await supabase.from('audit_log').insert({
         pharmacy_id: req.auth!.pharmacyId,
-        action: 'pharmacy_details_updated',
+        action: 'pharmacy_email_updated',
         performed_by: 'manager',
-        details: {
-          ...(body.managerName !== undefined ? { manager_name: body.managerName } : {}),
-          ...(body.managerEmail !== undefined ? { manager_email: body.managerEmail } : {}),
-        },
+        details: { pharmacy_email: body.pharmacyEmail },
       });
     }
     res.json({
       ok: true,
       pharmacySize: data?.pharmacy_size || null,
-      managerName: data?.manager_name || null,
-      managerEmail: data?.manager_email || null,
+      pharmacyEmail: data?.manager_email || null,
     });
   } catch (err) {
     if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
@@ -203,8 +193,7 @@ router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Req
     const data = z.object({
       name: z.string().min(1).max(120),
       password: z.string().min(8).max(200),
-      managerName: z.string().min(1).max(100),
-      managerEmail: z.string().email().max(200),
+      pharmacyEmail: z.string().email().max(200),
       address: z.string().max(300).optional(),
       licenceNumber: z.string().max(50).optional(),
     }).parse(req.body);
@@ -212,8 +201,7 @@ router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Req
     const { data: pharmacy, error } = await supabase.from('pharmacies').insert({
       name: data.name,
       password_hash: await bcrypt.hash(data.password, 12),
-      manager_name: data.managerName,
-      manager_email: data.managerEmail,
+      manager_email: data.pharmacyEmail,
       address: data.address,
       licence_number: data.licenceNumber,
     }).select().single();
@@ -224,7 +212,7 @@ router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Req
     }
 
     await supabase.from('audit_log').insert({ pharmacy_id: pharmacy.id, action: 'pharmacy_created', performed_by: 'founder', details: { name: data.name } });
-    console.log(`[EMAIL] To: ${data.managerEmail} | Subject: Welcome to NearMiss Pro | Body: Your pharmacy "${data.name}" is set up. Login at ${env.clientUrl}`);
+    console.log(`[EMAIL] To: ${data.pharmacyEmail} | Subject: Welcome to NearMiss Pro | Body: Your pharmacy "${data.name}" is set up. Login at ${env.clientUrl}`);
 
     res.status(201).json(pharmacy);
   } catch (err) {
@@ -269,7 +257,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
   try {
     const { pharmacyName } = forgotSchema.parse(req.body);
     const { data: pharmacy } = await supabase.from('pharmacies')
-      .select('id, name, manager_email, manager_name')
+      .select('id, name, manager_email')
       .ilike('name', pharmacyName).single();
     if (!pharmacy || !pharmacy.manager_email) {
       console.log('[forgot-password] no pharmacy or no manager_email:', pharmacyName);
@@ -294,11 +282,10 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       return;
     }
     const resetUrl = `${env.clientUrl}/reset-password?token=${token}`;
-    const greeting = pharmacy.manager_name ? `Hi ${escapeHtml(pharmacy.manager_name)},` : 'Hi,';
     await sendEmail({
       to: pharmacy.manager_email,
       subject: `Reset your NearMissPro password`,
-      text: `${pharmacy.manager_name ? `Hi ${pharmacy.manager_name},` : 'Hi,'}
+      text: `Hi,
 
 We received a request to reset the password for ${pharmacy.name}.
 
@@ -308,8 +295,8 @@ ${resetUrl}
 If you didn't ask to reset, ignore this email — your current password is unchanged.
 
 — NearMissPro`,
-      html: `<p>${greeting}</p>
-<p>We received a request to reset the password for ${escapeHtml(pharmacy.name)}.</p>
+      html: `<p>Hi,</p>
+<p>We received a request to reset the password for <strong>${escapeHtml(pharmacy.name)}</strong>.</p>
 <p><a href="${resetUrl}" style="display:inline-block;background:#0F6E56;color:white;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Set a new password</a></p>
 <p style="color:#666;font-size:13px">This link expires in 60 minutes. If you didn't ask to reset, ignore this email — your current password is unchanged.</p>
 <p style="color:#999;font-size:12px">— NearMissPro</p>`,
