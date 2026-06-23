@@ -37,6 +37,9 @@ export function AdminPage() {
   const [form, setForm] = useState({ name: '', password: '', pharmacyEmail: '', address: '', licenceNumber: '' });
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  // Per-pharmacy temp password shown once after a founder-mediated
+  // reset — keyed by pharmacy id so each row can hold its own.
+  const [tempPasswords, setTempPasswords] = useState<Record<string, string>>({});
 
   const loadHealth = () => api.getAdminHealth().then(d => setHealth(d as unknown as Health));
   const loadOthers = () => api.getOtherEntries().then(d => setOthers(d as unknown as OtherEntry[]));
@@ -84,6 +87,27 @@ export function AdminPage() {
   const handleStatus = async (id: string, status: 'active' | 'suspended') => {
     setBusy(true);
     try { await api.updatePharmacyStatus(id, status); await loadPharmacies(); } finally { setBusy(false); }
+  };
+
+  const handleResetPassword = async (id: string, name: string) => {
+    if (!window.confirm(`Reset the pharmacy password for "${name}"?\n\nThe current password will stop working immediately. A temporary password will appear on screen — copy it and send it to the pharmacy through a channel you trust (text, phone). They can change it themselves from Settings after they log in.`)) return;
+    setBusy(true);
+    try {
+      const res = await api.founderResetPharmacyPassword(id);
+      setTempPasswords(prev => ({ ...prev, [id]: res.temporaryPassword }));
+    } catch {
+      window.alert('Reset failed — try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const dismissTempPassword = (id: string) => {
+    setTempPasswords(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   const checklistFor = (p: Pharmacy) => [
@@ -238,9 +262,20 @@ export function AdminPage() {
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          {p.subscription_status === 'suspended'
-                            ? <button className="btn-teal text-xs" disabled={busy} onClick={() => handleStatus(p.id, 'active')}>Reinstate</button>
-                            : <button className="btn-red text-xs" disabled={busy} onClick={() => handleStatus(p.id, 'suspended')}>Suspend</button>}
+                          <div className="flex flex-col gap-1.5">
+                            {p.subscription_status === 'suspended'
+                              ? <button className="btn-teal text-xs" disabled={busy} onClick={() => handleStatus(p.id, 'active')}>Reinstate</button>
+                              : <button className="btn-red text-xs" disabled={busy} onClick={() => handleStatus(p.id, 'suspended')}>Suspend</button>}
+                            <button className="btn-grey text-xs" disabled={busy} onClick={() => handleResetPassword(p.id, p.name)}>Reset password</button>
+                          </div>
+                          {tempPasswords[p.id] && (
+                            <div className="mt-2 p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs">
+                              <p className="font-semibold text-amber-900 mb-1">Temporary password — shown ONCE</p>
+                              <code className="block bg-white border border-amber-200 px-2 py-1.5 rounded text-sm font-mono break-all select-all">{tempPasswords[p.id]}</code>
+                              <p className="mt-1.5 text-amber-800 leading-snug">Send to the pharmacy via a channel you trust. They should change it from Settings after logging in.</p>
+                              <button onClick={() => dismissTempPassword(p.id)} className="mt-1.5 text-amber-700 underline">I've copied it, dismiss</button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );

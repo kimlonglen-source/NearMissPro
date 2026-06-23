@@ -318,6 +318,44 @@ router.patch('/pharmacies/:id/status', authenticate, requireRole('founder'), asy
   } catch { res.status(500).json({ error: 'Failed' }); }
 });
 
+// ── Founder: reset a pharmacy's password ────────────────────
+// Last-resort recovery for the cases that self-service email reset
+// can't cover: pharmacy email is wrong/lost, the inbox owner went
+// rogue, manager left without handover, etc. Generates a random
+// 12-char temporary password, returns it ONCE to the founder
+// (never stored in plaintext), and clears the lockout state so
+// the pharmacy isn't blocked from logging in. Audit-logged so
+// every founder intervention is traceable.
+router.post('/pharmacies/:id/reset-password', authenticate, requireRole('founder'), async (req: Request, res: Response) => {
+  try {
+    // Reasonably memorable temp password — 12 chars, mixed case + digits,
+    // generated server-side so the founder doesn't pick something weak.
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const bytes = crypto.randomBytes(12);
+    let tempPassword = '';
+    for (let i = 0; i < 12; i++) {
+      tempPassword += alphabet[bytes[i] % alphabet.length];
+    }
+    const { data: pharmacy } = await supabase.from('pharmacies').select('id, name').eq('id', req.params.id).single();
+    if (!pharmacy) { res.status(404).json({ error: 'Pharmacy not found' }); return; }
+    await supabase.from('pharmacies').update({
+      password_hash: await bcrypt.hash(tempPassword, 12),
+      login_attempts: 0,
+      locked_until: null,
+    }).eq('id', req.params.id);
+    await supabase.from('audit_log').insert({
+      pharmacy_id: req.params.id,
+      action: 'founder_password_reset',
+      performed_by: 'founder',
+      details: {},
+    });
+    res.json({ ok: true, pharmacyName: pharmacy.name, temporaryPassword: tempPassword });
+  } catch (err) {
+    console.error('[founder reset] failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // ── Forgot password ────────────────────────────────────────
 // Generates a one-time reset token, stores its hash, emails the
 // reset link to the manager_email on file. Always returns 200 so

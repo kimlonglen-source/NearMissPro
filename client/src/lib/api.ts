@@ -109,6 +109,11 @@ class Api {
   updatePharmacyStatus(id: string, status: string) {
     return this.req<object>(`/auth/pharmacies/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
   }
+  founderResetPharmacyPassword(id: string) {
+    return this.req<{ ok: true; pharmacyName: string; temporaryPassword: string }>(`/auth/pharmacies/${id}/reset-password`, {
+      method: 'POST',
+    });
+  }
 
   // Password management
   changePassword(currentPassword: string, newPassword: string) { return this.req<object>('/auth/manager/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }); }
