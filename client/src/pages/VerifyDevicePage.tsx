@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { api } from '../lib/api';
@@ -16,6 +16,13 @@ export function VerifyDevicePage() {
   const [state, setState] = useState<'loading' | 'ok' | 'err'>('loading');
   const [message, setMessage] = useState('');
   const [deviceLabel, setDeviceLabel] = useState<string | null>(null);
+  // React 18 StrictMode runs useEffect twice in dev to surface
+  // side-effect bugs. The token is one-time use, so a naive effect
+  // would succeed on the first call and then fail on the second
+  // with "no longer valid" — even though the device is approved.
+  // This ref guards against the double-call by only firing the
+  // POST once per mount.
+  const fired = useRef(false);
 
   useEffect(() => {
     if (!token) {
@@ -23,6 +30,8 @@ export function VerifyDevicePage() {
       setMessage('This approval link is missing its security token. Have the person try logging in again to generate a fresh one.');
       return;
     }
+    if (fired.current) return;
+    fired.current = true;
     api.verifyDevice(token)
       .then(r => { setState('ok'); setDeviceLabel(r.deviceLabel); })
       .catch(err => {
