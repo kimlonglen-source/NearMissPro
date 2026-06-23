@@ -121,6 +121,13 @@ class Api {
       body: JSON.stringify({ token }),
     });
   }
+  checkDeviceTrust(pharmacyName: string) {
+    const deviceId = getOrCreateDeviceId();
+    return this.req<{ trusted: boolean }>('/auth/check-device-trust', {
+      method: 'POST',
+      body: JSON.stringify({ pharmacyName, deviceId }),
+    });
+  }
   managerAccess() {
     return this.req<{ token: string; role: string }>('/auth/manager/access', { method: 'POST' });
   }

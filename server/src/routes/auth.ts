@@ -157,6 +157,30 @@ If you DON'T recognise this attempt, do nothing — the request expires in 60 mi
   }
 });
 
+// ── Poll: has this device been approved yet? ───────────────
+// Lightweight boolean check used by the LoginPage while the user
+// waits on the "approve this device" screen. Doesn't validate the
+// password or issue a token — just answers "is this deviceId in
+// trusted_devices for that pharmacy yet?". Returns false on any
+// error or missing pharmacy so polling is forgiving and silent.
+router.post('/check-device-trust', async (req: Request, res: Response) => {
+  try {
+    const { pharmacyName, deviceId } = z.object({
+      pharmacyName: z.string().min(1).max(120),
+      deviceId: z.string().min(20).max(200),
+    }).parse(req.body);
+    const deviceIdHash = crypto.createHash('sha256').update(deviceId).digest('hex');
+    const { data: pharmacy } = await supabase.from('pharmacies')
+      .select('id').ilike('name', pharmacyName).single();
+    if (!pharmacy) { res.json({ trusted: false }); return; }
+    const { data: trusted } = await supabase.from('trusted_devices')
+      .select('id').eq('pharmacy_id', pharmacy.id).eq('device_id_hash', deviceIdHash).maybeSingle();
+    res.json({ trusted: !!trusted });
+  } catch {
+    res.json({ trusted: false });
+  }
+});
+
 // ── Verify (approve) a new device ────────────────────────
 // Consumes the one-time token in the email link and promotes the
 // pending device into trusted_devices. After this, any login
