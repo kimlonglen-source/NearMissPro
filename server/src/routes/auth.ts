@@ -76,7 +76,7 @@ router.post('/manager/access', authenticate, async (req: Request, res: Response)
 router.post('/manager/change-password', authenticate, requireRole('manager'), async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword } = z.object({ currentPassword: z.string(), newPassword: z.string().min(8) }).parse(req.body);
-    const { data: p } = await supabase.from('pharmacies').select('password_hash').eq('id', req.auth!.pharmacyId).single();
+    const { data: p } = await supabase.from('pharmacies').select('password_hash, name, manager_email').eq('id', req.auth!.pharmacyId).single();
     if (!p || !(await bcrypt.compare(currentPassword, p.password_hash))) {
       // 400, NOT 401. The session is fine — the wrong thing was a
       // form field. Returning 401 would trigger the api helper's
@@ -85,6 +85,29 @@ router.post('/manager/change-password', authenticate, requireRole('manager'), as
     }
     await supabase.from('pharmacies').update({ password_hash: await bcrypt.hash(newPassword, 12) }).eq('id', req.auth!.pharmacyId);
     await supabase.from('audit_log').insert({ pharmacy_id: req.auth!.pharmacyId, action: 'password_changed', performed_by: 'manager', details: {} });
+    // Notify the pharmacy email so a hostile password change is
+    // visible to whoever owns the recovery channel. Fire-and-forget
+    // — a transient SMTP issue shouldn't block the change.
+    if (p.manager_email) {
+      sendEmail({
+        to: p.manager_email,
+        subject: `${p.name || 'Your pharmacy'}: NearMissPro password was changed`,
+        text: `Hi,
+
+The NearMissPro password for ${p.name || 'your pharmacy'} was just changed.
+
+If you authorised this, no action is needed.
+
+If you DID NOT authorise this, use the 'Forgot password?' link on the login page to reset it back, then contact hello@nearmisspro.co.nz.
+
+— NearMissPro`,
+        html: `<p>Hi,</p>
+<p>The NearMissPro password for <strong>${escapeHtml(p.name || 'your pharmacy')}</strong> was just changed.</p>
+<p>If you authorised this, no action is needed.</p>
+<p style="color:#791F1F"><strong>If you DID NOT authorise this</strong>, use the "Forgot password?" link on the login page to reset it back, then contact <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p>
+<p style="color:#999;font-size:12px">— NearMissPro</p>`,
+      }).catch(err => console.error('[change-password] notification failed:', err));
+    }
     res.json({ success: true });
   } catch { res.status(500).json({ error: 'Failed' }); }
 });
@@ -160,6 +183,16 @@ router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder
       pharmacySize: z.enum(['sole', 'pharmacist_plus_tech', 'multi']).nullable().optional(),
       pharmacyEmail: z.string().trim().email().max(200).optional(),
     }).parse(req.body);
+
+    // Read the existing pharmacy first so we can tell what's actually
+    // changing — needed for the "notify the OLD email when email
+    // changes" safeguard against rogue-manager lock-outs.
+    const { data: existing, error: readErr } = await supabase.from('pharmacies')
+      .select('name, manager_email').eq('id', req.auth!.pharmacyId).single();
+    if (readErr) throw readErr;
+    const oldEmail = (existing?.manager_email as string | null) || null;
+    const pharmacyDisplayName = (existing?.name as string | null) || 'your pharmacy';
+
     const updates: Record<string, unknown> = {};
     if (body.pharmacySize !== undefined) updates.pharmacy_size = body.pharmacySize;
     if (body.pharmacyEmail !== undefined) updates.manager_email = body.pharmacyEmail;
@@ -167,12 +200,56 @@ router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder
     const { data, error } = await supabase.from('pharmacies').update(updates)
       .eq('id', req.auth!.pharmacyId).select('pharmacy_size, manager_email').single();
     if (error) throw error;
+
+    // Notify the OLD email if it's being changed — gives the previous
+    // owner of the recovery channel a chance to spot a hostile change
+    // (rogue manager rotating both email + password to lock everyone
+    // out). Also notify the NEW email so the new recipient knows the
+    // address is now wired up.
+    if (body.pharmacyEmail !== undefined && oldEmail && oldEmail !== body.pharmacyEmail) {
+      // Don't await — these are fire-and-forget so a transient SMTP
+      // issue can't block the manager from saving the change.
+      sendEmail({
+        to: oldEmail,
+        subject: `${pharmacyDisplayName}: your NearMissPro email was changed`,
+        text: `Hi,
+
+The pharmacy email on the NearMissPro account for ${pharmacyDisplayName} was just changed from this address to ${body.pharmacyEmail}.
+
+If you authorised this, no action is needed.
+
+If you DID NOT authorise this, contact us immediately at hello@nearmisspro.co.nz — your pharmacy may be at risk of being locked out.
+
+— NearMissPro`,
+        html: `<p>Hi,</p>
+<p>The pharmacy email on the NearMissPro account for <strong>${escapeHtml(pharmacyDisplayName)}</strong> was just changed from this address to <strong>${escapeHtml(body.pharmacyEmail)}</strong>.</p>
+<p>If you authorised this, no action is needed.</p>
+<p style="color:#791F1F"><strong>If you DID NOT authorise this</strong>, contact us immediately at <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a> — your pharmacy may be at risk of being locked out.</p>
+<p style="color:#999;font-size:12px">— NearMissPro</p>`,
+      }).catch(err => console.error('[pharmacy/settings] old-email notification failed:', err));
+      sendEmail({
+        to: body.pharmacyEmail,
+        subject: `${pharmacyDisplayName}: this is now your NearMissPro pharmacy email`,
+        text: `Hi,
+
+This address (${body.pharmacyEmail}) is now the registered pharmacy email for ${pharmacyDisplayName} on NearMissPro.
+
+From now on, password-reset links and any other product emails will come here.
+
+— NearMissPro`,
+        html: `<p>Hi,</p>
+<p>This address (${escapeHtml(body.pharmacyEmail)}) is now the registered pharmacy email for <strong>${escapeHtml(pharmacyDisplayName)}</strong> on NearMissPro.</p>
+<p>From now on, password-reset links and any other product emails will come here.</p>
+<p style="color:#999;font-size:12px">— NearMissPro</p>`,
+      }).catch(err => console.error('[pharmacy/settings] new-email notification failed:', err));
+    }
+
     if (body.pharmacyEmail !== undefined) {
       await supabase.from('audit_log').insert({
         pharmacy_id: req.auth!.pharmacyId,
         action: 'pharmacy_email_updated',
         performed_by: 'manager',
-        details: { pharmacy_email: body.pharmacyEmail },
+        details: { old: oldEmail, new: body.pharmacyEmail },
       });
     }
     res.json({
