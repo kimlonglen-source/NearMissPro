@@ -41,6 +41,8 @@ export function ReportPage() {
   const [prevEdited, setPrevEdited] = useState(false);
   const [summaryEdited, setSummaryEdited] = useState(false);
   const [agendaEdited, setAgendaEdited] = useState(false);
+  const [picName, setPicName] = useState('');
+  const [picEdited, setPicEdited] = useState(false);
   const [ackRows, setAckRows] = useState<AckRow[]>([]);
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export function ReportPage() {
         setPrevSummary(rpt.previous_period_summary || '');
         setPeriodSummary(rpt.period_summary || '');
         setAgenda(rpt.agenda_items || []);
+        setPicName(rpt.generated_by || '');
         setAckRows([
           { name: rpt.generated_by || '', role: 'Pharmacist-in-charge', initials: '', date: '' },
           ...Array(5).fill(null).map(() => ({ name: '', role: '', initials: '', date: '' })),
@@ -71,11 +74,12 @@ export function ReportPage() {
         previous_period_summary: prevSummary,
         period_summary: periodSummary,
         agenda_items: agenda,
+        generated_by: picName,
       });
       // Clear the "edited" flags so the Save button disappears, and refresh
       // local state so a second edit-then-save cycle starts clean.
-      setPrevEdited(false); setSummaryEdited(false); setAgendaEdited(false);
-      setReport({ ...report, previous_period_summary: prevSummary, period_summary: periodSummary, agenda_items: agenda });
+      setPrevEdited(false); setSummaryEdited(false); setAgendaEdited(false); setPicEdited(false);
+      setReport({ ...report, previous_period_summary: prevSummary, period_summary: periodSummary, agenda_items: agenda, generated_by: picName });
       setSaveState('saved');
       setTimeout(() => setSaveState(s => (s === 'saved' ? 'idle' : s)), 2000);
     } catch {
@@ -88,7 +92,7 @@ export function ReportPage() {
   // Only fires when something has actually changed; the Save button stays
   // as a visible fallback (and shows the saved/error state).
   const autoSaveOnBlur = () => {
-    if (prevEdited || summaryEdited || agendaEdited) saveEdits();
+    if (prevEdited || summaryEdited || agendaEdited || picEdited) saveEdits();
   };
 
   const toggleCompleted = async () => {
@@ -174,7 +178,23 @@ export function ReportPage() {
           </div>
           <div className="text-right text-sm text-gray-600">
             <p className="font-semibold text-gray-900">{pharmacyName}</p>
-            <p>Reviewed by: {report.generated_by}</p>
+            <p className="flex items-center gap-1 justify-end">
+              <span>Reviewed by:</span>
+              {!report.locked ? (
+                <>
+                  <input
+                    value={picName}
+                    onChange={e => { setPicName(e.target.value); setPicEdited(true); }}
+                    onBlur={autoSaveOnBlur}
+                    placeholder="Pharmacist-in-charge"
+                    className="no-print text-sm bg-transparent border-b border-gray-300 focus:border-[#0F6E56] focus:outline-none px-1 text-gray-900 text-right w-44"
+                  />
+                  <span className="hidden print:inline">{picName || '—'}</span>
+                </>
+              ) : (
+                <span>{picName || '—'}</span>
+              )}
+            </p>
             <p>{fmtDate(report.period_start)} — {fmtDate(report.period_end)}</p>
             <p>Generated: {fmtDate(report.generated_at)}</p>
           </div>
@@ -422,8 +442,21 @@ export function ReportPage() {
         <div className="grid grid-cols-2 gap-12 mt-8 mb-8">
           <div>
             <div className="border-b border-gray-400 mb-2 h-12" />
-            <div className="text-sm font-medium">{report.generated_by}</div>
-            <div className="text-xs text-gray-500">Pharmacist-in-charge</div>
+            {!report.locked ? (
+              <>
+                <input
+                  value={picName}
+                  onChange={e => { setPicName(e.target.value); setPicEdited(true); }}
+                  onBlur={autoSaveOnBlur}
+                  placeholder="Type the pharmacist-in-charge's name"
+                  className="no-print text-sm font-medium w-full bg-transparent focus:outline-none focus:bg-gray-50 px-1 py-0.5 rounded border border-dashed border-gray-300"
+                />
+                <p className="hidden print:block text-sm font-medium">{picName || ' '}</p>
+              </>
+            ) : (
+              <div className="text-sm font-medium">{picName || ' '}</div>
+            )}
+            <div className="text-xs text-gray-500 mt-0.5">Pharmacist-in-charge</div>
           </div>
           <div>
             <div className="border-b border-gray-400 mb-2 h-12" />
