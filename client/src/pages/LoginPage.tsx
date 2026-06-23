@@ -47,9 +47,6 @@ export function LoginPage() {
         <div className="mt-4 text-center">
           <Link to="/forgot-password" className="text-sm text-[#0F6E56] hover:underline">Forgot password?</Link>
         </div>
-        <div className="mt-3 text-center">
-          <a href="/founder" className="text-xs text-gray-400 hover:text-gray-600">Founder login →</a>
-        </div>
       </div>
     </div>
   );
