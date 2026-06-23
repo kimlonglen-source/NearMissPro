@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { Key, Building2, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Building2, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 
-type Tab = 'password' | 'pharmacy' | 'audit';
+type Tab = 'pharmacy' | 'audit';
 type PharmacySize = 'sole' | 'pharmacist_plus_tech' | 'multi';
 
 const SIZE_LABELS: Record<PharmacySize, { title: string; help: string }> = {
@@ -68,7 +68,7 @@ function auditDetailRows(action: string, details: Record<string, unknown> | null
 
 export function SettingsPage() {
   const { pharmacyName } = useAuth();
-  const [tab, setTab] = useState<Tab>('password');
+  const [tab, setTab] = useState<Tab>('pharmacy');
 
   // Password
   const [currentPwd, setCurrentPwd] = useState('');
@@ -184,22 +184,9 @@ export function SettingsPage() {
       <p className="text-sm text-gray-500 mb-6">{pharmacyName}</p>
 
       <div className="flex flex-wrap gap-2 mb-6">
-        <button onClick={() => setTab('password')} className={`btn text-sm ${tab === 'password' ? 'btn-teal' : 'btn-grey'}`}><Key size={14} /> Password</button>
         <button onClick={() => setTab('pharmacy')} className={`btn text-sm ${tab === 'pharmacy' ? 'btn-teal' : 'btn-grey'}`}><Building2 size={14} /> Pharmacy</button>
         <button onClick={() => setTab('audit')} className={`btn text-sm ${tab === 'audit' ? 'btn-teal' : 'btn-grey'}`}><FileText size={14} /> Audit</button>
       </div>
-
-      {tab === 'password' && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-          <h3 className="font-semibold">Change pharmacy password</h3>
-          <p className="text-xs text-gray-500">Used by all staff to log in on the dispensing computer. Change it whenever someone leaves the team.</p>
-          {pwdMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{pwdMsg}</div>}
-          {pwdErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{pwdErr}</div>}
-          <input type="password" placeholder="Current password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} className="input-field" />
-          <input type="password" placeholder="New password (min 8 characters)" value={newPwd} onChange={e => setNewPwd(e.target.value)} className="input-field" />
-          <button onClick={handleChangePassword} disabled={!currentPwd || newPwd.length < 8} className="btn-teal text-sm">Change password</button>
-        </div>
-      )}
 
       {tab === 'pharmacy' && (
         <div className="space-y-4">
@@ -210,6 +197,16 @@ export function SettingsPage() {
             {emailErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{emailErr}</div>}
             <input type="email" placeholder="hello@your-pharmacy.co.nz" value={pharmacyEmail} onChange={e => { setPharmacyEmail(e.target.value); if (emailMsg) setEmailMsg(''); }} className="input-field" />
             <button onClick={handleSaveEmail} disabled={!pharmacyEmail.trim()} className="btn-teal text-sm">Save email</button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
+            <h3 className="font-semibold">Change pharmacy password</h3>
+            <p className="text-xs text-gray-500">Used by all staff to log in on the dispensing computer. Change it whenever someone leaves the team.</p>
+            {pwdMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{pwdMsg}</div>}
+            {pwdErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{pwdErr}</div>}
+            <input type="password" placeholder="Current password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} className="input-field" />
+            <input type="password" placeholder="New password (min 8 characters)" value={newPwd} onChange={e => setNewPwd(e.target.value)} className="input-field" />
+            <button onClick={handleChangePassword} disabled={!currentPwd || newPwd.length < 8} className="btn-teal text-sm">Change password</button>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
