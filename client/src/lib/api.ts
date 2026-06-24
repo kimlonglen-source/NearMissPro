@@ -295,6 +295,37 @@ class Api {
       body: JSON.stringify({ email, pharmacyName, notes }),
     });
   }
+  pharmacySignup(data: {
+    pharmacyName: string;
+    address: string;
+    licenceNumber: string;
+    managerName: string;
+    pharmacyEmail: string;
+    phone: string;
+    pharmacySize: 'sole' | 'pharmacist_plus_tech' | 'multi';
+    source?: string;
+    notes?: string;
+  }) {
+    return this.req<{ ok: boolean }>('/marketing/signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+  setInitialPassword(token: string, password: string) {
+    return this.req<{ ok: true; token: string; role: string; pharmacyName: string; pharmacyId: string }>('/auth/set-initial-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
+  approvePharmacy(id: string) {
+    return this.req<{ ok: true }>(`/auth/pharmacies/${id}/approve`, { method: 'POST' });
+  }
+  declinePharmacy(id: string, reason?: string) {
+    return this.req<{ ok: true }>(`/auth/pharmacies/${id}/decline`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
 }
 
 export const api = new Api();

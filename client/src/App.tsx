@@ -14,6 +14,8 @@ import { LoginPage } from './pages/LoginPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { VerifyDevicePage } from './pages/VerifyDevicePage';
+import { SignupPage } from './pages/SignupPage';
+import { SetPasswordPage } from './pages/SetPasswordPage';
 import { FounderLoginPage } from './pages/FounderLoginPage';
 import { HomePage } from './pages/HomePage';
 import { RecordPage } from './pages/RecordPage';
@@ -72,6 +74,8 @@ export default function App() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/setup-password" element={<SetPasswordPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-device" element={<VerifyDevicePage />} />

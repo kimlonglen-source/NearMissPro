@@ -46,13 +46,30 @@ router.post('/staff/login', async (req: Request, res: Response) => {
     }).parse(req.body);
 
     const { data: pharmacy } = await supabase
-      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until, manager_email')
+      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until, manager_email, subscription_status')
       .ilike('name', name).single();
 
     if (!pharmacy) { res.status(401).json({ error: 'Invalid pharmacy name or password' }); return; }
 
     if (pharmacy.locked_until && new Date(pharmacy.locked_until) > new Date()) {
       res.status(423).json({ error: 'Account locked. Contact your manager.' }); return;
+    }
+
+    // Block login for pharmacies whose lifecycle hasn't reached
+    // "can use the app" yet (waiting on approval, declined,
+    // suspended). password_hash may also be null for the
+    // pending_approval case which would crash bcrypt.compare below.
+    if (pharmacy.subscription_status === 'pending_approval') {
+      res.status(403).json({ error: 'This pharmacy is still awaiting approval. Check the pharmacy email for our approval message, or contact hello@nearmisspro.co.nz.' }); return;
+    }
+    if (pharmacy.subscription_status === 'declined') {
+      res.status(403).json({ error: 'This application was not approved. Contact hello@nearmisspro.co.nz if you think this is a mistake.' }); return;
+    }
+    if (pharmacy.subscription_status === 'suspended') {
+      res.status(403).json({ error: 'This pharmacy account is suspended. Contact hello@nearmisspro.co.nz.' }); return;
+    }
+    if (!pharmacy.password_hash) {
+      res.status(403).json({ error: 'Password has not been set yet. Check the pharmacy email for the setup link, or contact hello@nearmisspro.co.nz.' }); return;
     }
 
     if (!(await bcrypt.compare(password, pharmacy.password_hash))) {
@@ -556,7 +573,8 @@ router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Req
 router.get('/pharmacies', authenticate, requireRole('founder'), async (_req: Request, res: Response) => {
   try {
     const { data } = await supabase.from('pharmacies')
-      .select('id, name, manager_email, subscription_status, created_at, trial_ends_at, address, licence_number')
+      .select('id, name, manager_email, manager_name, phone, address, licence_number, subscription_status, created_at, trial_ends_at, applied_at, approved_at, declined_at, decline_reason, signup_notes, signup_source, pharmacy_size')
+      .order('applied_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false });
     res.json(data || []);
   } catch { res.status(500).json({ error: 'Failed' }); }
@@ -607,6 +625,182 @@ router.post('/pharmacies/:id/reset-password', authenticate, requireRole('founder
   } catch (err) {
     console.error('[founder reset] failed:', err);
     res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// ── Founder: approve a pending signup ─────────────────────
+// Flips a pending_approval pharmacy to 'trial', generates a
+// one-time setup token, emails the pharmacy a link to set their
+// first password. After they click and set the password, they can
+// log in normally.
+router.post('/pharmacies/:id/approve', authenticate, requireRole('founder'), async (req: Request, res: Response) => {
+  try {
+    const { data: pharmacy } = await supabase.from('pharmacies')
+      .select('id, name, manager_email, manager_name, subscription_status')
+      .eq('id', req.params.id).single();
+    if (!pharmacy) { res.status(404).json({ error: 'Pharmacy not found' }); return; }
+    if (pharmacy.subscription_status !== 'pending_approval') {
+      res.status(400).json({ error: `Cannot approve — pharmacy is in ${pharmacy.subscription_status} status, not pending.` });
+      return;
+    }
+    const token = crypto.randomBytes(32).toString('base64url');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60_000).toISOString(); // 7 days
+    const { error: insertErr } = await supabase.from('password_setup_tokens').insert({
+      pharmacy_id: pharmacy.id,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+    });
+    if (insertErr) {
+      console.error('[approve] could not insert setup token — has migrate_self_serve_signup.sql been run?', insertErr);
+      res.status(500).json({ error: 'Could not generate setup link. Check server logs.' });
+      return;
+    }
+    await supabase.from('pharmacies').update({
+      subscription_status: 'trial',
+      approved_at: new Date().toISOString(),
+      approved_by: 'founder',
+    }).eq('id', pharmacy.id);
+    await supabase.from('audit_log').insert({
+      pharmacy_id: pharmacy.id,
+      action: 'pharmacy_approved',
+      performed_by: 'founder',
+      details: { name: pharmacy.name },
+    });
+    if (pharmacy.manager_email) {
+      const setupUrl = `${env.clientUrl}/setup-password?token=${token}`;
+      const greeting = pharmacy.manager_name ? `Hi ${escapeHtml(pharmacy.manager_name)},` : 'Hi,';
+      sendEmail({
+        to: pharmacy.manager_email,
+        subject: `You're approved — set your NearMissPro password to get started`,
+        text: `${pharmacy.manager_name ? `Hi ${pharmacy.manager_name},` : 'Hi,'}
+
+Your NearMissPro account for ${pharmacy.name} has been approved.
+
+Click the link below to set your pharmacy password and log in for the first time. The link is valid for 7 days.
+
+${setupUrl}
+
+Once you're in, you'll get a 3-month free trial. No payment method is needed during the trial.
+
+If you need help, email hello@nearmisspro.co.nz.
+
+— NearMissPro`,
+        html: `<p>${greeting}</p>
+<p>Your NearMissPro account for <strong>${escapeHtml(pharmacy.name)}</strong> has been approved.</p>
+<p>Click below to set your pharmacy password and log in for the first time. The link is valid for 7 days.</p>
+<p><a href="${setupUrl}" style="display:inline-block;background:#0F6E56;color:white;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Set your password</a></p>
+<p>Once you're in, you'll get a 3-month free trial. No payment method is needed during the trial.</p>
+<p style="color:#666;font-size:13px">If you need help, email <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p>
+<p style="color:#999;font-size:12px">— NearMissPro</p>`,
+      }).catch(err => console.error('[approve] email failed:', err));
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[approve] failed:', err);
+    res.status(500).json({ error: 'Approval failed' });
+  }
+});
+
+// ── Founder: decline a pending signup ─────────────────────
+router.post('/pharmacies/:id/decline', authenticate, requireRole('founder'), async (req: Request, res: Response) => {
+  try {
+    const { reason } = z.object({ reason: z.string().trim().max(500).optional() }).parse(req.body);
+    const { data: pharmacy } = await supabase.from('pharmacies')
+      .select('id, name, manager_email, manager_name, subscription_status')
+      .eq('id', req.params.id).single();
+    if (!pharmacy) { res.status(404).json({ error: 'Pharmacy not found' }); return; }
+    if (pharmacy.subscription_status !== 'pending_approval') {
+      res.status(400).json({ error: `Cannot decline — pharmacy is in ${pharmacy.subscription_status} status, not pending.` });
+      return;
+    }
+    await supabase.from('pharmacies').update({
+      subscription_status: 'declined',
+      declined_at: new Date().toISOString(),
+      decline_reason: reason || null,
+    }).eq('id', pharmacy.id);
+    await supabase.from('audit_log').insert({
+      pharmacy_id: pharmacy.id,
+      action: 'pharmacy_declined',
+      performed_by: 'founder',
+      details: { name: pharmacy.name, reason: reason || null },
+    });
+    if (pharmacy.manager_email) {
+      const greeting = pharmacy.manager_name ? `Hi ${escapeHtml(pharmacy.manager_name)},` : 'Hi,';
+      const reasonBlock = reason ? `\n\nReason: ${reason}\n` : '';
+      const reasonHtml = reason ? `<p><strong>Reason:</strong> ${escapeHtml(reason)}</p>` : '';
+      sendEmail({
+        to: pharmacy.manager_email,
+        subject: `Update on your NearMissPro application`,
+        text: `${pharmacy.manager_name ? `Hi ${pharmacy.manager_name},` : 'Hi,'}
+
+Thank you for your interest in NearMissPro for ${pharmacy.name}.
+
+After review, we're not able to approve your account at this time.${reasonBlock}
+
+If you'd like to discuss or you think this is a mistake, please email hello@nearmisspro.co.nz.
+
+— NearMissPro`,
+        html: `<p>${greeting}</p>
+<p>Thank you for your interest in NearMissPro for <strong>${escapeHtml(pharmacy.name)}</strong>.</p>
+<p>After review, we're not able to approve your account at this time.</p>
+${reasonHtml}
+<p>If you'd like to discuss or you think this is a mistake, please email <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p>
+<p style="color:#999;font-size:12px">— NearMissPro</p>`,
+      }).catch(err => console.error('[decline] email failed:', err));
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
+    console.error('[decline] failed:', err);
+    res.status(500).json({ error: 'Decline failed' });
+  }
+});
+
+// ── Set initial password (after approval) ──────────────────
+// Consumes the one-time setup token from the approval email,
+// stores the password, marks the token used, and returns a staff
+// JWT so the user is logged in immediately.
+router.post('/set-initial-password', async (req: Request, res: Response) => {
+  try {
+    const { token, password } = z.object({
+      token: z.string().min(20).max(200),
+      password: z.string().min(8).max(200),
+    }).parse(req.body);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const { data: row } = await supabase.from('password_setup_tokens')
+      .select('id, pharmacy_id, expires_at, used_at')
+      .eq('token_hash', tokenHash).single();
+    if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
+      res.status(400).json({ error: 'This setup link is no longer valid. Contact hello@nearmisspro.co.nz to get a fresh one.' });
+      return;
+    }
+    const { data: pharmacy } = await supabase.from('pharmacies')
+      .select('id, name').eq('id', row.pharmacy_id).single();
+    if (!pharmacy) { res.status(400).json({ error: 'Pharmacy not found' }); return; }
+    await supabase.from('pharmacies').update({
+      password_hash: await bcrypt.hash(password, 12),
+      login_attempts: 0,
+      locked_until: null,
+    }).eq('id', row.pharmacy_id);
+    await supabase.from('password_setup_tokens').update({ used_at: new Date().toISOString() }).eq('id', row.id);
+    await supabase.from('audit_log').insert({
+      pharmacy_id: row.pharmacy_id,
+      action: 'initial_password_set',
+      performed_by: 'self-service',
+      details: {},
+    });
+    // Log them in immediately so they don't have to type the password
+    // they JUST chose — saves a step on first impression.
+    const jwtToken = jwt.sign(
+      { pharmacyId: pharmacy.id, pharmacyName: pharmacy.name, role: 'staff' },
+      env.jwtSecret, { expiresIn: '7d' } as jwt.SignOptions
+    );
+    res.json({ ok: true, token: jwtToken, role: 'staff', pharmacyName: pharmacy.name, pharmacyId: pharmacy.id });
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
+    console.error('[set-initial-password] failed:', err);
+    res.status(500).json({ error: 'Setup failed — try the link again.' });
   }
 });
 

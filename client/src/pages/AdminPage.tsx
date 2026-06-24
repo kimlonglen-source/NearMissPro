@@ -5,7 +5,24 @@ import { Info } from 'lucide-react';
 type Tab = 'overview' | 'other' | 'pharmacies';
 type Health = { totalPharmacies: number; activePharmacies: number; inactivePharmacies: number; incidentsThisMonth: number; incidentsLastMonth: number; otherEntriesPending: number };
 type OtherEntry = { id: string; category: string; text: string; review_outcome: string | null; created_at: string; pharmacy_id: string };
-type Pharmacy = { id: string; name: string; subscription_status: string; created_at: string; incidentsThisMonth: number; lastActive: string | null };
+type Pharmacy = {
+  id: string;
+  name: string;
+  subscription_status: string;
+  created_at: string;
+  incidentsThisMonth: number;
+  lastActive: string | null;
+  manager_name?: string | null;
+  manager_email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  licence_number?: string | null;
+  pharmacy_size?: string | null;
+  applied_at?: string | null;
+  approved_at?: string | null;
+  signup_notes?: string | null;
+  signup_source?: string | null;
+};
 
 const TABS: { key: Tab; label: string; subtitle: string }[] = [
   { key: 'overview', label: 'Overview', subtitle: 'How NearMissPro is doing across all your pharmacies.' },
@@ -24,8 +41,10 @@ function statusPill(s: string) {
   const map: Record<string, string> = {
     active: 'bg-green-100 text-green-800', trial: 'bg-blue-100 text-blue-800',
     inactive: 'bg-red-100 text-red-800', suspended: 'bg-red-100 text-red-800',
+    pending_approval: 'bg-amber-100 text-amber-800', declined: 'bg-gray-200 text-gray-600',
   };
-  return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${map[s] || 'bg-gray-100 text-gray-600'}`}>{s.charAt(0).toUpperCase() + s.slice(1)}</span>;
+  const label = s === 'pending_approval' ? 'Pending review' : s.charAt(0).toUpperCase() + s.slice(1);
+  return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${map[s] || 'bg-gray-100 text-gray-600'}`}>{label}</span>;
 }
 
 export function AdminPage() {
@@ -33,8 +52,6 @@ export function AdminPage() {
   const [health, setHealth] = useState<Health | null>(null);
   const [others, setOthers] = useState<OtherEntry[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', password: '', pharmacyEmail: '', address: '', licenceNumber: '' });
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   // Per-pharmacy temp password shown once after a founder-mediated
@@ -68,22 +85,6 @@ export function AdminPage() {
     } finally { setBusy(false); }
   };
 
-  const handleCreatePharmacy = async () => {
-    if (!form.name || !form.password || form.password.length < 8 || !form.pharmacyEmail) return;
-    setBusy(true);
-    try {
-      await api.createPharmacy({
-        name: form.name,
-        password: form.password,
-        pharmacyEmail: form.pharmacyEmail,
-        ...(form.address ? { address: form.address } : {}),
-        ...(form.licenceNumber ? { licenceNumber: form.licenceNumber } : {}),
-      });
-      setForm({ name: '', password: '', pharmacyEmail: '', address: '', licenceNumber: '' });
-      setShowCreate(false); await loadPharmacies();
-    } finally { setBusy(false); }
-  };
-
   const handleStatus = async (id: string, status: 'active' | 'suspended') => {
     setBusy(true);
     try { await api.updatePharmacyStatus(id, status); await loadPharmacies(); } finally { setBusy(false); }
@@ -108,6 +109,32 @@ export function AdminPage() {
       delete next[id];
       return next;
     });
+  };
+
+  const handleApprove = async (id: string, name: string) => {
+    if (!window.confirm(`Approve "${name}"? An email with a "set your password" link will be sent to the pharmacy email.`)) return;
+    setBusy(true);
+    try {
+      await api.approvePharmacy(id);
+      await loadPharmacies();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Approval failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDecline = async (id: string, name: string, reason?: string) => {
+    if (!window.confirm(`Decline "${name}"?${reason ? `\n\nReason that will be emailed:\n"${reason}"` : '\n\n(No reason will be included in the email — they\'ll just be told it wasn\'t approved.)'}\n\nThis can't be undone — to onboard them later they'd need to apply again.`)) return;
+    setBusy(true);
+    try {
+      await api.declinePharmacy(id, reason);
+      await loadPharmacies();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Decline failed.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const checklistFor = (p: Pharmacy) => [
@@ -181,50 +208,35 @@ export function AdminPage() {
       {/* Pharmacies */}
       {tab === 'pharmacies' && (
         <div>
-          <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
-            <p className="text-xs text-gray-500 max-w-2xl flex items-start gap-1.5">
-              <Info size={14} className="text-gray-400 mt-[2px] flex-shrink-0" />
-              <span>Pharmacies don't sign themselves up — you create their account here, then share the password with their manager. Suspending blocks login without deleting data; reinstate brings them back.</span>
-            </p>
-            <button className="btn-teal" onClick={() => setShowCreate(!showCreate)}>{showCreate ? 'Cancel' : '+ Add pharmacy'}</button>
-          </div>
+          <p className="text-xs text-gray-500 mb-4 flex items-start gap-1.5">
+            <Info size={14} className="text-gray-400 mt-[2px] flex-shrink-0" />
+            <span>Pharmacies sign themselves up via the marketing site. New applications appear here as <strong>Pending review</strong> — approve to send them a "set your password" email, decline to email them back with a reason.</span>
+          </p>
 
-          {showCreate && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4 space-y-4">
-              <h3 className="text-sm font-bold">New pharmacy</h3>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-700 mb-1.5">Pharmacy</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <input className="input-field" placeholder="Pharmacy name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-                  <input className="input-field" placeholder="Address (optional)" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
-                  <input className="input-field" placeholder="Licence number (optional)" value={form.licenceNumber} onChange={e => setForm({ ...form, licenceNumber: e.target.value })} />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-700 mb-1.5">Pharmacy email</p>
-                <input className="input-field" placeholder="Pharmacy email *" value={form.pharmacyEmail} onChange={e => setForm({ ...form, pharmacyEmail: e.target.value })} />
-                <p className="text-[11px] text-gray-400 mt-1">Where password-reset links and other product emails will be sent. Use the pharmacy's own inbox — when a manager leaves, the new manager will use this email to reset the password.</p>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-700 mb-1.5">Password</p>
-                <input className="input-field" placeholder="Pharmacy password * (8+ chars)" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-                <p className="text-[11px] text-gray-400 mt-1">Shared with all staff on the dispensing computer.</p>
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <button className="btn-grey text-xs" onClick={() => setShowCreate(false)}>Cancel</button>
-                <button className="btn-teal text-xs" disabled={busy || !form.name || form.password.length < 8 || !form.pharmacyEmail} onClick={handleCreatePharmacy}>Create pharmacy</button>
+          {/* Pending review queue — surfaced separately at the top
+              because it's actionable: every pending pharmacy is
+              waiting on you. */}
+          {pharmacies.filter(p => p.subscription_status === 'pending_approval').length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-bold text-gray-900 mb-2">Pending review</h3>
+              <div className="space-y-3">
+                {pharmacies.filter(p => p.subscription_status === 'pending_approval').map(p => (
+                  <PendingApplicationCard
+                    key={p.id}
+                    pharmacy={p}
+                    busy={busy}
+                    onApprove={() => handleApprove(p.id, p.name)}
+                    onDecline={(reason) => handleDecline(p.id, p.name, reason)}
+                  />
+                ))}
               </div>
             </div>
           )}
 
-          {pharmacies.length === 0 && !showCreate && (
+          {pharmacies.length === 0 && (
             <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
               <p className="text-sm text-gray-500">No pharmacies yet.</p>
-              <p className="text-xs text-gray-400 mt-1">Click "Add pharmacy" above to create your first account.</p>
+              <p className="text-xs text-gray-400 mt-1">When someone signs up via <code>/signup</code>, their application will appear here for review.</p>
             </div>
           )}
 
@@ -237,7 +249,7 @@ export function AdminPage() {
                   <th className="py-2 px-4">Setup progress</th><th className="py-2 px-4">Actions</th>
                 </tr></thead>
                 <tbody>
-                  {pharmacies.map(p => {
+                  {pharmacies.filter(p => p.subscription_status !== 'pending_approval').map(p => {
                     const inactive30 = daysSince(p.lastActive) >= 30;
                     const checks = checklistFor(p);
                     return (
@@ -298,6 +310,73 @@ function Card({ label, value, sub, alert, hint }: { label: string; value: string
       <p className={`text-xl font-bold ${alert ? 'text-red-600' : 'text-gray-900'}`}>{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       {hint && <p className="text-[11px] text-gray-400 mt-2 leading-snug">{hint}</p>}
+    </div>
+  );
+}
+
+// One pending application — surfaces every detail the pharmacy
+// entered, plus Approve / Decline buttons. Decline reason is
+// optional but encouraged; goes straight into the rejection email.
+function PendingApplicationCard({ pharmacy, busy, onApprove, onDecline }: {
+  pharmacy: Pharmacy;
+  busy: boolean;
+  onApprove: () => void;
+  onDecline: (reason?: string) => void;
+}) {
+  const [reason, setReason] = useState('');
+  const fmt = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  const sizeLabel = pharmacy.pharmacy_size === 'sole' ? 'Sole pharmacist'
+    : pharmacy.pharmacy_size === 'pharmacist_plus_tech' ? 'Pharmacist + tech'
+    : pharmacy.pharmacy_size === 'multi' ? 'Two or more pharmacists' : '—';
+  return (
+    <div className="bg-amber-50 border border-amber-300 rounded-xl p-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+        <div>
+          <h4 className="font-semibold text-gray-900">{pharmacy.name}</h4>
+          <p className="text-xs text-gray-500">Applied {fmt(pharmacy.applied_at)}</p>
+        </div>
+        <span className="bg-amber-200 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">Pending review</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-3">
+        <DetailRow label="Manager" value={pharmacy.manager_name || '—'} />
+        <DetailRow label="Email" value={pharmacy.manager_email || '—'} />
+        <DetailRow label="Phone" value={pharmacy.phone || '—'} />
+        <DetailRow label="Address" value={pharmacy.address || '—'} />
+        <DetailRow label="Licence" value={pharmacy.licence_number || '—'} />
+        <DetailRow label="Size" value={sizeLabel} />
+        {pharmacy.signup_source && <DetailRow label="Heard via" value={pharmacy.signup_source} />}
+      </div>
+      {pharmacy.signup_notes && (
+        <div className="mb-3 p-2 bg-white border border-amber-200 rounded text-xs">
+          <span className="font-medium text-gray-700">Notes:</span>{' '}
+          <span className="text-gray-800 whitespace-pre-wrap">{pharmacy.signup_notes}</span>
+        </div>
+      )}
+      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+        <div className="flex-1">
+          <label className="text-[11px] text-gray-600 block mb-1">Decline reason (optional — sent in email if you decline)</label>
+          <input
+            type="text"
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            placeholder="e.g. We don't currently support hospital pharmacies"
+            className="input-field text-sm w-full"
+          />
+        </div>
+        <div className="flex gap-2">
+          <button className="btn-teal text-xs whitespace-nowrap" disabled={busy} onClick={onApprove}>Approve</button>
+          <button className="btn-grey text-xs whitespace-nowrap" disabled={busy} onClick={() => onDecline(reason.trim() || undefined)}>Decline</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <span className="text-gray-500 text-xs uppercase tracking-wide font-medium w-16 flex-shrink-0">{label}</span>
+      <span className="text-gray-800 break-all">{value}</span>
     </div>
   );
 }

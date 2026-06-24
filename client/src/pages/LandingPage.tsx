@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { ShieldIcon } from '../components/Logo';
 import { MarketingHeader, MarketingFooter } from '../components/MarketingChrome';
@@ -45,10 +46,10 @@ function Hero() {
             Anonymous reporting in 60 seconds. Auto-generated meeting reports. Closed-loop tracking so you can see what's actually reducing errors — and what isn't.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            <a href="#trial" className="bg-[#0F6E56] text-white font-semibold px-6 py-3.5 rounded-xl hover:bg-[#0B5A46] transition-colors flex items-center gap-2 group">
+            <Link to="/signup" className="bg-[#0F6E56] text-white font-semibold px-6 py-3.5 rounded-xl hover:bg-[#0B5A46] transition-colors flex items-center gap-2 group">
               Start your 3-month free trial
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-            </a>
+            </Link>
             <span className="text-sm text-gray-500">No card required</span>
           </div>
         </div>
@@ -586,10 +587,10 @@ function VsPaper() {
         </div>
 
         <div className="mt-10 text-center">
-          <a href="#trial" className="inline-flex items-center gap-2 bg-[#0F6E56] text-white font-semibold px-6 py-3 rounded-xl hover:bg-[#0B5A46] transition-colors group">
+          <Link to="/signup" className="inline-flex items-center gap-2 bg-[#0F6E56] text-white font-semibold px-6 py-3 rounded-xl hover:bg-[#0B5A46] transition-colors group">
             Start your 3-month free trial
             <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -627,9 +628,9 @@ function Pricing() {
                 <li key={i} className="flex items-start gap-2"><CheckCircle2 size={16} className="text-[#1D9E75] mt-0.5 flex-shrink-0" /> {i}</li>
               ))}
             </ul>
-            <a href="#trial" className="block w-full bg-[#0F6E56] text-white text-center font-semibold py-3 rounded-xl hover:bg-[#0B5A46] transition-colors">
+            <Link to="/signup" className="block w-full bg-[#0F6E56] text-white text-center font-semibold py-3 rounded-xl hover:bg-[#0B5A46] transition-colors">
               Start 3-month free trial
-            </a>
+            </Link>
             <p className="text-xs text-gray-400 text-center mt-3">No card required during trial</p>
           </div>
         </div>
