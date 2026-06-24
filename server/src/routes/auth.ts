@@ -221,6 +221,13 @@ router.post('/check-device-trust', async (req: Request, res: Response) => {
 // Consumes the one-time token in the email link and promotes the
 // pending device into trusted_devices. After this, any login
 // attempt from that device's browser succeeds normally.
+//
+// Idempotent by design: if a repeat call hits this endpoint with
+// the same token (React StrictMode double-invocation in dev, or a
+// user simply clicking the link twice), we check whether the
+// device is ALREADY in trusted_devices and return success rather
+// than the misleading "no longer valid". The actual approval
+// happened on the first call — the second call just observes it.
 router.post('/verify-device', async (req: Request, res: Response) => {
   try {
     const { token } = z.object({ token: z.string().min(20).max(200) }).parse(req.body);
@@ -228,12 +235,29 @@ router.post('/verify-device', async (req: Request, res: Response) => {
     const { data: row } = await supabase.from('device_verification_requests')
       .select('id, pharmacy_id, device_id_hash, device_label, expires_at, used_at')
       .eq('token_hash', tokenHash).single();
-    if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
+    if (!row) {
       res.status(400).json({ error: 'This approval link is no longer valid. Have the person try logging in again to generate a fresh one.' });
       return;
     }
-    // Promote to trusted_devices (UNIQUE on pharmacy_id+device_id_hash
-    // prevents duplicates if someone clicks the link twice).
+    // If the device is already in trusted_devices, the work is done
+    // — return success regardless of whether the token is used or
+    // expired. This is the idempotency path: a second click (or a
+    // React-StrictMode-induced second mount) lands here and sees
+    // "already approved" instead of an alarming error.
+    const { data: alreadyTrusted } = await supabase.from('trusted_devices')
+      .select('id, device_label')
+      .eq('pharmacy_id', row.pharmacy_id)
+      .eq('device_id_hash', row.device_id_hash)
+      .maybeSingle();
+    if (alreadyTrusted) {
+      res.json({ ok: true, deviceLabel: alreadyTrusted.device_label || row.device_label });
+      return;
+    }
+    // Not yet trusted — validate the token before approving.
+    if (row.used_at || new Date(row.expires_at) < new Date()) {
+      res.status(400).json({ error: 'This approval link is no longer valid. Have the person try logging in again to generate a fresh one.' });
+      return;
+    }
     const { error: upsertErr } = await supabase.from('trusted_devices').upsert({
       pharmacy_id: row.pharmacy_id,
       device_id_hash: row.device_id_hash,
