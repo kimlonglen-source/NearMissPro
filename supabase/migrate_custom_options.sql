@@ -13,3 +13,8 @@ CREATE TABLE IF NOT EXISTS pharmacy_custom_options (
 
 CREATE INDEX IF NOT EXISTS idx_custom_options_pharmacy
   ON pharmacy_custom_options(pharmacy_id, section);
+
+-- Explicit grant for the API service_role (see migrate_trusted_devices
+-- for the why — Supabase doesn't auto-grant new tables when "Automatically
+-- expose new tables" is off, which is the recommended secure setting).
+GRANT SELECT, INSERT, UPDATE, DELETE ON pharmacy_custom_options TO service_role;

@@ -20,3 +20,8 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_pharmacy
   ON password_reset_tokens(pharmacy_id, created_at DESC);
+
+-- Explicit grant for the API service_role (see migrate_trusted_devices
+-- for the why — Supabase doesn't auto-grant new tables when "Automatically
+-- expose new tables" is off, which is the recommended secure setting).
+GRANT SELECT, INSERT, UPDATE, DELETE ON password_reset_tokens TO service_role;

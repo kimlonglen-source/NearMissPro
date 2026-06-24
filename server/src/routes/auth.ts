@@ -118,13 +118,23 @@ If this WASN'T you or your team, someone may be trying to guess your password. R
       const approvalToken = crypto.randomBytes(32).toString('base64url');
       const approvalTokenHash = crypto.createHash('sha256').update(approvalToken).digest('hex');
       const deviceLabel = describeDevice(req.headers['user-agent'] as string | undefined);
-      await supabase.from('device_verification_requests').insert({
+      const { error: insertErr } = await supabase.from('device_verification_requests').insert({
         pharmacy_id: pharmacy.id,
         device_id_hash: deviceIdHash,
         device_label: deviceLabel,
         token_hash: approvalTokenHash,
         expires_at: new Date(Date.now() + 60 * 60_000).toISOString(),
       });
+      if (insertErr) {
+        // Most common cause: GRANT for service_role on
+        // device_verification_requests wasn't run on the target
+        // database. Surface this loudly — silent failure here meant
+        // the email went out with a token the server could never
+        // validate, and the user saw "no longer valid" forever.
+        console.error('[staff/login] could not insert device verification — has the GRANT in migrate_trusted_devices.sql been run?', insertErr);
+        res.status(500).json({ error: 'Could not create device approval. Contact support.' });
+        return;
+      }
       if (pharmacy.manager_email) {
         const approveUrl = `${env.clientUrl}/verify-device?token=${approvalToken}`;
         const ip = req.ip || 'unknown IP';

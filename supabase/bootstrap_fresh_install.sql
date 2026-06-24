@@ -1,7 +1,7 @@
 -- ============================================================
 -- NearMissPro — fresh install bootstrap
 -- Paste the entire contents of this file into a NEW Supabase
--- project's SQL Editor and click Run. It creates the schema,
+-- project's SQL Editor and click Run. Creates the schema,
 -- applies every migration in order, and seeds the taxonomy.
 -- Safe on a fresh project (uses IF NOT EXISTS where possible).
 -- ============================================================
@@ -555,6 +555,11 @@ CREATE TABLE IF NOT EXISTS pattern_interventions (
 CREATE INDEX IF NOT EXISTS idx_pattern_interventions_lookup
   ON pattern_interventions(pharmacy_id, drug_key, error_type, created_at DESC);
 
+-- Explicit grant for the API service_role. Supabase doesn't
+-- auto-grant new tables when "Automatically expose new tables" is
+-- off (the recommended secure setting).
+GRANT SELECT, INSERT, UPDATE, DELETE ON pattern_interventions TO service_role;
+
 -- ── migrate_report_patterns_trend.sql ──
 -- ============================================================
 -- NearMiss Pro — add pattern_alerts + trend_data to reports
@@ -641,6 +646,11 @@ CREATE TABLE IF NOT EXISTS pharmacy_custom_options (
 CREATE INDEX IF NOT EXISTS idx_custom_options_pharmacy
   ON pharmacy_custom_options(pharmacy_id, section);
 
+-- Explicit grant for the API service_role (see migrate_trusted_devices
+-- for the why — Supabase doesn't auto-grant new tables when "Automatically
+-- expose new tables" is off, which is the recommended secure setting).
+GRANT SELECT, INSERT, UPDATE, DELETE ON pharmacy_custom_options TO service_role;
+
 -- ── migrate_trial_signups.sql ──
 -- Trial sign-up interest list.
 -- Captured from the public landing page so we can email back to
@@ -691,6 +701,11 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_pharmacy
   ON password_reset_tokens(pharmacy_id, created_at DESC);
 
+-- Explicit grant for the API service_role (see migrate_trusted_devices
+-- for the why — Supabase doesn't auto-grant new tables when "Automatically
+-- expose new tables" is off, which is the recommended secure setting).
+GRANT SELECT, INSERT, UPDATE, DELETE ON password_reset_tokens TO service_role;
+
 -- ── migrate_trusted_devices.sql ──
 -- Device verification ("trust this device") for staff login.
 --
@@ -732,3 +747,11 @@ CREATE TABLE IF NOT EXISTS device_verification_requests (
 
 CREATE INDEX IF NOT EXISTS idx_device_verifications_hash
   ON device_verification_requests(token_hash);
+
+-- Supabase no longer auto-grants new public-schema tables to API
+-- roles when "Automatically expose new tables" is off (the
+-- recommended setting). Grant the server's service_role explicit
+-- access — without this, INSERTs from the staff-login flow fail
+-- silently and the approval-token row never lands in the table.
+GRANT SELECT, INSERT, UPDATE, DELETE ON trusted_devices TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON device_verification_requests TO service_role;

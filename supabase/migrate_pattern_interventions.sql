@@ -19,3 +19,8 @@ CREATE TABLE IF NOT EXISTS pattern_interventions (
 
 CREATE INDEX IF NOT EXISTS idx_pattern_interventions_lookup
   ON pattern_interventions(pharmacy_id, drug_key, error_type, created_at DESC);
+
+-- Explicit grant for the API service_role. Supabase doesn't
+-- auto-grant new tables when "Automatically expose new tables" is
+-- off (the recommended secure setting).
+GRANT SELECT, INSERT, UPDATE, DELETE ON pattern_interventions TO service_role;

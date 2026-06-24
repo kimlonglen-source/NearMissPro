@@ -38,3 +38,11 @@ CREATE TABLE IF NOT EXISTS device_verification_requests (
 
 CREATE INDEX IF NOT EXISTS idx_device_verifications_hash
   ON device_verification_requests(token_hash);
+
+-- Supabase no longer auto-grants new public-schema tables to API
+-- roles when "Automatically expose new tables" is off (the
+-- recommended setting). Grant the server's service_role explicit
+-- access — without this, INSERTs from the staff-login flow fail
+-- silently and the approval-token row never lands in the table.
+GRANT SELECT, INSERT, UPDATE, DELETE ON trusted_devices TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON device_verification_requests TO service_role;
