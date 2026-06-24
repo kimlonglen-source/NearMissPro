@@ -95,7 +95,7 @@ export function LoginPage() {
             </div>
             <h2 className="text-lg font-bold text-gray-900">Approve this device</h2>
             <p className="text-sm text-gray-600 leading-snug">
-              This is a new device, so for security we've emailed the pharmacy email asking someone to approve it. Open the inbox and click the green button in the email.
+              This is a new device, so for security we've sent an approval request to the pharmacy's email address. Open that inbox and click the green button in the email.
             </p>
             {!pollTimedOut ? (
               <>

@@ -13,7 +13,7 @@ const TABS: { key: Tab; label: string; subtitle: string }[] = [
   { key: 'pharmacies', label: 'Pharmacies', subtitle: 'Every pharmacy account: status, activity, onboarding, suspend/reinstate.' },
 ];
 
-const CHECKLIST = ['Account created', 'Manager first login', 'PWA installed', 'First near miss submitted', 'First review completed'];
+const CHECKLIST = ['Account created', 'First staff login', 'PWA installed', 'First near miss submitted', 'First review completed'];
 
 function daysSince(date: string | null) {
   if (!date) return Infinity;

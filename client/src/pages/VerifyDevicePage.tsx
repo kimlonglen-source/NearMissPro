@@ -61,7 +61,7 @@ export function VerifyDevicePage() {
             <p className="text-sm text-gray-600 leading-snug">
               {deviceLabel
                 ? <>The device <strong>{deviceLabel}</strong> can now log in.</>
-                : 'The device can now log in.'}
+                : 'This device can now log in.'}
             </p>
             <p className="text-xs text-gray-400 leading-snug pt-2">
               The person trying to log in just needs to click "Try logging in again" on their screen and enter the password.

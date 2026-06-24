@@ -33,9 +33,9 @@ export function ForgotPasswordPage() {
             <div className="w-12 h-12 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto">
               <Mail size={22} className="text-[#0F6E56]" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Check the manager's email</h2>
+            <h2 className="text-lg font-bold text-gray-900">Check the pharmacy email</h2>
             <p className="text-sm text-gray-600 leading-snug">
-              If a pharmacy by that name exists, we've sent a reset link to the manager's email address. The link expires in 60 minutes.
+              If a pharmacy by that name exists, we've sent a reset link to the pharmacy email on file. The link expires in 60 minutes.
             </p>
             <p className="text-xs text-gray-400 leading-snug pt-2">
               Didn't get an email? Check spam, or confirm the pharmacy name is spelled the same as when you registered.
@@ -46,7 +46,7 @@ export function ForgotPasswordPage() {
           <>
             <h2 className="text-lg font-bold text-gray-900 mb-1">Reset password</h2>
             <p className="text-sm text-gray-500 mb-4">
-              We'll email a reset link to the manager's email on file.
+              We'll email a reset link to the pharmacy email on file.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

@@ -75,8 +75,14 @@ export function ResetPasswordPage() {
         <p className="text-sm text-gray-500 mb-4">Pick something at least 8 characters long.</p>
         {err && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-sm">{err}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="password" value={pwd} onChange={e => setPwd(e.target.value)} className="input-field" placeholder="New password (min 8 characters)" autoFocus required />
-          <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} className="input-field" placeholder="Confirm new password" required />
+          <div>
+            <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">New password</label>
+            <input id="new-password" type="password" value={pwd} onChange={e => setPwd(e.target.value)} className="input-field" placeholder="At least 8 characters" autoFocus required />
+          </div>
+          <div>
+            <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">Confirm new password</label>
+            <input id="confirm-password" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} className="input-field" placeholder="Type it again" required />
+          </div>
           <button type="submit" disabled={loading || pwd.length < 8 || pwd !== confirm} className="btn-teal w-full">
             {loading ? 'Updating…' : 'Update password'}
           </button>

@@ -10,6 +10,14 @@ export const env = {
   supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   founderEmail: process.env.FOUNDER_EMAIL || '',
+  // Founder password + TOTP secret. When either is empty the
+  // server falls back to dev-mode credentials ('founder123' /
+  // accept any 6 digits) so localhost stays frictionless. Both
+  // MUST be set on any deployed instance — otherwise the founder
+  // login is essentially open. Use `npm run founder-setup` from
+  // the server folder to generate a strong pair.
+  founderPassword: process.env.FOUNDER_PASSWORD || '',
+  founderTotpSecret: process.env.FOUNDER_TOTP_SECRET || '',
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
   awsS3Bucket: process.env.AWS_S3_BUCKET || '',
