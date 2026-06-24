@@ -55,13 +55,76 @@ router.post('/generate', async (req: Request, res: Response) => {
 });
 
 // ── Update report (editable sections) ───────────────────────
+// Audit logging policy: draft edits (locked=false) are NOT logged
+// — auto-save fires constantly while a manager polishes a report
+// and the noise would drown out anything meaningful. Once the
+// report is signed off (locked=true), every change after that
+// point IS logged: sign-off itself, unlock, and any field edit
+// while locked. The diff captures before/after for each field so
+// an inspector can see exactly what changed and when.
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase.from('reports')
+    const { data: before, error: readErr } = await supabase.from('reports')
+      .select('*')
+      .eq('id', req.params.id)
+      .eq('pharmacy_id', req.auth!.pharmacyId)
+      .single();
+    if (readErr || !before) { res.status(404).json({ error: 'Report not found' }); return; }
+
+    const { data: after, error } = await supabase.from('reports')
       .update(req.body).eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId).select().single();
     if (error) throw error;
-    res.json(data);
-  } catch { res.status(500).json({ error: 'Failed' }); }
+
+    // Human-friendly period label so the audit log entry can be
+    // cross-referenced with the printed report by an inspector.
+    const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const reportPeriod = `${fmt(before.period_start)} — ${fmt(before.period_end)}`;
+    const reportRef = { report_id: before.id, report_period: reportPeriod };
+
+    const wasLocked = before.locked === true;
+    const nowLocked = after.locked === true;
+
+    if (!wasLocked && nowLocked) {
+      const { error: auditErr } = await supabase.from('audit_log').insert({
+        pharmacy_id: req.auth!.pharmacyId,
+        action: 'report_signed_off',
+        performed_by: 'manager',
+        details: reportRef,
+      });
+      if (auditErr) console.error('[reports] audit insert (signed_off) failed:', auditErr);
+    } else if (wasLocked && !nowLocked) {
+      const { error: auditErr } = await supabase.from('audit_log').insert({
+        pharmacy_id: req.auth!.pharmacyId,
+        action: 'report_unlocked',
+        performed_by: 'manager',
+        details: reportRef,
+      });
+      if (auditErr) console.error('[reports] audit insert (unlocked) failed:', auditErr);
+    } else if (wasLocked && nowLocked) {
+      const trackedFields = ['period_summary', 'previous_period_summary', 'agenda_items', 'generated_by'] as const;
+      const changes: Record<string, { old: unknown; new: unknown }> = {};
+      for (const field of trackedFields) {
+        if (req.body[field] !== undefined && JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
+          changes[field] = { old: before[field], new: after[field] };
+        }
+      }
+      if (Object.keys(changes).length > 0) {
+        const { error: auditErr } = await supabase.from('audit_log').insert({
+          pharmacy_id: req.auth!.pharmacyId,
+          action: 'report_amended',
+          performed_by: 'manager',
+          details: { ...reportRef, fields_changed: Object.keys(changes), changes },
+        });
+        if (auditErr) console.error('[reports] audit insert (amended) failed:', auditErr);
+      }
+    }
+    // !wasLocked && !nowLocked → draft edit, intentionally not logged
+
+    res.json(after);
+  } catch (err) {
+    console.error('[reports] patch failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
 });
 
 

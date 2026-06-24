@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { Building2, FileText, ChevronDown, ChevronRight } from 'lucide-react';
@@ -12,56 +13,133 @@ const SIZE_LABELS: Record<PharmacySize, { title: string; help: string }> = {
   multi: { title: 'Two or more pharmacists', help: 'Two or more pharmacists rostered together.' },
 };
 
-// Plain-English label for the action column. Falls back to the raw
-// underscore_separated action so new actions still show something readable.
+// Plain-English label for the action column. Every action emitted
+// anywhere in the server is mapped here so the audit log reads as
+// English, not codespeak. Anything unmapped falls through to the
+// raw underscore_separated form so a new action type still shows
+// something readable until it's added here.
 function auditActionLabel(action: string): string {
   switch (action) {
+    // Recommendations
     case 'recommendation_accepted': return 'Recommendation accepted';
     case 'recommendation_modified': return 'Recommendation modified';
     case 'recommendation_no_action': return 'Recommendation marked no action';
     case 'bulk_accept': return 'Bulk-accepted recommendations';
-    case 'incident_voided': return 'Incident voided';
-    case 'incident_restored': return 'Incident restored';
-    case 'incident_edited': return 'Incident edited';
-    case 'phi_suspected': return 'Possible patient identifier in notes';
+    // Incidents
+    case 'incident_voided': return 'Near miss voided';
+    case 'incident_restored': return 'Near miss restored';
+    case 'incident_edited': return 'Near miss edited';
+    case 'phi_suspected': return 'Possible patient information in notes';
+    // Reports
     case 'report_generated': return 'Report generated';
-    case 'password_changed': return 'Password changed';
-    case 'pharmacy_created': return 'Pharmacy created';
+    case 'report_signed_off': return 'Report signed off';
+    case 'report_unlocked': return 'Report unlocked for amendment';
+    case 'report_amended': return 'Report amended after sign-off';
+    // Passwords / authentication
+    case 'password_changed': return 'Pharmacy password changed';
+    case 'password_reset_requested': return 'Password reset requested';
+    case 'pharmacy_password_reset': return 'Pharmacy password reset via email link';
+    case 'founder_password_reset': return 'Password reset by founder (support)';
+    case 'founder_login': return 'Founder logged in';
+    // Devices
+    case 'device_verification_requested': return 'New device tried to log in';
+    case 'device_approved': return 'New device approved';
+    // Pharmacy profile
+    case 'pharmacy_created': return 'Pharmacy account created';
+    case 'pharmacy_email_updated': return 'Pharmacy email changed';
+    case 'pharmacy_active': return 'Pharmacy reinstated';
+    case 'pharmacy_suspended': return 'Pharmacy suspended';
+    case 'pharmacy_trial': return 'Pharmacy set to trial';
+    // Other entries (founder review)
+    case 'other_entry_added': return '"Other" entry added to taxonomy';
+    case 'other_entry_dismissed': return '"Other" entry dismissed';
     default: return action.replace(/_/g, ' ');
   }
 }
 
-// Per-action detail rows for the expanded view. Returns [label, value]
-// pairs in the order to render. Skips fields we don't want surfaced
-// (like raw IDs without a way to navigate to them).
-function auditDetailRows(action: string, details: Record<string, unknown> | null): { label: string; value: string }[] {
-  const out: { label: string; value: string }[] = [];
+// Friendly labels for the editable report fields. Used when an audit
+// entry lists "fields_changed" so the inspector sees real names, not
+// snake_case database columns.
+function reportFieldLabel(field: string): string {
+  switch (field) {
+    case 'period_summary': return 'Period summary';
+    case 'previous_period_summary': return 'Last period notes';
+    case 'agenda_items': return 'Meeting agenda';
+    case 'generated_by': return 'Pharmacist-in-charge';
+    default: return field.replace(/_/g, ' ');
+  }
+}
+
+// Per-action detail rows for the expanded view. Returns [label,
+// value] pairs in the order to render. `to` makes the value into a
+// clickable React Router link — used so an inspector can click
+// straight from an audit entry to the report it refers to.
+interface AuditDetailRow { label: string; value: string; to?: string }
+function auditDetailRows(action: string, details: Record<string, unknown> | null): AuditDetailRow[] {
+  const out: AuditDetailRow[] = [];
   if (!details) return out;
   const get = (k: string) => {
     const v = details[k];
     return v === null || v === undefined ? '' : String(v);
   };
+  const truncate = (s: string, n = 200) => s.length > n ? `${s.slice(0, n).trim()}…` : s;
+
+  // Recommendations
   if (action.startsWith('recommendation_')) {
     if (get('modified_text')) out.push({ label: 'Modified text', value: get('modified_text') });
     if (get('recommendation_id')) out.push({ label: 'Recommendation ID', value: get('recommendation_id') });
   } else if (action === 'bulk_accept') {
     if (get('count')) out.push({ label: 'Count', value: `${get('count')} recommendations` });
-  } else if (action === 'incident_voided' || action === 'incident_edited') {
+  }
+  // Incidents
+  else if (action === 'incident_voided' || action === 'incident_edited') {
     if (get('reason')) out.push({ label: 'Reason', value: get('reason') });
-    if (get('incident_id')) out.push({ label: 'Incident ID', value: get('incident_id') });
+    if (get('incident_id')) out.push({ label: 'Near miss ID', value: get('incident_id') });
   } else if (action === 'incident_restored') {
-    if (get('incident_id')) out.push({ label: 'Incident ID', value: get('incident_id') });
+    if (get('incident_id')) out.push({ label: 'Near miss ID', value: get('incident_id') });
   } else if (action === 'phi_suspected') {
-    if (get('incident_id')) out.push({ label: 'Incident ID', value: get('incident_id') });
+    if (get('incident_id')) out.push({ label: 'Near miss ID', value: get('incident_id') });
     const fields = details.fields;
     if (fields && typeof fields === 'object') {
       out.push({ label: 'Fields flagged', value: Object.keys(fields as Record<string, unknown>).join(', ') });
     }
-  } else if (action === 'report_generated') {
+  }
+  // Reports
+  else if (action === 'report_generated') {
     if (get('period')) out.push({ label: 'Period', value: get('period') });
-    if (get('report_id')) out.push({ label: 'Report ID', value: get('report_id') });
-  } else if (action === 'pharmacy_created') {
+    if (get('report_id')) out.push({ label: 'View report', value: 'Open this report →', to: `/reports/${get('report_id')}` });
+  } else if (action === 'report_signed_off' || action === 'report_unlocked' || action === 'report_amended') {
+    if (get('report_period')) out.push({ label: 'Period', value: get('report_period') });
+    if (action === 'report_amended') {
+      const fieldsChanged = details.fields_changed;
+      if (Array.isArray(fieldsChanged) && fieldsChanged.length > 0) {
+        out.push({ label: 'Fields changed', value: fieldsChanged.map(f => reportFieldLabel(String(f))).join(', ') });
+      }
+      // Show before/after for any text fields. Arrays (agenda_items)
+      // are noted by name only — the diff is too dense to render
+      // sensibly inline.
+      const changes = details.changes;
+      if (changes && typeof changes === 'object') {
+        for (const [field, diff] of Object.entries(changes as Record<string, { old: unknown; new: unknown }>)) {
+          if (typeof diff.old === 'string' && typeof diff.new === 'string') {
+            out.push({ label: `${reportFieldLabel(field)} — before`, value: truncate(diff.old || '(empty)') });
+            out.push({ label: `${reportFieldLabel(field)} — after`, value: truncate(diff.new || '(empty)') });
+          }
+        }
+      }
+    }
+    if (get('report_id')) out.push({ label: 'View report', value: 'Open this report →', to: `/reports/${get('report_id')}` });
+  }
+  // Pharmacy profile
+  else if (action === 'pharmacy_created') {
     if (get('name')) out.push({ label: 'Pharmacy name', value: get('name') });
+  } else if (action === 'pharmacy_email_updated') {
+    if (get('old')) out.push({ label: 'Previous email', value: get('old') });
+    if (get('new')) out.push({ label: 'New email', value: get('new') });
+  }
+  // Devices
+  else if (action === 'device_verification_requested' || action === 'device_approved') {
+    if (get('device_label')) out.push({ label: 'Device', value: get('device_label') });
   }
   return out;
 }
@@ -305,7 +383,11 @@ export function SettingsPage() {
                         {rows.map((r, idx) => (
                           <div key={idx} className="text-xs">
                             <span className="text-gray-500">{r.label}: </span>
-                            <span className="text-gray-800 break-all">{r.value}</span>
+                            {r.to ? (
+                              <Link to={r.to} className="text-[#0F6E56] hover:underline font-medium">{r.value}</Link>
+                            ) : (
+                              <span className="text-gray-800 break-all whitespace-pre-wrap">{r.value}</span>
+                            )}
                           </div>
                         ))}
                       </div>
