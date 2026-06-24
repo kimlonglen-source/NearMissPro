@@ -33,7 +33,7 @@ export function TermsPage() {
       <h2>5. Acceptable use</h2>
       <ul>
         <li>Use NearMissPro only for its intended purpose: tracking near misses in your pharmacy.</li>
-        <li>Do not enter patient-identifying information into the notes field. The product includes a PHI scanner to remind staff, but the responsibility is yours.</li>
+        <li>Do not enter patient-identifying information (names, NHI numbers, dates of birth, phone numbers) into the notes field. The product includes an automatic check that flags this as you type, but the responsibility is yours.</li>
         <li>Do not attempt to access another pharmacy's data, scrape the site, or interfere with the service.</li>
         <li>Do not resell or sub-license the service.</li>
       </ul>

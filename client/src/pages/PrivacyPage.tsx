@@ -35,7 +35,7 @@ export function PrivacyPage() {
       </ul>
 
       <h2>Health Information Privacy Code 2020</h2>
-      <p>The Health Information Privacy Code 2020 (HIPC) applies to identifiable health information. NearMissPro deliberately avoids collecting patient-identifying information: the recording form has no patient fields, and the notes field has a PHI scanner that flags accidental NHI numbers, dates of birth, or names. We treat the pharmacy as the agency responsible for any information your staff enters in error, and we will help you redact or delete it on request.</p>
+      <p>The Health Information Privacy Code 2020 (HIPC) applies to identifiable health information. NearMissPro deliberately avoids collecting patient-identifying information: the recording form has no patient fields, and the notes field has an automatic patient-info check that flags accidental NHI numbers, dates of birth, phone numbers, or names as you type. We treat the pharmacy as the agency responsible for any information your staff enters in error, and we will help you redact or delete it on request.</p>
 
       <h2>How we use your data</h2>
       <ul>
