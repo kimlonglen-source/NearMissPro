@@ -57,9 +57,45 @@ router.post('/staff/login', async (req: Request, res: Response) => {
 
     if (!(await bcrypt.compare(password, pharmacy.password_hash))) {
       const attempts = (pharmacy.login_attempts || 0) + 1;
-      const lockout = attempts >= 10 ? new Date(Date.now() + 30 * 60_000).toISOString() : null;
+      const remaining = 10 - attempts;
+      const isLocked = attempts >= 10;
+      const lockout = isLocked ? new Date(Date.now() + 30 * 60_000).toISOString() : null;
       await supabase.from('pharmacies').update({ login_attempts: attempts, ...(lockout && { locked_until: lockout }) }).eq('id', pharmacy.id);
-      if (lockout) console.log(`[EMAIL] To: manager | Subject: Account locked | Body: ${pharmacy.name} locked after 10 failed attempts.`);
+      if (isLocked) {
+        // Email the pharmacy email so whoever owns it sees the
+        // lockout — could be honest staff fumbling the password, or
+        // someone trying to guess. Either way, the inbox holder
+        // should know.
+        if (pharmacy.manager_email) {
+          sendEmail({
+            to: pharmacy.manager_email,
+            subject: `${pharmacy.name}: NearMissPro account locked after 10 failed logins`,
+            text: `Hi,
+
+Your NearMissPro account for ${pharmacy.name} has been locked after 10 failed login attempts in a row.
+
+It will unlock automatically in 30 minutes. If it was a staff member fumbling the password, no action is needed.
+
+If this WASN'T you or your team, someone may be trying to guess your password. Reset it now using "Forgot password?" on the login screen — that clears the lockout immediately and gives you a fresh password.
+
+— NearMissPro`,
+            html: `<p>Hi,</p>
+<p>Your NearMissPro account for <strong>${escapeHtml(pharmacy.name)}</strong> has been locked after 10 failed login attempts in a row.</p>
+<p>It will unlock automatically in 30 minutes. If it was a staff member fumbling the password, no action is needed.</p>
+<p style="color:#791F1F"><strong>If this WASN'T you or your team</strong>, someone may be trying to guess your password. Reset it now using <a href="${env.clientUrl}/forgot-password">Forgot password?</a> on the login screen — that clears the lockout immediately and gives you a fresh password.</p>
+<p style="color:#999;font-size:12px">— NearMissPro</p>`,
+          }).catch(err => console.error('[staff/login] lockout email failed:', err));
+        }
+        res.status(423).json({ error: 'Account locked after 10 wrong attempts. Try again in 30 minutes, or use "Forgot password?" to reset now.' });
+        return;
+      }
+      // Escalating warning when the user gets within 3 attempts of
+      // the lockout — gives them a chance to pause and check before
+      // accidentally locking everyone out.
+      if (remaining <= 3) {
+        res.status(401).json({ error: `Wrong password. ${remaining} attempt${remaining === 1 ? '' : 's'} left before the account is locked for 30 minutes.` });
+        return;
+      }
       res.status(401).json({ error: 'Invalid pharmacy name or password' }); return;
     }
 
