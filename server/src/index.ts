@@ -26,7 +26,18 @@ app.use(helmet());
 app.use(cors({ origin: env.clientUrl, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 
-const authLimiter = rateLimit({ windowMs: 15 * 60_000, max: 30, message: { error: 'Too many attempts' } });
+// 30 attempts per 15 min per IP is the right shape for the
+// brute-force-vulnerable endpoints (login, forgot-password). But it's
+// too tight for endpoints that get called frequently for legitimate
+// reasons — specifically the device-verification polling loop fires
+// every 5 seconds while the user waits on the "approve this device"
+// screen. Skip the limiter for those endpoints.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 30,
+  message: { error: 'Too many attempts' },
+  skip: (req) => req.path === '/check-device-trust' || req.path === '/verify-device',
+});
 
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/incidents', incidentRoutes);
