@@ -19,7 +19,7 @@ export function MarketingHeader() {
         <div className="flex items-center gap-5">
           <Link to="/#pricing" className="hidden sm:inline text-sm font-medium text-gray-600 hover:text-[#0F6E56]">Pricing</Link>
           <Link to="/login" className="text-sm font-medium text-gray-700 hover:text-[#0F6E56]">Log in</Link>
-          <Link to="/#trial" className="bg-[#0F6E56] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#0B5A46] transition-colors">
+          <Link to="/signup" className="bg-[#0F6E56] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#0B5A46] transition-colors">
             Start free trial
           </Link>
         </div>
@@ -43,7 +43,7 @@ export function MarketingFooter() {
           <p className="text-xs uppercase tracking-wider font-semibold text-gray-500">Product</p>
           <ul className="space-y-1.5">
             <li><Link to="/#pricing" className="hover:text-white">Pricing</Link></li>
-            <li><Link to="/#trial" className="hover:text-white">Free trial</Link></li>
+            <li><Link to="/signup" className="hover:text-white">Free trial</Link></li>
             <li><Link to="/login" className="hover:text-white">Log in</Link></li>
           </ul>
         </div>
