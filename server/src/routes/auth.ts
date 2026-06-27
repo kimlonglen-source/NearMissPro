@@ -60,7 +60,7 @@ router.post('/staff/login', async (req: Request, res: Response) => {
     // suspended). password_hash may also be null for the
     // pending_approval case which would crash bcrypt.compare below.
     if (pharmacy.subscription_status === 'pending_approval') {
-      res.status(403).json({ error: 'This pharmacy is still awaiting approval. Check the pharmacy email for our approval message, or contact hello@nearmisspro.co.nz.' }); return;
+      res.status(403).json({ error: 'This pharmacy is still awaiting approval. Check the dispensary email for our approval message, or contact hello@nearmisspro.co.nz.' }); return;
     }
     if (pharmacy.subscription_status === 'declined') {
       res.status(403).json({ error: 'This application was not approved. Contact hello@nearmisspro.co.nz if you think this is a mistake.' }); return;
@@ -69,7 +69,7 @@ router.post('/staff/login', async (req: Request, res: Response) => {
       res.status(403).json({ error: 'This pharmacy account is suspended. Contact hello@nearmisspro.co.nz.' }); return;
     }
     if (!pharmacy.password_hash) {
-      res.status(403).json({ error: 'Password has not been set yet. Check the pharmacy email for the setup link, or contact hello@nearmisspro.co.nz.' }); return;
+      res.status(403).json({ error: 'Password has not been set yet. Check the dispensary email for the setup link, or contact hello@nearmisspro.co.nz.' }); return;
     }
 
     if (!(await bcrypt.compare(password, pharmacy.password_hash))) {
@@ -485,7 +485,7 @@ router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder
         subject: `${pharmacyDisplayName}: your NearMissPro email was changed`,
         text: `Hi,
 
-The pharmacy email on the NearMissPro account for ${pharmacyDisplayName} was just changed from this address to ${body.pharmacyEmail}.
+The dispensary email on the NearMissPro account for ${pharmacyDisplayName} was just changed from this address to ${body.pharmacyEmail}.
 
 If you authorised this, no action is needed.
 
@@ -493,23 +493,23 @@ If you DID NOT authorise this, contact us immediately at hello@nearmisspro.co.nz
 
 — NearMissPro`,
         html: `<p>Hi,</p>
-<p>The pharmacy email on the NearMissPro account for <strong>${escapeHtml(pharmacyDisplayName)}</strong> was just changed from this address to <strong>${escapeHtml(body.pharmacyEmail)}</strong>.</p>
+<p>The dispensary email on the NearMissPro account for <strong>${escapeHtml(pharmacyDisplayName)}</strong> was just changed from this address to <strong>${escapeHtml(body.pharmacyEmail)}</strong>.</p>
 <p>If you authorised this, no action is needed.</p>
 <p style="color:#791F1F"><strong>If you DID NOT authorise this</strong>, contact us immediately at <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a> — your pharmacy may be at risk of being locked out.</p>
 <p style="color:#999;font-size:12px">— NearMissPro</p>`,
       }).catch(err => console.error('[pharmacy/settings] old-email notification failed:', err));
       sendEmail({
         to: body.pharmacyEmail,
-        subject: `${pharmacyDisplayName}: this is now your NearMissPro pharmacy email`,
+        subject: `${pharmacyDisplayName}: this is now your NearMissPro dispensary email`,
         text: `Hi,
 
-This address (${body.pharmacyEmail}) is now the registered pharmacy email for ${pharmacyDisplayName} on NearMissPro.
+This address (${body.pharmacyEmail}) is now the registered dispensary email for ${pharmacyDisplayName} on NearMissPro.
 
 From now on, password-reset links and any other product emails will come here.
 
 — NearMissPro`,
         html: `<p>Hi,</p>
-<p>This address (${escapeHtml(body.pharmacyEmail)}) is now the registered pharmacy email for <strong>${escapeHtml(pharmacyDisplayName)}</strong> on NearMissPro.</p>
+<p>This address (${escapeHtml(body.pharmacyEmail)}) is now the registered dispensary email for <strong>${escapeHtml(pharmacyDisplayName)}</strong> on NearMissPro.</p>
 <p>From now on, password-reset links and any other product emails will come here.</p>
 <p style="color:#999;font-size:12px">— NearMissPro</p>`,
       }).catch(err => console.error('[pharmacy/settings] new-email notification failed:', err));

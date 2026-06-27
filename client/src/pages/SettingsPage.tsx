@@ -46,7 +46,7 @@ function auditActionLabel(action: string): string {
     case 'device_approved': return 'New device approved';
     // Pharmacy profile
     case 'pharmacy_created': return 'Pharmacy account created';
-    case 'pharmacy_email_updated': return 'Pharmacy email changed';
+    case 'pharmacy_email_updated': return 'Dispensary email changed';
     case 'pharmacy_active': return 'Pharmacy reinstated';
     case 'pharmacy_suspended': return 'Pharmacy suspended';
     case 'pharmacy_trial': return 'Pharmacy set to trial';
@@ -269,11 +269,11 @@ export function SettingsPage() {
       {tab === 'pharmacy' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
-            <h3 className="font-semibold">Pharmacy email</h3>
+            <h3 className="font-semibold">Dispensary email</h3>
             <p className="text-xs text-gray-500">Where password-reset links land. When a manager leaves, the new manager uses "Forgot password?" on the login screen — the link comes here.</p>
             {emailMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{emailMsg}</div>}
             {emailErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{emailErr}</div>}
-            <input type="email" placeholder="hello@your-pharmacy.co.nz" value={pharmacyEmail} onChange={e => { setPharmacyEmail(e.target.value); if (emailMsg) setEmailMsg(''); }} className="input-field" />
+            <input type="email" placeholder="dispensary@your-pharmacy.co.nz" value={pharmacyEmail} onChange={e => { setPharmacyEmail(e.target.value); if (emailMsg) setEmailMsg(''); }} className="input-field" />
             <button onClick={handleSaveEmail} disabled={!pharmacyEmail.trim()} className="btn-teal text-sm">Save email</button>
           </div>
 

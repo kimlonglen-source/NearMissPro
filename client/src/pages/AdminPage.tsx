@@ -112,7 +112,7 @@ export function AdminPage() {
   };
 
   const handleApprove = async (id: string, name: string) => {
-    if (!window.confirm(`Approve "${name}"? An email with a "set your password" link will be sent to the pharmacy email.`)) return;
+    if (!window.confirm(`Approve "${name}"? An email with a "set your password" link will be sent to the dispensary email.`)) return;
     setBusy(true);
     try {
       await api.approvePharmacy(id);
