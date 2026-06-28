@@ -615,7 +615,7 @@ function Pricing() {
               <span className="text-5xl font-bold tracking-tight">$30</span>
               <span className="text-lg text-gray-500">/month</span>
             </div>
-            <p className="text-sm text-gray-500 mb-6">or <span className="font-semibold text-gray-700">$300/year</span> — save 17%</p>
+            <p className="text-sm text-gray-500 mb-6">or <span className="font-semibold text-gray-700">$300/year</span> — save $60</p>
             <ul className="space-y-2.5 text-sm text-gray-700 mb-7">
               {[
                 'All staff included — no per-user fees',
@@ -629,7 +629,7 @@ function Pricing() {
               ))}
             </ul>
             <Link to="/signup" className="block w-full bg-[#0F6E56] text-white text-center font-semibold py-3 rounded-xl hover:bg-[#0B5A46] transition-colors">
-              Start 3-month free trial
+              Start your 3-month free trial
             </Link>
             <p className="text-xs text-gray-400 text-center mt-3">No card required during trial</p>
           </div>

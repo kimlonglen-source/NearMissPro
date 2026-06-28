@@ -24,7 +24,7 @@ export function TermsPage() {
       <h2>4. Free trial, subscription, and billing</h2>
       <ul>
         <li>Your first three months are free. No payment method is required during the trial.</li>
-        <li>After the trial, the subscription is $30 NZD per month per pharmacy, or $300 NZD per year (saving roughly 17%). All prices exclude GST where applicable; we'll display the GST-inclusive price clearly when we collect payment.</li>
+        <li>After the trial, the subscription is $30 NZD per month per pharmacy, or $300 NZD per year (saving $60). All prices exclude GST where applicable; we'll display the GST-inclusive price clearly when we collect payment.</li>
         <li>Subscriptions auto-renew until cancelled.</li>
         <li>You can cancel at any time. If you cancel mid-month, you keep access for the remainder of that month; we do not refund partial months.</li>
         <li>Annual subscriptions are not refunded for unused months unless we materially change the service to your disadvantage.</li>

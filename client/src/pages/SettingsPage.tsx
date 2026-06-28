@@ -50,6 +50,9 @@ function auditActionLabel(action: string): string {
     case 'pharmacy_active': return 'Pharmacy reinstated';
     case 'pharmacy_suspended': return 'Pharmacy suspended';
     case 'pharmacy_trial': return 'Pharmacy set to trial';
+    case 'pharmacy_approved': return 'Pharmacy application approved';
+    case 'pharmacy_declined': return 'Pharmacy application declined';
+    case 'initial_password_set': return 'Pharmacy password set during signup';
     // Data export
     case 'data_exported': return 'Data export downloaded';
     // Other entries (founder review)

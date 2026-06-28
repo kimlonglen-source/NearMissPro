@@ -489,7 +489,7 @@ export function DashboardPage() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-[#791F1F] mb-2">Void this incident</h3>
-            <p className="text-sm text-gray-500 mb-3">This cannot be undone. The incident will be excluded from reports.</p>
+            <p className="text-sm text-gray-500 mb-3">The incident will be excluded from reports. You can restore it later from the Voided page if needed.</p>
             <textarea className="input-field" rows={3} placeholder="Reason (required)" value={voidReason} onChange={e => setVoidReason(e.target.value)} autoFocus />
             <div className="flex gap-3 mt-4">
               <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200" onClick={() => { setVoidId(null); setVoidReason(''); }}>Cancel</button>
