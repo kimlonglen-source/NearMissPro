@@ -115,6 +115,16 @@ function auditDetailRows(action: string, details: Record<string, unknown> | null
     if (get('report_id')) out.push({ label: 'View report', value: 'Open this report →', to: `/reports/${get('report_id')}` });
   } else if (action === 'report_signed_off' || action === 'report_unlocked' || action === 'report_amended') {
     if (get('report_period')) out.push({ label: 'Period', value: get('report_period') });
+    if (action === 'report_signed_off') {
+      const lockedAt = details.locked_at;
+      if (typeof lockedAt === 'string') {
+        out.push({ label: 'Signed off at', value: new Date(lockedAt).toLocaleString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) });
+      }
+      const count = details.incident_count;
+      if (typeof count === 'number') {
+        out.push({ label: 'Near misses on the report', value: `${count} (locked in snapshot)` });
+      }
+    }
     if (action === 'report_amended') {
       const fieldsChanged = details.fields_changed;
       if (Array.isArray(fieldsChanged) && fieldsChanged.length > 0) {

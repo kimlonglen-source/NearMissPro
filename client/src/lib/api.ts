@@ -91,7 +91,10 @@ class Api {
       throw new Error(data.error || 'Invalid pharmacy name or password');
     }
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+    // Prefer a server-supplied friendly `message` over the short
+    // `error` code so users see plain English ("That date falls
+    // inside a signed-off report…") instead of a label ("period_locked").
+    if (!res.ok) throw new Error(data.message || data.error || 'Request failed');
     return data as T;
   }
 

@@ -85,11 +85,27 @@ router.patch('/:id', async (req: Request, res: Response) => {
     const nowLocked = after.locked === true;
 
     if (!wasLocked && nowLocked) {
+      // Snapshot every active incident on the report at the moment
+      // of sign-off. Lets the manager (or an inspector) prove later
+      // exactly what was on the printed report — even if the period
+      // is reopened, edited, or re-signed.
+      const { data: snapshotRows } = await supabase.from('incidents')
+        .select('id')
+        .eq('pharmacy_id', req.auth!.pharmacyId)
+        .eq('status', 'active')
+        .gte('submitted_at', before.period_start)
+        .lte('submitted_at', `${before.period_end}T23:59:59.999Z`);
+      const incidentIds = (snapshotRows || []).map(r => (r as { id: string }).id);
       const { error: auditErr } = await supabase.from('audit_log').insert({
         pharmacy_id: req.auth!.pharmacyId,
         action: 'report_signed_off',
         performed_by: 'manager',
-        details: reportRef,
+        details: {
+          ...reportRef,
+          locked_at: new Date().toISOString(),
+          incident_count: incidentIds.length,
+          incident_ids: incidentIds,
+        },
       });
       if (auditErr) console.error('[reports] audit insert (signed_off) failed:', auditErr);
     } else if (wasLocked && !nowLocked) {

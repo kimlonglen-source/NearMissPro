@@ -29,6 +29,23 @@ const createSchema = z.object({
   occurredAt: z.string().datetime({ offset: true }).optional(),
 });
 
+// Returns the end date of any locked (signed-off) report whose period
+// covers `iso`, scoped to the pharmacy. Used to refuse late entries
+// (and edits) that would silently mutate a report a manager has
+// already signed and printed. Pharmacy Council Standard 1.8 expects
+// signed reports to represent the data at the moment they were signed.
+async function lockedPeriodCoveringDate(pharmacyId: string, iso: string): Promise<string | null> {
+  const { data } = await supabase.from('reports')
+    .select('period_start, period_end')
+    .eq('pharmacy_id', pharmacyId)
+    .eq('locked', true)
+    .lte('period_start', iso)
+    .gte('period_end', iso)
+    .limit(1);
+  if (data && data.length > 0) return data[0].period_end as string;
+  return null;
+}
+
 // Derive "morning" / "lunch" / "afternoon" / "evening" from a Date in NZ local time.
 // Uses the server clock — acceptable for a NZ-hosted deployment; for multi-region
 // we'd pass an IANA zone from the client and use Intl.DateTimeFormat.
@@ -57,6 +74,16 @@ router.post('/', async (req: Request, res: Response) => {
       if (parsed.getTime() > now.getTime() + 60_000) { // allow 1min clock skew
         res.status(400).json({ error: 'occurredAt cannot be in the future' }); return;
       }
+      // Don't let late entries silently appear on a signed-off report.
+      // The client catches this error and offers to save under today's date.
+      const lockedEnd = await lockedPeriodCoveringDate(req.auth!.pharmacyId, parsed.toISOString());
+      if (lockedEnd) {
+        res.status(409).json({
+          error: 'period_locked',
+          message: 'That date falls inside a report that has already been signed off. You can save this near miss under today\'s date instead — it will appear on the current period\'s report.',
+        });
+        return;
+      }
       occurredAt = parsed;
     }
     const timeOfDay = bucketTimeOfDay(occurredAt ?? now);
@@ -84,11 +111,17 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Defence-in-depth: server-side PHI scan. We still save the record — losing the
     // report is worse than logging the potential leak — but write an audit row so
-    // the founder can review and prune if needed.
+    // the founder can review and prune if needed. Scans every free-text field
+    // because staff sometimes paste patient details into the wrong box.
     const phi = scanFields({
       notes: d.notes,
       drug_name: d.drugName,
       dispensed_drug: d.dispensedDrug,
+      prescribed_strength: d.prescribedStrength,
+      dispensed_strength: d.dispensedStrength,
+      correct_formulation: d.correctFormulation,
+      dispensed_formulation: d.dispensedFormulation,
+      where_caught: d.whereCaught,
     });
     if (phi.anyHit && incident) {
       await supabase.from('audit_log').insert({
@@ -626,6 +659,30 @@ router.patch('/:id', async (req: Request, res: Response) => {
       const t = new Date(parsed.occurredAt).getTime();
       if (Number.isFinite(t) && t > Date.now() + 60_000) {
         res.status(400).json({ error: 'occurredAt cannot be in the future' }); return;
+      }
+    }
+
+    // Refuse any edit to an incident whose effective date sits inside
+    // a locked (signed-off) report — that report has been printed and
+    // signed and must not change under the inspector's feet. Also
+    // refuse moves that would push the date INTO a locked period.
+    const existingEffective = (incident.occurred_at || incident.submitted_at) as string;
+    const existingLockedEnd = await lockedPeriodCoveringDate(req.auth!.pharmacyId, existingEffective);
+    if (existingLockedEnd) {
+      res.status(409).json({
+        error: 'period_locked',
+        message: 'This near miss is on a report that has already been signed off, so it can\'t be changed. If something is genuinely wrong, void it and log a fresh entry under today\'s date.',
+      });
+      return;
+    }
+    if (parsed.occurredAt) {
+      const movedLockedEnd = await lockedPeriodCoveringDate(req.auth!.pharmacyId, parsed.occurredAt);
+      if (movedLockedEnd) {
+        res.status(409).json({
+          error: 'period_locked',
+          message: 'That date falls inside a report that has already been signed off. Pick a date in the current period instead.',
+        });
+        return;
       }
     }
 

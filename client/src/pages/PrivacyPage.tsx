@@ -74,6 +74,7 @@ export function PrivacyPage() {
         <li>Passwords are hashed (we never see them in plain text).</li>
         <li>We back up the database daily via Supabase.</li>
       </ul>
+      <p><strong>If we discover that data has been accessed without authorisation</strong>, we'll notify the dispensary email on your account within 72 hours, describe what was accessed, and tell you what we're doing about it. Serious breaches will also be reported to the Office of the Privacy Commissioner as required by the Privacy Act 2020.</p>
 
       <h2>Cookies</h2>
       <p>We don't use tracking cookies or third-party analytics. The only storage we use in your browser is a session token (in localStorage) so you stay logged in.</p>
