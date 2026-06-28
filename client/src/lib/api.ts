@@ -144,6 +144,29 @@ class Api {
       body: JSON.stringify({ pharmacyEmail }),
     });
   }
+  // Privacy Act 2020 — pharmacy downloads a JSON file of everything
+  // they own. Bypasses req<T>() because the server streams a file
+  // attachment with a Content-Disposition filename, not JSON we'd
+  // parse client-side.
+  async exportPharmacyData(): Promise<void> {
+    const token = this.getToken();
+    const res = await fetch(`${BASE}/auth/pharmacy/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Export failed');
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : `nearmisspro-export-${new Date().toISOString().slice(0, 10)}.json`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
   getMyAuditLog(page = 1) {
     return this.req<{ entries: { id: string; action: string; performed_by: string | null; details: Record<string, unknown> | null; created_at: string }[]; total: number; page: number; limit: number }>(`/audit/log?page=${page}`);
   }

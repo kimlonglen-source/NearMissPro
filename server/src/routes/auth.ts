@@ -535,6 +535,68 @@ From now on, password-reset links and any other product emails will come here.
   }
 });
 
+// ── Export all pharmacy data (manager only) ─────────────────
+// NZ Privacy Act 2020 — pharmacies have the right to a copy of
+// their own data. One JSON file containing everything they own:
+// profile, incidents, recommendations, reports, interventions,
+// custom chips, trusted devices, and the full audit log. Password
+// hashes and security tokens are excluded — they're ours, not
+// theirs, and surfacing them is a leak risk for no upside.
+router.get('/pharmacy/export', authenticate, requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const pharmacyId = req.auth!.pharmacyId;
+
+    const [pharmacy, incidents, recommendations, reports, interventions, customOptions, trustedDevices, auditLog] = await Promise.all([
+      supabase.from('pharmacies')
+        .select('id, name, address, licence_number, manager_email, manager_name, phone, pharmacy_size, subscription_status, created_at, trial_ends_at, applied_at, approved_at, signup_notes, signup_source')
+        .eq('id', pharmacyId).single(),
+      supabase.from('incidents').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
+      supabase.from('recommendations').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
+      supabase.from('reports').select('*').eq('pharmacy_id', pharmacyId).order('period_end', { ascending: false }),
+      supabase.from('pattern_interventions').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
+      supabase.from('pharmacy_custom_options').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
+      supabase.from('trusted_devices').select('id, label, last_seen_at, created_at').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
+      supabase.from('audit_log').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
+    ]);
+
+    const exportData = {
+      export_metadata: {
+        exported_at: new Date().toISOString(),
+        exported_by: req.auth!.role,
+        format_version: 1,
+        notes: 'Full data export for this pharmacy from NearMissPro. Password hashes and security tokens are intentionally excluded.',
+      },
+      pharmacy: pharmacy.data,
+      incidents: incidents.data || [],
+      recommendations: recommendations.data || [],
+      reports: reports.data || [],
+      pattern_interventions: interventions.data || [],
+      custom_options: customOptions.data || [],
+      trusted_devices: trustedDevices.data || [],
+      audit_log: auditLog.data || [],
+    };
+
+    await supabase.from('audit_log').insert({
+      pharmacy_id: pharmacyId,
+      action: 'data_exported',
+      performed_by: req.auth!.role,
+      details: {
+        incident_count: exportData.incidents.length,
+        report_count: exportData.reports.length,
+      },
+    });
+
+    const safeName = (pharmacy.data?.name || 'pharmacy').replace(/[^a-z0-9-]+/gi, '-').toLowerCase();
+    const today = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="nearmisspro-export-${safeName}-${today}.json"`);
+    res.send(JSON.stringify(exportData, null, 2));
+  } catch (err) {
+    console.error('[auth] pharmacy/export failed:', err);
+    res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
 // ── Founder: create pharmacy ────────────────────────────────
 router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Request, res: Response) => {
   try {

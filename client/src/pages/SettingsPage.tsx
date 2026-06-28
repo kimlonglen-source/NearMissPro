@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { Building2, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Building2, FileText, ChevronDown, ChevronRight, Download } from 'lucide-react';
 
 type Tab = 'pharmacy' | 'audit';
 type PharmacySize = 'sole' | 'pharmacist_plus_tech' | 'multi';
@@ -50,6 +50,8 @@ function auditActionLabel(action: string): string {
     case 'pharmacy_active': return 'Pharmacy reinstated';
     case 'pharmacy_suspended': return 'Pharmacy suspended';
     case 'pharmacy_trial': return 'Pharmacy set to trial';
+    // Data export
+    case 'data_exported': return 'Data export downloaded';
     // Other entries (founder review)
     case 'other_entry_added': return '"Other" entry added to taxonomy';
     case 'other_entry_dismissed': return '"Other" entry dismissed';
@@ -206,6 +208,19 @@ export function SettingsPage() {
     }
   };
 
+  const [downloading, setDownloading] = useState(false);
+  const [downloadErr, setDownloadErr] = useState('');
+  const handleDownload = async () => {
+    setDownloadErr(''); setDownloading(true);
+    try {
+      await api.exportPharmacyData();
+    } catch {
+      setDownloadErr('Could not download — try again');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   useEffect(() => {
     if (tab !== 'pharmacy') return;
     api.listCustomOptions().then(r => setCustomChips(r)).catch(() => {});
@@ -307,6 +322,16 @@ export function SettingsPage() {
                 );
               })}
             </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
+            <h3 className="font-semibold">Download my data</h3>
+            <p className="text-sm text-gray-500">Get a copy of everything this pharmacy has on NearMissPro — near misses, reports, custom chips and the full audit log. Comes as a single file. Useful for backups, regulator requests, or a Privacy Act request.</p>
+            {downloadErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{downloadErr}</div>}
+            <button onClick={handleDownload} disabled={downloading} className="btn-teal text-sm inline-flex items-center gap-2">
+              <Download size={14} />
+              {downloading ? 'Preparing download…' : 'Download my data'}
+            </button>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
