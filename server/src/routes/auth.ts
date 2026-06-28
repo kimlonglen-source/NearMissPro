@@ -555,7 +555,7 @@ router.get('/pharmacy/export', authenticate, requireRole('manager', 'founder'), 
       supabase.from('reports').select('*').eq('pharmacy_id', pharmacyId).order('period_end', { ascending: false }),
       supabase.from('pattern_interventions').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
       supabase.from('pharmacy_custom_options').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
-      supabase.from('trusted_devices').select('id, label, last_seen_at, created_at').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
+      supabase.from('trusted_devices').select('id, device_label, first_approved_at, last_used_at').eq('pharmacy_id', pharmacyId).order('first_approved_at', { ascending: false }),
       supabase.from('audit_log').select('*').eq('pharmacy_id', pharmacyId).order('created_at', { ascending: false }),
     ]);
 
