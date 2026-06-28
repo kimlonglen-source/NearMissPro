@@ -53,6 +53,7 @@ function auditActionLabel(action: string): string {
     case 'pharmacy_approved': return 'Pharmacy application approved';
     case 'pharmacy_declined': return 'Pharmacy application declined';
     case 'initial_password_set': return 'Pharmacy password set during signup';
+    case 'pharmacy_deletion_requested': return 'Account deletion requested';
     // Data export
     case 'data_exported': return 'Data export downloaded';
     // Other entries (founder review)
@@ -71,6 +72,8 @@ function reportFieldLabel(field: string): string {
     case 'previous_period_summary': return 'Last period notes';
     case 'agenda_items': return 'Meeting agenda';
     case 'generated_by': return 'Pharmacist-in-charge';
+    case 'last_meeting_review': return 'Review of last meeting’s actions';
+    case 'next_review_date': return 'Next review meeting';
     default: return field.replace(/_/g, ' ');
   }
 }
@@ -234,6 +237,25 @@ export function SettingsPage() {
     }
   };
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleteErr, setDeleteErr] = useState('');
+  const [deleteMsg, setDeleteMsg] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const handleRequestDeletion = async () => {
+    setDeleteErr(''); setDeleteBusy(true);
+    try {
+      await api.requestPharmacyDeletion(deleteConfirm.trim());
+      setDeleteMsg('Request received. The founder will action the deletion within the next few working days. You can keep using the account until then.');
+      setShowDeleteModal(false);
+      setDeleteConfirm('');
+    } catch (err) {
+      setDeleteErr(err instanceof Error ? err.message : 'Could not submit the request');
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
   useEffect(() => {
     if (tab !== 'pharmacy') return;
     api.listCustomOptions().then(r => setCustomChips(r)).catch(() => {});
@@ -379,6 +401,49 @@ export function SettingsPage() {
                 </div>
               );
             })}
+          </div>
+
+          <div className="bg-white rounded-2xl border-2 border-red-200 p-6 space-y-3">
+            <h3 className="font-semibold text-red-700">Delete this pharmacy</h3>
+            <p className="text-sm text-gray-600">Asks the founder to delete this pharmacy and all its data — near misses, reports, audit log, the lot. Nothing is destroyed automatically; the founder reviews the request and actions it within a few working days. You can keep using the account until then. If you change your mind, email <a className="underline" href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p>
+            <p className="text-xs text-gray-500">Tip: download your data first (button above) so you have a copy for your records.</p>
+            {deleteMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{deleteMsg}</div>}
+            <button onClick={() => { setShowDeleteModal(true); setDeleteErr(''); setDeleteConfirm(''); }} className="text-sm font-medium px-4 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50">
+              Delete this pharmacy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-3">
+            <h3 className="text-lg font-bold text-red-700">Delete "{pharmacyName}"?</h3>
+            <p className="text-sm text-gray-600">To confirm, type the pharmacy name exactly: <strong>{pharmacyName}</strong></p>
+            <input
+              type="text"
+              value={deleteConfirm}
+              onChange={e => setDeleteConfirm(e.target.value)}
+              className="input-field"
+              placeholder="Type the pharmacy name"
+              autoFocus
+            />
+            {deleteErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{deleteErr}</div>}
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); setDeleteErr(''); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRequestDeletion}
+                disabled={deleteBusy || !deleteConfirm.trim()}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteBusy ? 'Sending…' : 'Request deletion'}
+              </button>
+            </div>
           </div>
         </div>
       )}

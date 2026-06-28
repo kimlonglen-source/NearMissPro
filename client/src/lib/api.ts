@@ -147,6 +147,12 @@ class Api {
       body: JSON.stringify({ pharmacyEmail }),
     });
   }
+  requestPharmacyDeletion(confirmName: string) {
+    return this.req<{ ok: boolean; requested_at: string }>('/auth/pharmacy/request-deletion', {
+      method: 'POST',
+      body: JSON.stringify({ confirmName }),
+    });
+  }
   // Privacy Act 2020 — pharmacy downloads a JSON file of everything
   // they own. Bypasses req<T>() because the server streams a file
   // attachment with a Content-Disposition filename, not JSON we'd

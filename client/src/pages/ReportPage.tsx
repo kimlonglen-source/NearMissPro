@@ -24,6 +24,8 @@ interface Report {
   previous_period_summary?: string; period_summary?: string; agenda_items: { text: string; edited: boolean }[];
   pattern_alerts?: { drug: string; errorType: string; count: number }[];
   trend_data?: { weekStart: string; count: number }[];
+  last_meeting_review?: string;
+  next_review_date?: string;
 }
 interface AckRow { name: string; role: string; initials: string; date: string; }
 
@@ -44,6 +46,10 @@ export function ReportPage() {
   const [picName, setPicName] = useState('');
   const [picEdited, setPicEdited] = useState(false);
   const [ackRows, setAckRows] = useState<AckRow[]>([]);
+  const [lastMeetingReview, setLastMeetingReview] = useState('');
+  const [lastMeetingReviewEdited, setLastMeetingReviewEdited] = useState(false);
+  const [nextReviewDate, setNextReviewDate] = useState('');
+  const [nextReviewDateEdited, setNextReviewDateEdited] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -55,6 +61,8 @@ export function ReportPage() {
         setPeriodSummary(rpt.period_summary || '');
         setAgenda(rpt.agenda_items || []);
         setPicName(rpt.generated_by || '');
+        setLastMeetingReview(rpt.last_meeting_review || '');
+        setNextReviewDate(rpt.next_review_date || '');
         setAckRows([
           { name: rpt.generated_by || '', role: 'Pharmacist-in-charge', initials: '', date: '' },
           ...Array(5).fill(null).map(() => ({ name: '', role: '', initials: '', date: '' })),
@@ -75,11 +83,14 @@ export function ReportPage() {
         period_summary: periodSummary,
         agenda_items: agenda,
         generated_by: picName,
+        last_meeting_review: lastMeetingReview,
+        next_review_date: nextReviewDate || null,
       });
       // Clear the "edited" flags so the Save button disappears, and refresh
       // local state so a second edit-then-save cycle starts clean.
       setPrevEdited(false); setSummaryEdited(false); setAgendaEdited(false); setPicEdited(false);
-      setReport({ ...report, previous_period_summary: prevSummary, period_summary: periodSummary, agenda_items: agenda, generated_by: picName });
+      setLastMeetingReviewEdited(false); setNextReviewDateEdited(false);
+      setReport({ ...report, previous_period_summary: prevSummary, period_summary: periodSummary, agenda_items: agenda, generated_by: picName, last_meeting_review: lastMeetingReview, next_review_date: nextReviewDate });
       setSaveState('saved');
       setTimeout(() => setSaveState(s => (s === 'saved' ? 'idle' : s)), 2000);
     } catch {
@@ -92,7 +103,7 @@ export function ReportPage() {
   // Only fires when something has actually changed; the Save button stays
   // as a visible fallback (and shows the saved/error state).
   const autoSaveOnBlur = () => {
-    if (prevEdited || summaryEdited || agendaEdited || picEdited) saveEdits();
+    if (prevEdited || summaryEdited || agendaEdited || picEdited || lastMeetingReviewEdited || nextReviewDateEdited) saveEdits();
   };
 
   const toggleCompleted = async () => {
@@ -236,6 +247,33 @@ export function ReportPage() {
         {/* What worked — wins lead so the meeting opens positively. */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What worked</h2>
         <PeriodComparison from={report.period_start} to={report.period_end} maxRows={5} />
+
+        {/* Review of last meeting's actions — Pharmacy Council Standard 1.8
+            wants visible evidence that prior actions were followed up.
+            Always rendered (empty by default) so the manager has a spot
+            to record "we moved the methadone register on 12 May and have
+            had no methadone errors since." */}
+        <div className="mb-8 mt-4">
+          <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
+            Review of last meeting’s actions — did they work?
+            {lastMeetingReviewEdited && <EditBadge />}
+          </p>
+          {!report.locked ? (
+            <>
+              <textarea
+                value={lastMeetingReview}
+                onChange={e => { setLastMeetingReview(e.target.value); setLastMeetingReviewEdited(true); }}
+                onBlur={autoSaveOnBlur}
+                rows={Math.max(3, Math.ceil(lastMeetingReview.length / 90))}
+                placeholder="What did the team agree to do last meeting, and did it work? e.g. 'Moved the methadone register on 12 May — no methadone errors since.'"
+                className="no-print w-full p-3 rounded-lg border border-gray-200 text-sm bg-white leading-relaxed"
+              />
+              <p className="hidden print:block text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{lastMeetingReview || ' '}</p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{lastMeetingReview || ' '}</p>
+          )}
+        </div>
         {/* "Notes from last meeting" only shows when the manager has
             typed something. We deliberately suppress the auto-generated
             comparison narrative here (phrases like "X more near misses
@@ -437,6 +475,28 @@ export function ReportPage() {
           <button onClick={() => setAckRows([...ackRows, { name: '', role: '', initials: '', date: '' }])}
             className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add row</button>
         )}
+
+        {/* Next review date — inspectors look for documented cadence. */}
+        <div className="mt-6 mb-2">
+          <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
+            Next review meeting
+            {nextReviewDateEdited && <EditBadge />}
+          </p>
+          {!report.locked ? (
+            <>
+              <input
+                type="date"
+                value={nextReviewDate}
+                onChange={e => { setNextReviewDate(e.target.value); setNextReviewDateEdited(true); }}
+                onBlur={autoSaveOnBlur}
+                className="no-print text-sm px-2 py-1 rounded border border-gray-300"
+              />
+              <p className="hidden print:block text-sm text-gray-700">{nextReviewDate ? fmtDate(nextReviewDate) : '________________'}</p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-700">{nextReviewDate ? fmtDate(nextReviewDate) : '—'}</p>
+          )}
+        </div>
 
         {/* 8. PIC Signature */}
         <div className="grid grid-cols-2 gap-12 mt-8 mb-8">

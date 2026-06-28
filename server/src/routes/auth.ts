@@ -597,6 +597,63 @@ router.get('/pharmacy/export', authenticate, requireRole('manager', 'founder'), 
   }
 });
 
+// ── Request pharmacy deletion (manager only) ────────────────
+// Privacy Act 2020 — pharmacies have the right to ask for their
+// account and data to be deleted. We don't destroy anything
+// automatically; we mark the pharmacy as deletion-requested, audit
+// the request, and email the founder. The founder does the actual
+// delete by hand in Supabase within the policy window (currently
+// 12 months per the Privacy page). The pharmacy keeps working
+// until then — they can change their mind by emailing us.
+router.post('/pharmacy/request-deletion', authenticate, requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const { confirmName } = z.object({ confirmName: z.string().min(1) }).parse(req.body);
+    const { data: pharmacy, error: readErr } = await supabase.from('pharmacies')
+      .select('id, name, manager_email')
+      .eq('id', req.auth!.pharmacyId).single();
+    if (readErr || !pharmacy) { res.status(404).json({ error: 'Pharmacy not found' }); return; }
+    if (confirmName.trim().toLowerCase() !== pharmacy.name.toLowerCase()) {
+      res.status(400).json({
+        error: 'name_mismatch',
+        message: 'The pharmacy name you typed doesn\'t match. To confirm deletion, type the pharmacy name exactly as it appears in your account.',
+      });
+      return;
+    }
+    const requestedAt = new Date().toISOString();
+    await supabase.from('pharmacies').update({
+      deletion_requested_at: requestedAt,
+      deletion_requested_by: pharmacy.manager_email || 'manager',
+    }).eq('id', pharmacy.id);
+    await supabase.from('audit_log').insert({
+      pharmacy_id: pharmacy.id,
+      action: 'pharmacy_deletion_requested',
+      performed_by: 'manager',
+      details: { requested_at: requestedAt, requested_by: pharmacy.manager_email || 'manager' },
+    });
+    if (env.founderEmail) {
+      sendEmail({
+        to: env.founderEmail,
+        subject: `Account deletion requested: ${pharmacy.name}`,
+        text: `${pharmacy.name} (${pharmacy.manager_email || 'no email on file'}) has requested account deletion via the in-app button at ${requestedAt}.\n\nReview and delete the row in Supabase when ready.\n\n— NearMissPro`,
+        html: `<p><strong>${escapeHtml(pharmacy.name)}</strong> (${escapeHtml(pharmacy.manager_email || 'no email on file')}) has requested account deletion via the in-app button at ${escapeHtml(requestedAt)}.</p><p>Review and delete the row in Supabase when ready.</p><p style="color:#999;font-size:12px">— NearMissPro</p>`,
+      }).catch(err => console.error('[pharmacy/request-deletion] founder notify failed:', err));
+    }
+    if (pharmacy.manager_email) {
+      sendEmail({
+        to: pharmacy.manager_email,
+        subject: `${pharmacy.name}: NearMissPro deletion request received`,
+        text: `Hi,\n\nWe've received your request to delete the NearMissPro account for ${pharmacy.name}. The founder will action this within the next few working days.\n\nYou can keep using the account until then. If you change your mind, just email hello@nearmisspro.co.nz.\n\n— NearMissPro`,
+        html: `<p>Hi,</p><p>We've received your request to delete the NearMissPro account for <strong>${escapeHtml(pharmacy.name)}</strong>. The founder will action this within the next few working days.</p><p>You can keep using the account until then. If you change your mind, just email <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p><p style="color:#999;font-size:12px">— NearMissPro</p>`,
+      }).catch(err => console.error('[pharmacy/request-deletion] pharmacy notify failed:', err));
+    }
+    res.json({ ok: true, requested_at: requestedAt });
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
+    console.error('[auth] pharmacy/request-deletion failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // ── Founder: create pharmacy ────────────────────────────────
 router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Request, res: Response) => {
   try {

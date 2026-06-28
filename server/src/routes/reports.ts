@@ -117,7 +117,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
       });
       if (auditErr) console.error('[reports] audit insert (unlocked) failed:', auditErr);
     } else if (wasLocked && nowLocked) {
-      const trackedFields = ['period_summary', 'previous_period_summary', 'agenda_items', 'generated_by'] as const;
+      const trackedFields = ['period_summary', 'previous_period_summary', 'agenda_items', 'generated_by', 'last_meeting_review', 'next_review_date'] as const;
       const changes: Record<string, { old: unknown; new: unknown }> = {};
       for (const field of trackedFields) {
         if (req.body[field] !== undefined && JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
