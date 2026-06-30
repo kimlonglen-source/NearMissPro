@@ -380,9 +380,9 @@ export function ReportPage() {
                         <div className="text-xs font-semibold text-gray-600 mb-1">
                           {usePatternAction
                             ? `Pattern action — ${pattern!.count} incidents in this pattern`
-                            : outcome === 'modified' ? 'Recommendation — modified by pharmacist-in-charge'
-                            : outcome === 'accepted' ? 'Recommendation accepted'
-                            : outcome === 'no_action' ? 'No change needed'
+                            : outcome === 'modified' ? 'Action agreed (rewritten by pharmacist-in-charge)'
+                            : outcome === 'accepted' ? 'Action agreed'
+                            : outcome === 'no_action' ? 'No system change required'
                             : 'Recommendation'}
                         </div>
                         {usePatternAction ? (

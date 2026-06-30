@@ -21,10 +21,10 @@ const SIZE_LABELS: Record<PharmacySize, { title: string; help: string }> = {
 function auditActionLabel(action: string): string {
   switch (action) {
     // Recommendations
-    case 'recommendation_accepted': return 'Recommendation accepted';
-    case 'recommendation_modified': return 'Recommendation modified';
-    case 'recommendation_no_action': return 'Recommendation marked no action';
-    case 'bulk_accept': return 'Bulk-accepted recommendations';
+    case 'recommendation_accepted': return 'Action agreed (AI suggestion)';
+    case 'recommendation_modified': return 'Action agreed (own wording)';
+    case 'recommendation_no_action': return 'No system change required';
+    case 'bulk_accept': return 'Bulk-agreed AI suggestions';
     // Incidents
     case 'incident_voided': return 'Near miss voided';
     case 'incident_restored': return 'Near miss restored';

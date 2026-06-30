@@ -391,18 +391,18 @@ export function DashboardPage() {
                   {/* Actions */}
                   {inc.status !== 'voided' && rec && !showMod && !showNote && (
                     <div className="space-y-2">
-                      {pending && <p className="text-xs font-medium text-gray-600">What would you like to do?</p>}
+                      {pending && <p className="text-xs font-medium text-gray-600">Will you change anything because of this near miss?</p>}
                       <button className="w-full py-3.5 rounded-xl font-semibold text-sm bg-[#0F6E56] text-white hover:bg-[#0B5A46] flex items-center justify-center gap-2"
                         disabled={busy} onClick={() => doAction(rec, 'accepted')}>
-                        <CheckCircle2 size={16} /> Accept recommendation
+                        <CheckCircle2 size={16} /> Yes — we'll do what the AI suggested
                       </button>
                       <div className="flex gap-2">
                         <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[#EEEDFE] text-[#3C3489] hover:bg-[#E0DEFE] flex items-center justify-center gap-1.5"
                           onClick={() => { setShowMod(true); setModText(rec.manager_text || rec.ai_text); }}>
-                          <Edit3 size={14} /> Modify
+                          <Edit3 size={14} /> Yes — but in our own words
                         </button>
                         <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          disabled={busy} onClick={() => doAction(rec, 'no_action')} title="No workflow change needed for this one">No change needed</button>
+                          disabled={busy} onClick={() => doAction(rec, 'no_action')} title="One-off, already handled, or doesn't warrant a system change">No — won't change anything</button>
                       </div>
                       <div className="flex gap-2 pt-1">
                         <button className="flex-1 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-50 border border-gray-200 flex items-center justify-center gap-1"
@@ -490,7 +490,7 @@ export function DashboardPage() {
             ) : (
               <>
                 <p className="text-sm font-medium text-gray-500">Generate report</p>
-                <p className="text-xs text-gray-400 mt-1">Review all {pendingList.length} remaining incident{pendingList.length > 1 ? 's' : ''} above before generating — use "No change needed" if no action is required for that one.</p>
+                <p className="text-xs text-gray-400 mt-1">Decide each of the {pendingList.length} remaining incident{pendingList.length > 1 ? 's' : ''} above first. If a near miss doesn't warrant a system change, choose "No — won't change anything".</p>
               </>
             )}
           </div>

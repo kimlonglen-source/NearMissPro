@@ -360,7 +360,7 @@ function ReviewStage() {
 
         {!accepted ? (
           <button className="w-full py-2 rounded-lg bg-[#0F6E56] text-white text-xs font-semibold flex items-center justify-center gap-1.5 animate-[pulse_1.5s_ease-in-out_infinite]">
-            <CheckCircle2 size={14} /> Accept recommendation
+            <CheckCircle2 size={14} /> Yes — we'll do this
           </button>
         ) : (
           <button className="w-full py-2 rounded-lg bg-gray-100 text-gray-500 text-xs font-medium" disabled>
