@@ -9,7 +9,7 @@ import { FactorPanel } from '../components/FactorPanel';
 import { WorkflowHeatmap } from '../components/WorkflowHeatmap';
 import { summarizeIncident } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
-import { Printer, Mail, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Printer, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface Incident {
   id: string; error_types: string[]; drug_name?: string; dispensed_drug?: string;
@@ -157,19 +157,17 @@ export function ReportPage() {
         )}
         {report.locked ? (
           <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
-            <CheckCircle2 size={12} /> Completed
+            <CheckCircle2 size={12} /> Signed off
           </span>
         ) : (
           <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-[#FAEEDA] text-[#633806]">
-            Pending review
+            Draft
           </span>
         )}
         <button onClick={toggleCompleted}
           className={`btn text-sm ${report.locked ? 'bg-gray-50 text-gray-700 border border-gray-200' : 'bg-[#0F6E56] text-white'}`}>
-          {report.locked ? <><RotateCcw size={14} /> Re-open</> : <><CheckCircle2 size={14} /> Mark completed</>}
+          {report.locked ? <><RotateCcw size={14} /> Unlock to edit</> : <><CheckCircle2 size={14} /> Sign off report</>}
         </button>
-        <button onClick={() => { if (id) { api.emailReport(id); alert('Email logged to console'); } }}
-          className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200"><Mail size={14} /> Email PDF</button>
         <button onClick={() => window.print()} className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200">
           <Printer size={14} /> Print report
         </button>
@@ -450,7 +448,8 @@ export function ReportPage() {
         {/* ─── 6. SIGN-OFF ───────────────────────────────────── */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Sign-off</h2>
         <h3 className="text-sm font-semibold text-gray-700 mb-1">Staff acknowledgement</h3>
-        <p className="text-xs text-gray-500 mb-3">I confirm I have attended the near miss review meeting and have read and understood the incidents and actions in this report.</p>
+        <p className="text-xs text-gray-500 mb-1">I confirm I have attended the near miss review meeting and have read and understood the incidents and actions in this report.</p>
+        <p className="text-xs text-gray-400 italic mb-3 no-print">Print this report and have each staff member sign in pen at the meeting.</p>
         <table className="w-full border-collapse text-sm mb-4">
           <thead>
             <tr className="bg-gray-50">

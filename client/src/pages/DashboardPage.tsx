@@ -490,7 +490,7 @@ export function DashboardPage() {
             ) : (
               <>
                 <p className="text-sm font-medium text-gray-500">Generate report</p>
-                <p className="text-xs text-gray-400 mt-1">Review all {pendingList.length} remaining incident{pendingList.length > 1 ? 's' : ''} above before generating.</p>
+                <p className="text-xs text-gray-400 mt-1">Review all {pendingList.length} remaining incident{pendingList.length > 1 ? 's' : ''} above before generating — use "No change needed" if no action is required for that one.</p>
               </>
             )}
           </div>
