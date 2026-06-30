@@ -16,6 +16,19 @@ router.post('/generate', async (req: Request, res: Response) => {
       isCustomRange: z.boolean().optional(),
     }).parse(req.body);
 
+    // Idempotency guard: a double-click or retried request must not
+    // create a duplicate report for the same pharmacy + period. If a
+    // report already covers this exact range, return that one instead
+    // of inserting a second row that would muddy the audit trail.
+    const { data: existing } = await supabase.from('reports')
+      .select('*')
+      .eq('pharmacy_id', req.auth!.pharmacyId)
+      .eq('period_start', periodStart)
+      .eq('period_end', periodEnd)
+      .limit(1)
+      .maybeSingle();
+    if (existing) { res.status(200).json(existing); return; }
+
     // Run summary, hotspot detection, and trend series in parallel —
     // they each hit the DB independently.
     const [{ summary, agenda, previousSummary }, hotspots, trend] = await Promise.all([

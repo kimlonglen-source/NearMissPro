@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
+import { lockedPeriodCoveringDate } from '../lib/lockedPeriod.js';
 
 const router = Router();
 router.use(authenticate);
@@ -16,6 +17,28 @@ router.patch('/:id', async (req: Request, res: Response) => {
       managerName: z.string().optional(),
       privateNote: z.string().optional(),
     }).parse(req.body);
+
+    // Refuse to mutate a recommendation whose incident sits inside a
+    // locked (signed-off) report — same rule we apply to incident
+    // edits. Without this, the buttons under the AI text (Accept /
+    // Modify / No change) would let a manager silently change what
+    // was on a printed signed-off report.
+    const { data: incident, error: incidentErr } = await supabase.from('recommendations')
+      .select('incidents!inner(submitted_at, occurred_at, pharmacy_id)')
+      .eq('id', req.params.id)
+      .eq('pharmacy_id', req.auth!.pharmacyId)
+      .single();
+    if (incidentErr || !incident) { res.status(404).json({ error: 'Not found' }); return; }
+    const inc = (incident as unknown as { incidents: { submitted_at: string; occurred_at: string | null } }).incidents;
+    const effectiveDate = inc.occurred_at || inc.submitted_at;
+    const lockedEnd = await lockedPeriodCoveringDate(req.auth!.pharmacyId, effectiveDate);
+    if (lockedEnd) {
+      res.status(409).json({
+        error: 'period_locked',
+        message: 'This near miss is on a report that has already been signed off, so the recommendation buttons are locked. Unlock the report first if you really need to change the decision — that will be recorded in the audit log.',
+      });
+      return;
+    }
 
     // Scope the update by pharmacy_id too — without it, a manager
     // could PATCH any recommendation by guessing its UUID, including

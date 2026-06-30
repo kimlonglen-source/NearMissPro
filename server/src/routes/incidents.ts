@@ -5,6 +5,7 @@ import { authenticate, requireRole } from '../middleware/auth.js';
 import { scanFields } from '../lib/phi.js';
 import { normalizeDrugName } from '../lib/normalize.js';
 import { FACTOR_SUGGESTIONS } from '../lib/factorSuggestions.js';
+import { lockedPeriodCoveringDate } from '../lib/lockedPeriod.js';
 
 const router = Router();
 router.use(authenticate);
@@ -28,23 +29,6 @@ const createSchema = z.object({
   // Must be parseable and not in the future.
   occurredAt: z.string().datetime({ offset: true }).optional(),
 });
-
-// Returns the end date of any locked (signed-off) report whose period
-// covers `iso`, scoped to the pharmacy. Used to refuse late entries
-// (and edits) that would silently mutate a report a manager has
-// already signed and printed. Pharmacy Council Standard 1.8 expects
-// signed reports to represent the data at the moment they were signed.
-async function lockedPeriodCoveringDate(pharmacyId: string, iso: string): Promise<string | null> {
-  const { data } = await supabase.from('reports')
-    .select('period_start, period_end')
-    .eq('pharmacy_id', pharmacyId)
-    .eq('locked', true)
-    .lte('period_start', iso)
-    .gte('period_end', iso)
-    .limit(1);
-  if (data && data.length > 0) return data[0].period_end as string;
-  return null;
-}
 
 // Derive "morning" / "lunch" / "afternoon" / "evening" from a Date in NZ local time.
 // Uses the server clock — acceptable for a NZ-hosted deployment; for multi-region

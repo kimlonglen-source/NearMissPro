@@ -315,6 +315,33 @@ export function DashboardPage() {
                       2. Part of a recurring pattern WITHOUT an action yet:
                          show the AI rec, plus a nudge to log a pattern action.
                       3. One-off (not a pattern): AI rec, same as before. */}
+                  {!rec && inc.status !== 'voided' && (() => {
+                    // The AI runs async after submit. In the first few
+                    // seconds it might not be saved yet; if it failed
+                    // entirely, no rec row gets written. Either way the
+                    // manager needs SOME signal — otherwise the card
+                    // just goes silent and they don't know whether to
+                    // wait or decide.
+                    const minutesSince = Math.floor((Date.now() - new Date(inc.submitted_at).getTime()) / 60000);
+                    const stillFresh = minutesSince < 2;
+                    return (
+                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-3">
+                        <p>
+                          {stillFresh
+                            ? 'AI recommendation is still being generated for this near miss. Refresh the page in a moment, or make your decision based on the details above.'
+                            : 'No AI recommendation is available for this near miss. Please review the details above and make your decision manually.'}
+                        </p>
+                        {!stillFresh && (
+                          <button
+                            onClick={() => setVoidId(inc.id)}
+                            className="text-xs text-red-600 hover:bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 inline-flex items-center gap-1.5"
+                          >
+                            <XCircle size={12} /> Void this near miss
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {rec && (() => {
                     const pattern = findPattern(patternMap, inc.drug_name || null, inc.error_types);
                     const usePatternAction = !!pattern && !!pattern.latestAction;
