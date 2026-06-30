@@ -680,63 +680,53 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   //   4. CLOSE    — training, sign-off, next meeting date
   const agendaItems: string[] = [];
 
-  // ── 1. OPEN: read the summary aloud + no-blame framing +
-  //   acknowledge wins (inline). Reading the summary to the team is
-  //   the manager's first job in the meeting; without it the staff
-  //   walk in cold and the rest of the agenda doesn't land. ──
-  let openItem = 'Open the meeting: read the Period Summary above aloud to the team. Remind everyone the data is anonymised — the goal is learning, not blame (Pharmacy Council NZ continuous quality improvement).';
+  // Each agenda item is now ONE short sentence where possible.
+  // Optional context (wins, recurring patterns, top factor, high-risk
+  // classes) is tacked on as a brief tag rather than a fresh sentence
+  // so the meeting script stays scannable. The whole agenda should
+  // fit on half the report — managers were skipping items because of
+  // wall-of-text.
+
+  // ── 1. OPEN ──
+  let openItem = 'Read the summary aloud. Anonymous, learning not blame.';
   if (wins.length > 0) {
-    openItem += ` Thank the team — ${wins.length} previous pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting.`;
+    openItem += ` Thank the team — ${wins.length} pattern${wins.length > 1 ? 's' : ''} resolved since last meeting.`;
   } else if (recurring.length > 0) {
-    openItem += ` ${recurring.length} pattern${recurring.length > 1 ? 's are' : ' is'} reducing — the action is helping but not done.`;
-  } else if (incidentCount > 0) {
-    openItem += ` ${incidentCount} near miss${incidentCount > 1 ? 'es were' : ' was'} reported this period — the team is flagging things, which is what keeps patients safe.`;
+    openItem += ` ${recurring.length} pattern${recurring.length > 1 ? 's' : ''} reducing — action is helping.`;
   }
   agendaItems.push(openItem);
 
-  // ── 2. REVIEW: walk through the log (top pattern + the rest) ──
-  //   High-risk medicines woven in as a sentence rather than a new
-  //   bullet so the meeting flows naturally from one big "review"
-  //   discussion instead of three separate ones. ──
+  // ── 2. REVIEW ──
   if (incidentCount > 0) {
-    let reviewItem = 'Walk through the log';
-    const remainingAfterTop = incidentCount - topPairCount;
+    let reviewItem = 'Walk through each near miss — confirm or challenge the action chosen.';
     if (topPairLabel && topPairCount >= 2) {
-      reviewItem += `: start with ${topPairLabel} (${topPairCount} this period) — root cause and SOPs`;
-      if (remainingAfterTop >= 1) {
-        reviewItem += `, then the other ${remainingAfterTop} near miss${remainingAfterTop > 1 ? 'es' : ''}`;
-      }
-      reviewItem += '. For each, was the action the manager took right?';
-    } else {
-      reviewItem += '. For each near miss, was the action the manager took right? Anything to do differently?';
+      reviewItem += ` Start with ${topPairLabel} (${topPairCount} this period).`;
     }
     if (highRiskClasses.length > 0) {
-      reviewItem += ` Pay extra attention to the high-risk medicines (${highRiskClasses.join(', ')}) — Medsafe protocol applies.`;
+      reviewItem += ` High-risk: ${highRiskClasses.join(', ')}.`;
     }
     agendaItems.push(reviewItem);
   }
 
-  // ── 3. DECIDE: ONE system change + revisit concerns ──
+  // ── 3. DECIDE ──
   if (incidentCount > 0) {
-    let decideItem;
+    let decideItem = 'Pick ONE system change for this month. Assign an owner and deadline.';
     if (topFactors.length > 0 && topFactors[0][1] >= 2) {
-      decideItem = `Agree ONE system change for this month — what workspace, SOP, layout, or software change will target ${topFactors[0][0].toLowerCase()}? Decide as a team and assign an owner.`;
-    } else {
-      decideItem = 'Agree ONE system change for this month — workspace, SOP, layout, or software. Decide as a team and assign an owner.';
+      decideItem += ` Target: ${topFactors[0][0].toLowerCase()}.`;
     }
     if (concerns.length > 0) {
-      decideItem += ` Also revisit ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last action hasn't been enough.`;
+      decideItem += ` Revisit ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last action wasn't enough.`;
     }
     agendaItems.push(decideItem);
   }
 
-  // Quiet period — no incidents at all. Single item instead of items 2 + 3.
+  // Quiet period — no incidents at all. Single item replaces 2 + 3.
   if (incidentCount === 0) {
-    agendaItems.push('No near misses this period — encourage staff to keep reporting. Under-reporting is the bigger risk than a quiet log.');
+    agendaItems.push('Quiet period — keep reporting. Under-reporting is the bigger risk than a quiet log.');
   }
 
-  // ── 4. CLOSE: training + sign off + next meeting (one item) ──
-  agendaItems.push('Close: anyone need extra learning? Write down the change we agreed today, who owns it, and by when. Sign the staff acknowledgement and set the next meeting date.');
+  // ── 4. CLOSE ──
+  agendaItems.push('Sign acknowledgement. Set the next meeting date.');
 
   const stub = {
     summary: stubSummaryText,
