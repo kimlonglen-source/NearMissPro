@@ -54,6 +54,7 @@ function auditActionLabel(action: string): string {
     case 'pharmacy_declined': return 'Pharmacy application declined';
     case 'initial_password_set': return 'Pharmacy password set during signup';
     case 'pharmacy_deletion_requested': return 'Account deletion requested';
+    case 'trial_reminder_sent': return 'Trial-end reminder sent';
     // Data export
     case 'data_exported': return 'Data export downloaded';
     // Other entries (founder review)

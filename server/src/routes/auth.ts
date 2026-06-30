@@ -46,7 +46,7 @@ router.post('/staff/login', async (req: Request, res: Response) => {
     }).parse(req.body);
 
     const { data: pharmacy } = await supabase
-      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until, manager_email, subscription_status')
+      .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until, manager_email, subscription_status, trial_ends_at')
       .ilike('name', name).single();
 
     if (!pharmacy) { res.status(401).json({ error: 'Invalid pharmacy name or password' }); return; }
@@ -211,6 +211,19 @@ If you DON'T recognise this attempt, do nothing — the request expires in 60 mi
       { pharmacyId: pharmacy.id, pharmacyName: pharmacy.name, role: 'staff' },
       env.jwtSecret, { expiresIn: '7d' } as jwt.SignOptions
     );
+
+    // Trial-ending nudge — fires only if status === 'trial' AND
+    // the manager hasn't already received this bucket's email.
+    // Background — must never block the login response.
+    import('../services/trialReminders.js').then(({ maybeSendTrialReminder }) => {
+      maybeSendTrialReminder({
+        id: pharmacy.id,
+        name: pharmacy.name,
+        manager_email: pharmacy.manager_email,
+        subscription_status: pharmacy.subscription_status,
+        trial_ends_at: pharmacy.trial_ends_at,
+      });
+    }).catch(err => console.error('[staff/login] trial reminder import failed:', err));
 
     res.json({ token, role: 'staff', pharmacyName: pharmacy.name, pharmacyId: pharmacy.id, deviceId: effectiveDeviceId });
   } catch (err) {
@@ -432,14 +445,18 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
   // email is where password-reset and product emails are delivered.
   let pharmacySize: string | null = null;
   let pharmacyEmail: string | null = null;
+  let trialEndsAt: string | null = null;
+  let subscriptionStatus: string | null = null;
   if (req.auth!.pharmacyId) {
     const { data } = await supabase.from('pharmacies')
-      .select('pharmacy_size, manager_email')
+      .select('pharmacy_size, manager_email, trial_ends_at, subscription_status')
       .eq('id', req.auth!.pharmacyId).single();
     pharmacySize = (data?.pharmacy_size as string | null) || null;
     pharmacyEmail = (data?.manager_email as string | null) || null;
+    trialEndsAt = (data?.trial_ends_at as string | null) || null;
+    subscriptionStatus = (data?.subscription_status as string | null) || null;
   }
-  res.json({ ...req.auth, pharmacySize, pharmacyEmail });
+  res.json({ ...req.auth, pharmacySize, pharmacyEmail, trialEndsAt, subscriptionStatus });
 });
 
 // ── Update pharmacy-level settings (manager only) ───────────
@@ -775,10 +792,16 @@ router.post('/pharmacies/:id/approve', authenticate, requireRole('founder'), asy
       res.status(500).json({ error: 'Could not generate setup link. Check server logs.' });
       return;
     }
+    // Marketing everywhere promises a 3-month free trial. The schema
+    // default for trial_ends_at is 30 days from row INSERT (i.e. from
+    // signup time), which both undershoots the promise and loses any
+    // days spent waiting for founder review. Set it explicitly here.
+    const trialEndsAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
     await supabase.from('pharmacies').update({
       subscription_status: 'trial',
       approved_at: new Date().toISOString(),
       approved_by: 'founder',
+      trial_ends_at: trialEndsAt,
     }).eq('id', pharmacy.id);
     await supabase.from('audit_log').insert({
       pharmacy_id: pharmacy.id,

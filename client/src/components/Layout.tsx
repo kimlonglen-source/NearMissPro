@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from './Logo';
+import { TrialBanner } from './TrialBanner';
 import { LogOut, LayoutDashboard, FileText, Settings, Shield, ArrowLeft } from 'lucide-react';
 
 export function Layout() {
@@ -57,6 +58,7 @@ export function Layout() {
           </button>
         </nav>
       </header>
+      <TrialBanner />
       <main className="flex-1"><Outlet /></main>
     </div>
   );
