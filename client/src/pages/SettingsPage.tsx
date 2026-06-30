@@ -204,13 +204,11 @@ export function SettingsPage() {
   const [pharmacyEmail, setPharmacyEmail] = useState('');
   const [emailMsg, setEmailMsg] = useState('');
   const [emailErr, setEmailErr] = useState('');
-  const [lastDataExport, setLastDataExport] = useState<string | null>(null);
 
   useEffect(() => {
     api.getMe().then(me => {
       setSize((me.pharmacySize as PharmacySize | null) || null);
       setPharmacyEmail(me.pharmacyEmail || '');
-      setLastDataExport(me.lastDataExport || null);
     }).catch(() => {});
   }, []);
 
@@ -232,9 +230,6 @@ export function SettingsPage() {
     setDownloadErr(''); setDownloading(true);
     try {
       await api.exportPharmacyData();
-      // Optimistically refresh the "last downloaded" line so the
-      // amber/red nudge clears without a full page reload.
-      setLastDataExport(new Date().toISOString());
     } catch {
       setDownloadErr('Could not download — try again');
     } finally {
@@ -366,22 +361,7 @@ export function SettingsPage() {
 
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
             <h3 className="font-semibold">Download my data</h3>
-            <p className="text-sm text-gray-600">Your near-miss history is your pharmacy's CQI record. Everything stays in NearMissPro indefinitely while your account is active — your dashboard, period-to-period comparisons and trend charts always read from the full history. Downloading is an <strong>extra</strong> copy for your own records, not a replacement.</p>
-            <p className="text-sm text-gray-600"><strong>We recommend downloading once a month.</strong> One file, saved to your dispensary computer. Useful if Pharmacy Council asks for records between visits, if someone makes a Privacy Act request, or if you ever leave the service and want your records to come with you.</p>
-            {(() => {
-              if (!lastDataExport) {
-                return <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">You haven't downloaded a copy yet. Start now and you'll always have something to fall back on.</p>;
-              }
-              const days = Math.floor((Date.now() - new Date(lastDataExport).getTime()) / 86400000);
-              const dateLabel = new Date(lastDataExport).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
-              if (days >= 60) {
-                return <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">Last downloaded {dateLabel} ({days} days ago). Please grab a fresh copy.</p>;
-              }
-              if (days >= 30) {
-                return <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">Last downloaded {dateLabel} ({days} days ago) — time for a fresh copy.</p>;
-              }
-              return <p className="text-xs text-gray-500">Last downloaded {dateLabel} ({days === 0 ? 'today' : `${days} day${days === 1 ? '' : 's'} ago`}).</p>;
-            })()}
+            <p className="text-sm text-gray-600">Get a copy of everything this pharmacy has on NearMissPro — incidents, reports, custom chips and the full audit log — as a single file. Your full history stays in NearMissPro indefinitely; this is an extra copy for your own records, for Pharmacy Council requests, or if you ever leave the service.</p>
             {downloadErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{downloadErr}</div>}
             <button onClick={handleDownload} disabled={downloading} className="btn-teal text-sm inline-flex items-center gap-2">
               <Download size={14} />

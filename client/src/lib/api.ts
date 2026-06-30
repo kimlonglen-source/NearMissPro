@@ -137,7 +137,7 @@ class Api {
   founderLogin(email: string, password: string, mfaCode?: string) {
     return this.req<{ token?: string; role?: string; requiresMfa?: boolean; email?: string }>('/auth/founder/login', { method: 'POST', body: JSON.stringify({ email, password, mfaCode }) });
   }
-  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; pharmacyEmail?: string | null; lastDataExport?: string | null }>('/auth/me'); }
+  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; pharmacyEmail?: string | null }>('/auth/me'); }
   setPharmacySize(pharmacySize: 'sole' | 'pharmacist_plus_tech' | 'multi' | null) {
     return this.req<{ ok: boolean; pharmacySize: string | null }>('/auth/pharmacy/settings', { method: 'PATCH', body: JSON.stringify({ pharmacySize }) });
   }
