@@ -430,16 +430,29 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
   // so it doesn't have to make a second round-trip. pharmacy_size
   // drives the AI's tone in recommendations and summaries; pharmacy
   // email is where password-reset and product emails are delivered.
+  // lastDataExport powers the "time for a fresh backup" nudge on the
+  // Download my data card.
   let pharmacySize: string | null = null;
   let pharmacyEmail: string | null = null;
+  let lastDataExport: string | null = null;
   if (req.auth!.pharmacyId) {
-    const { data } = await supabase.from('pharmacies')
-      .select('pharmacy_size, manager_email')
-      .eq('id', req.auth!.pharmacyId).single();
+    const [{ data }, { data: lastExport }] = await Promise.all([
+      supabase.from('pharmacies')
+        .select('pharmacy_size, manager_email')
+        .eq('id', req.auth!.pharmacyId).single(),
+      supabase.from('audit_log')
+        .select('created_at')
+        .eq('pharmacy_id', req.auth!.pharmacyId)
+        .eq('action', 'data_exported')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
     pharmacySize = (data?.pharmacy_size as string | null) || null;
     pharmacyEmail = (data?.manager_email as string | null) || null;
+    lastDataExport = (lastExport?.created_at as string | null) || null;
   }
-  res.json({ ...req.auth, pharmacySize, pharmacyEmail });
+  res.json({ ...req.auth, pharmacySize, pharmacyEmail, lastDataExport });
 });
 
 // ── Update pharmacy-level settings (manager only) ───────────
