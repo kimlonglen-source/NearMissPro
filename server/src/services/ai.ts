@@ -698,7 +698,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
 
   // ── 2. REVIEW ──
   if (incidentCount > 0) {
-    let reviewItem = 'Read out each near miss below and the action you\'ve already chosen. Ask the team: "Does this still feel like the right move? Anyone got a better idea?"';
+    let reviewItem = 'Read out each near miss above and the action chosen. Make sure the team understands what we\'re changing — and note anything they\'d want handled differently next time.';
     if (topPairLabel && topPairCount >= 2) {
       reviewItem += ` Start with ${topPairLabel} — it came up ${topPairCount} times this period.`;
     }
