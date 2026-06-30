@@ -50,9 +50,10 @@ export function Layout() {
             <NavLink to="/admin" icon={Shield} label="Admin" current={loc.pathname} />
           )}
 
-          {/* Staff sees nothing except logout */}
-          <button onClick={() => { logout(); nav('/login'); }} className="ml-2 p-2 text-gray-400 hover:text-gray-600" title="Logout" aria-label="Logout">
+          {/* Staff sees nothing except sign-out */}
+          <button onClick={() => { logout(); nav('/login'); }} className="ml-2 inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
             <LogOut size={16} />
+            <span>Sign out</span>
           </button>
         </nav>
       </header>
