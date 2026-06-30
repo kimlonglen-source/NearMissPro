@@ -177,6 +177,45 @@ router.get('/:id', async (req: Request, res: Response) => {
   } catch { res.status(500).json({ error: 'Failed' }); }
 });
 
+// ── Delete a draft report ───────────────────────────────────
+// Only DRAFT (unsigned-off) reports can be deleted. Signed-off
+// reports represent the data at the moment they were signed and
+// stay forever as an audit anchor — the only legitimate way to
+// change one is unlock → edit → re-sign-off, which is fully audit
+// logged. Deletion writes a clearly-tagged audit row so an
+// inspector can see a draft was thrown out and when.
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    const { data: report } = await supabase.from('reports')
+      .select('id, locked, period_start, period_end')
+      .eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId)
+      .single();
+    if (!report) { res.status(404).json({ error: 'Not found' }); return; }
+    if (report.locked === true) {
+      res.status(409).json({
+        error: 'report_locked',
+        message: 'This report has been signed off and can\'t be deleted. Unlock it first if you really need to make changes — that will be recorded in the audit log.',
+      });
+      return;
+    }
+    const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const reportPeriod = `${fmt(report.period_start)} — ${fmt(report.period_end)}`;
+    const { error: delErr } = await supabase.from('reports').delete()
+      .eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId);
+    if (delErr) throw delErr;
+    await supabase.from('audit_log').insert({
+      pharmacy_id: req.auth!.pharmacyId,
+      action: 'report_deleted',
+      performed_by: 'manager',
+      details: { report_id: req.params.id, report_period: reportPeriod },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[reports] delete failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // ── Email report (console only) ─────────────────────────────
 router.post('/:id/email', async (req: Request, res: Response) => {
   try {

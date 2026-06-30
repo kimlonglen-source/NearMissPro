@@ -238,6 +238,7 @@ class Api {
   getReports() { return this.req<Record<string, unknown>[]>('/reports'); }
   getReport(id: string) { return this.req<Record<string, unknown>>(`/reports/${id}`); }
   updateReport(id: string, data: object) { return this.req<object>(`/reports/${id}`, { method: 'PATCH', body: JSON.stringify(data) }); }
+  deleteReport(id: string) { return this.req<{ ok: boolean }>(`/reports/${id}`, { method: 'DELETE' }); }
   emailReport(id: string) { return this.req<object>(`/reports/${id}/email`, { method: 'POST' }); }
 
   // Admin

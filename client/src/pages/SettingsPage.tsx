@@ -35,6 +35,7 @@ function auditActionLabel(action: string): string {
     case 'report_signed_off': return 'Report signed off';
     case 'report_unlocked': return 'Report unlocked for amendment';
     case 'report_amended': return 'Report amended after sign-off';
+    case 'report_deleted': return 'Draft report deleted';
     // Passwords / authentication
     case 'password_changed': return 'Pharmacy password changed';
     case 'password_reset_requested': return 'Password reset requested';
@@ -117,6 +118,8 @@ function auditDetailRows(action: string, details: Record<string, unknown> | null
   else if (action === 'report_generated') {
     if (get('period')) out.push({ label: 'Period', value: get('period') });
     if (get('report_id')) out.push({ label: 'View report', value: 'Open this report →', to: `/reports/${get('report_id')}` });
+  } else if (action === 'report_deleted') {
+    if (get('report_period')) out.push({ label: 'Period', value: get('report_period') });
   } else if (action === 'report_signed_off' || action === 'report_unlocked' || action === 'report_amended') {
     if (get('report_period')) out.push({ label: 'Period', value: get('report_period') });
     if (action === 'report_signed_off') {

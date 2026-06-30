@@ -9,7 +9,7 @@ import { FactorPanel } from '../components/FactorPanel';
 import { WorkflowHeatmap } from '../components/WorkflowHeatmap';
 import { summarizeIncident } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
-import { Printer, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Printer, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle, Trash2 } from 'lucide-react';
 
 interface Incident {
   id: string; error_types: string[]; drug_name?: string; dispensed_drug?: string;
@@ -113,6 +113,21 @@ export function ReportPage() {
     setReport({ ...report, locked: next });
   };
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteErr, setDeleteErr] = useState('');
+  const handleDelete = async () => {
+    if (!report) return;
+    setDeleteBusy(true); setDeleteErr('');
+    try {
+      await api.deleteReport(report.id);
+      nav('/reports');
+    } catch (err) {
+      setDeleteErr(err instanceof Error ? err.message : 'Could not delete — try again.');
+      setDeleteBusy(false);
+    }
+  };
+
   // Pattern lookup for the report's date range. Used to swap each
   // incident card's recommendation for the pattern action when that
   // pair has been actioned, so the report tells the same story as
@@ -171,7 +186,34 @@ export function ReportPage() {
         <button onClick={() => window.print()} className="btn text-sm bg-gray-50 text-gray-700 border border-gray-200">
           <Printer size={14} /> Print report
         </button>
+        {!report.locked && (
+          <button onClick={() => { setShowDeleteModal(true); setDeleteErr(''); }}
+            className="btn text-sm bg-white text-red-600 border border-red-200 hover:bg-red-50"
+            title="Permanently delete this draft so you can start fresh">
+            <Trash2 size={14} /> Delete draft
+          </button>
+        )}
       </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4 no-print">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-3">
+            <h3 className="text-lg font-bold text-red-700">Delete this draft report?</h3>
+            <p className="text-sm text-gray-600">The report's summary, agenda, and any edits will be permanently removed. <strong>Your near misses are not deleted</strong> — only the report. You can generate a fresh one for the same period any time from the Dashboard.</p>
+            {deleteErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{deleteErr}</div>}
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => { setShowDeleteModal(false); setDeleteErr(''); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleteBusy}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">
+                {deleteBusy ? 'Deleting…' : 'Delete draft'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Report content */}
       <div className="max-w-4xl mx-auto px-6 py-8 bg-white my-4 shadow-sm rounded-xl print:shadow-none print:my-0 print:rounded-none">
