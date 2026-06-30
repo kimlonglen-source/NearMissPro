@@ -147,10 +147,10 @@ class Api {
       body: JSON.stringify({ pharmacyEmail }),
     });
   }
-  requestPharmacyDeletion(confirmName: string) {
+  requestPharmacyDeletion(confirmName: string, confirmDownloaded: boolean) {
     return this.req<{ ok: boolean; requested_at: string }>('/auth/pharmacy/request-deletion', {
       method: 'POST',
-      body: JSON.stringify({ confirmName }),
+      body: JSON.stringify({ confirmName, confirmDownloaded }),
     });
   }
   // Privacy Act 2020 — pharmacy downloads a JSON file of everything

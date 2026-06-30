@@ -624,7 +624,10 @@ router.get('/pharmacy/export', authenticate, requireRole('manager', 'founder'), 
 // until then — they can change their mind by emailing us.
 router.post('/pharmacy/request-deletion', authenticate, requireRole('manager', 'founder'), async (req: Request, res: Response) => {
   try {
-    const { confirmName } = z.object({ confirmName: z.string().min(1) }).parse(req.body);
+    const { confirmName, confirmDownloaded } = z.object({
+      confirmName: z.string().min(1),
+      confirmDownloaded: z.boolean().optional(),
+    }).parse(req.body);
     const { data: pharmacy, error: readErr } = await supabase.from('pharmacies')
       .select('id, name, manager_email')
       .eq('id', req.auth!.pharmacyId).single();
@@ -645,7 +648,11 @@ router.post('/pharmacy/request-deletion', authenticate, requireRole('manager', '
       pharmacy_id: pharmacy.id,
       action: 'pharmacy_deletion_requested',
       performed_by: 'manager',
-      details: { requested_at: requestedAt, requested_by: pharmacy.manager_email || 'manager' },
+      details: {
+        requested_at: requestedAt,
+        requested_by: pharmacy.manager_email || 'manager',
+        confirmed_downloaded: confirmDownloaded === true,
+      },
     });
     if (env.founderEmail) {
       sendEmail({
@@ -659,8 +666,8 @@ router.post('/pharmacy/request-deletion', authenticate, requireRole('manager', '
       sendEmail({
         to: pharmacy.manager_email,
         subject: `${pharmacy.name}: NearMissPro deletion request received`,
-        text: `Hi,\n\nWe've received your request to delete the NearMissPro account for ${pharmacy.name}. The founder will action this within the next few working days.\n\nYou can keep using the account until then. If you change your mind, just email hello@nearmisspro.co.nz.\n\n— NearMissPro`,
-        html: `<p>Hi,</p><p>We've received your request to delete the NearMissPro account for <strong>${escapeHtml(pharmacy.name)}</strong>. The founder will action this within the next few working days.</p><p>You can keep using the account until then. If you change your mind, just email <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p><p style="color:#999;font-size:12px">— NearMissPro</p>`,
+        text: `Hi,\n\nWe've received your request to delete the NearMissPro account for ${pharmacy.name}. We'll action this within the next few working days.\n\nYou can keep using the account until then. If you change your mind, just email hello@nearmisspro.co.nz.\n\n— NearMissPro`,
+        html: `<p>Hi,</p><p>We've received your request to delete the NearMissPro account for <strong>${escapeHtml(pharmacy.name)}</strong>. We'll action this within the next few working days.</p><p>You can keep using the account until then. If you change your mind, just email <a href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p><p style="color:#999;font-size:12px">— NearMissPro</p>`,
       }).catch(err => console.error('[pharmacy/request-deletion] pharmacy notify failed:', err));
     }
     res.json({ ok: true, requested_at: requestedAt });

@@ -39,8 +39,8 @@ function auditActionLabel(action: string): string {
     case 'password_changed': return 'Pharmacy password changed';
     case 'password_reset_requested': return 'Password reset requested';
     case 'pharmacy_password_reset': return 'Pharmacy password reset via email link';
-    case 'founder_password_reset': return 'Password reset by founder (support)';
-    case 'founder_login': return 'Founder logged in';
+    case 'founder_password_reset': return 'Password reset by NearMissPro support';
+    case 'founder_login': return 'NearMissPro admin logged in';
     // Devices
     case 'device_verification_requested': return 'New device tried to log in';
     case 'device_approved': return 'New device approved';
@@ -160,6 +160,11 @@ function auditDetailRows(action: string, details: Record<string, unknown> | null
   else if (action === 'device_verification_requested' || action === 'device_approved') {
     if (get('device_label')) out.push({ label: 'Device', value: get('device_label') });
   }
+  // Account deletion request
+  else if (action === 'pharmacy_deletion_requested') {
+    if (get('requested_by')) out.push({ label: 'Requested by', value: get('requested_by') });
+    out.push({ label: 'Confirmed data downloaded', value: details.confirmed_downloaded === true ? 'Yes' : 'No' });
+  }
   return out;
 }
 
@@ -240,20 +245,30 @@ export function SettingsPage() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleteDownloaded, setDeleteDownloaded] = useState(false);
   const [deleteErr, setDeleteErr] = useState('');
   const [deleteMsg, setDeleteMsg] = useState('');
   const [deleteBusy, setDeleteBusy] = useState(false);
   const handleRequestDeletion = async () => {
     setDeleteErr(''); setDeleteBusy(true);
     try {
-      await api.requestPharmacyDeletion(deleteConfirm.trim());
-      setDeleteMsg('Request received. The founder will action the deletion within the next few working days. You can keep using the account until then.');
+      await api.requestPharmacyDeletion(deleteConfirm.trim(), deleteDownloaded);
+      setDeleteMsg('Request received. We\'ll action the deletion within the next few working days. You can keep using the account until then.');
       setShowDeleteModal(false);
       setDeleteConfirm('');
+      setDeleteDownloaded(false);
     } catch (err) {
       setDeleteErr(err instanceof Error ? err.message : 'Could not submit the request');
     } finally {
       setDeleteBusy(false);
+    }
+  };
+  const handleDownloadInsideModal = async () => {
+    setDeleteErr('');
+    try {
+      await api.exportPharmacyData();
+    } catch {
+      setDeleteErr('Could not download — try again before continuing.');
     }
   };
 
@@ -406,10 +421,9 @@ export function SettingsPage() {
 
           <div className="bg-white rounded-2xl border-2 border-red-200 p-6 space-y-3">
             <h3 className="font-semibold text-red-700">Delete this pharmacy</h3>
-            <p className="text-sm text-gray-600">Asks the founder to delete this pharmacy and all its data — near misses, reports, audit log, the lot. Nothing is destroyed automatically; the founder reviews the request and actions it within a few working days. You can keep using the account until then. If you change your mind, email <a className="underline" href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p>
-            <p className="text-xs text-gray-500">Tip: download your data first (button above) so you have a copy for your records.</p>
+            <p className="text-sm text-gray-600">Asks us to delete this pharmacy and all its data — near misses, reports, audit log, the lot. Nothing is destroyed automatically; we review the request and action it within a few working days. You can keep using the account until then. If you change your mind, email <a className="underline" href="mailto:hello@nearmisspro.co.nz">hello@nearmisspro.co.nz</a>.</p>
             {deleteMsg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">{deleteMsg}</div>}
-            <button onClick={() => { setShowDeleteModal(true); setDeleteErr(''); setDeleteConfirm(''); }} className="text-sm font-medium px-4 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50">
+            <button onClick={() => { setShowDeleteModal(true); setDeleteErr(''); setDeleteConfirm(''); setDeleteDownloaded(false); }} className="text-sm font-medium px-4 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50">
               Delete this pharmacy
             </button>
           </div>
@@ -418,29 +432,54 @@ export function SettingsPage() {
 
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-3">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-red-700">Delete "{pharmacyName}"?</h3>
-            <p className="text-sm text-gray-600">To confirm, type the pharmacy name exactly: <strong>{pharmacyName}</strong></p>
-            <input
-              type="text"
-              value={deleteConfirm}
-              onChange={e => setDeleteConfirm(e.target.value)}
-              className="input-field"
-              placeholder="Type the pharmacy name"
-              autoFocus
-            />
+
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+              <p className="text-sm text-amber-900 font-semibold">Have you downloaded your data first?</p>
+              <p className="text-xs text-amber-800">Once we action this deletion, your near misses, reports and audit log are gone for good — there's no way to get them back. Download a copy now so you keep your CQI history.</p>
+              <button
+                onClick={handleDownloadInsideModal}
+                className="text-sm font-medium px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 inline-flex items-center gap-1.5"
+              >
+                <Download size={14} /> Download my data now
+              </button>
+            </div>
+
+            <label className="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteDownloaded}
+                onChange={e => setDeleteDownloaded(e.target.checked)}
+                className="mt-0.5 flex-shrink-0"
+              />
+              <span>I've downloaded a copy of our data and I understand this can't be undone.</span>
+            </label>
+
+            <div>
+              <p className="text-sm text-gray-600 mb-1.5">Then type the pharmacy name to confirm: <strong>{pharmacyName}</strong></p>
+              <input
+                type="text"
+                value={deleteConfirm}
+                onChange={e => setDeleteConfirm(e.target.value)}
+                className="input-field"
+                placeholder="Type the pharmacy name"
+              />
+            </div>
+
             {deleteErr && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{deleteErr}</div>}
+
             <div className="flex gap-3 pt-1">
               <button
-                onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); setDeleteErr(''); }}
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); setDeleteDownloaded(false); setDeleteErr(''); }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRequestDeletion}
-                disabled={deleteBusy || !deleteConfirm.trim()}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                disabled={deleteBusy || !deleteConfirm.trim() || !deleteDownloaded}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deleteBusy ? 'Sending…' : 'Request deletion'}
               </button>
