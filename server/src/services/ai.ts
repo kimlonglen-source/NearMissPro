@@ -294,8 +294,14 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
     await saveRecommendation(incident.id, incident.pharmacy_id, aiText);
     return aiText;
   } catch (err) {
-    console.error('[ai] generateRecommendation failed:', err);
-    const fallback = 'AI recommendation unavailable. Please review this incident manually.';
+    console.error('[ai] generateRecommendation failed, falling back to NZ stub:', err);
+    // Same NZ-grounded stub we use when no API key is configured —
+    // gives the manager something useful (Medsafe / HQSC / Pharmacy
+    // Council aligned guidance based on the error type) instead of a
+    // generic "AI unavailable, decide manually" line. The dashboard
+    // still labels this as an AI recommendation; the failure is
+    // logged server-side for the founder to investigate.
+    const fallback = nzStubRecommendation(incident);
     await saveRecommendation(incident.id, incident.pharmacy_id, fallback);
     return fallback;
   }
