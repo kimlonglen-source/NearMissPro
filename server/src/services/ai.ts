@@ -680,53 +680,53 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   //   4. CLOSE    — training, sign-off, next meeting date
   const agendaItems: string[] = [];
 
-  // Each agenda item is now ONE short sentence where possible.
-  // Optional context (wins, recurring patterns, top factor, high-risk
-  // classes) is tacked on as a brief tag rather than a fresh sentence
-  // so the meeting script stays scannable. The whole agenda should
-  // fit on half the report — managers were skipping items because of
-  // wall-of-text.
+  // Each agenda item is written as a direct instruction to the
+  // manager: read this, ask that, write this here. A first-time
+  // manager should be able to run the whole meeting just by working
+  // down the list. Optional context (top pattern, high-risk drugs,
+  // dominant factor) is appended as a brief tag so the meeting
+  // script stays scannable.
 
   // ── 1. OPEN ──
-  let openItem = 'Read the summary aloud. Anonymous, learning not blame.';
+  let openItem = 'Read the Period Summary above out loud to the team. Remind everyone: we don\'t track who reported what — this is about learning, not blame.';
   if (wins.length > 0) {
-    openItem += ` Thank the team — ${wins.length} pattern${wins.length > 1 ? 's' : ''} resolved since last meeting.`;
+    openItem += ` Good news to share — ${wins.length} pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting. Thank the team.`;
   } else if (recurring.length > 0) {
-    openItem += ` ${recurring.length} pattern${recurring.length > 1 ? 's' : ''} reducing — action is helping.`;
+    openItem += ` Worth flagging — ${recurring.length} pattern${recurring.length > 1 ? 's are' : ' is'} reducing. Action is helping but not done yet.`;
   }
   agendaItems.push(openItem);
 
   // ── 2. REVIEW ──
   if (incidentCount > 0) {
-    let reviewItem = 'Walk through each near miss — confirm or challenge the action chosen.';
+    let reviewItem = 'Read out each near miss below and the action you\'ve already chosen. Ask the team: "Does this still feel like the right move? Anyone got a better idea?"';
     if (topPairLabel && topPairCount >= 2) {
-      reviewItem += ` Start with ${topPairLabel} (${topPairCount} this period).`;
+      reviewItem += ` Start with ${topPairLabel} — it came up ${topPairCount} times this period.`;
     }
     if (highRiskClasses.length > 0) {
-      reviewItem += ` High-risk: ${highRiskClasses.join(', ')}.`;
+      reviewItem += ` Pay extra attention to high-risk medicines (${highRiskClasses.join(', ')}).`;
     }
     agendaItems.push(reviewItem);
   }
 
   // ── 3. DECIDE ──
   if (incidentCount > 0) {
-    let decideItem = 'Pick ONE system change for this month. Assign an owner and deadline.';
+    let decideItem = 'Decide on ONE change to make this month — something specific, like moving a shelf, updating a label, or tweaking a workflow. Name the person who\'ll do it and the date it\'ll be done by.';
     if (topFactors.length > 0 && topFactors[0][1] >= 2) {
-      decideItem += ` Target: ${topFactors[0][0].toLowerCase()}.`;
+      decideItem += ` The biggest factor this period was "${topFactors[0][0]}" — a good place to focus.`;
     }
     if (concerns.length > 0) {
-      decideItem += ` Revisit ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where the last action wasn't enough.`;
+      decideItem += ` Also revisit ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where last month\'s action hasn\'t worked yet.`;
     }
     agendaItems.push(decideItem);
   }
 
   // Quiet period — no incidents at all. Single item replaces 2 + 3.
   if (incidentCount === 0) {
-    agendaItems.push('Quiet period — keep reporting. Under-reporting is the bigger risk than a quiet log.');
+    agendaItems.push('No near misses this period — encourage the team to keep reporting. A quiet log usually means under-reporting, not zero risk.');
   }
 
   // ── 4. CLOSE ──
-  agendaItems.push('Sign acknowledgement. Set the next meeting date.');
+  agendaItems.push('Pass the printed report around — everyone writes their initials and today\'s date in the signature table at the bottom. Then set the date for next month\'s meeting.');
 
   const stub = {
     summary: stubSummaryText,
