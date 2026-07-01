@@ -33,7 +33,6 @@ export const STAGES: Stage[] = [
       { label: 'Dose not adjusted for age, kidney or liver', common: false },
       { label: 'Pregnancy or breastfeeding safety not checked', common: false },
       { label: 'Pharmac Special Authority not checked', common: false },
-      { label: 'Wrong Pharmac brand supplied', common: false },
       { label: 'Patient NHI or prescriber HPI wrong', common: false },
       { label: 'Wrong subsidy code', common: false },
       { label: 'Practitioner\'s Supply Order (PSO) treated as patient script', common: false },
