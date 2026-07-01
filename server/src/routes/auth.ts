@@ -86,24 +86,24 @@ router.post('/staff/login', async (req: Request, res: Response) => {
         if (pharmacy.manager_email) {
           sendEmail({
             to: pharmacy.manager_email,
-            subject: `${pharmacy.name}: NearMissPro account locked after 10 failed logins`,
+            subject: `${pharmacy.name}: NearMissPro account locked (10 wrong passwords)`,
             text: `Hi,
 
-Your NearMissPro account for ${pharmacy.name} has been locked after 10 failed login attempts in a row.
+Your NearMissPro account for ${pharmacy.name} was locked after 10 wrong passwords in a row.
 
-It will unlock automatically in 30 minutes. If it was a staff member fumbling the password, no action is needed.
+It unlocks automatically in 30 minutes. If it was just a staff member fumbling the password, no action needed.
 
-If this WASN'T you or your team, someone may be trying to guess your password. Reset it now using "Forgot password?" on the login screen — that clears the lockout immediately and gives you a fresh password.
+If this wasn't your team, someone may be trying to guess your password. Reset it now using "Forgot password?" on the login screen — that unlocks the account straight away and gives you a fresh password.
 
 — NearMissPro`,
             html: `<p>Hi,</p>
-<p>Your NearMissPro account for <strong>${escapeHtml(pharmacy.name)}</strong> has been locked after 10 failed login attempts in a row.</p>
-<p>It will unlock automatically in 30 minutes. If it was a staff member fumbling the password, no action is needed.</p>
-<p style="color:#791F1F"><strong>If this WASN'T you or your team</strong>, someone may be trying to guess your password. Reset it now using <a href="${env.clientUrl}/forgot-password">Forgot password?</a> on the login screen — that clears the lockout immediately and gives you a fresh password.</p>
+<p>Your NearMissPro account for <strong>${escapeHtml(pharmacy.name)}</strong> was locked after 10 wrong passwords in a row.</p>
+<p>It unlocks automatically in 30 minutes. If it was just a staff member fumbling the password, no action needed.</p>
+<p style="color:#791F1F"><strong>If this wasn't your team</strong>, someone may be trying to guess your password. Reset it now using <a href="${env.clientUrl}/forgot-password">Forgot password?</a> on the login screen — that unlocks the account straight away and gives you a fresh password.</p>
 <p style="color:#999;font-size:12px">— NearMissPro</p>`,
           }).catch(err => console.error('[staff/login] lockout email failed:', err));
         }
-        res.status(423).json({ error: 'Account locked after 10 wrong attempts. Try again in 30 minutes, or use "Forgot password?" to reset now.' });
+        res.status(423).json({ error: 'Account locked for 30 minutes after 10 wrong passwords. Use "Forgot password?" to unlock straight away.' });
         return;
       }
       // Escalating warning when the user gets within 3 attempts of

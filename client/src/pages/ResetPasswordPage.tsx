@@ -44,7 +44,7 @@ export function ResetPasswordPage() {
             <AlertTriangle size={22} className="text-red-600" />
           </div>
           <h2 className="text-lg font-bold text-gray-900">Reset link missing</h2>
-          <p className="text-sm text-gray-600">This reset link is missing its security token. Request a new one.</p>
+          <p className="text-sm text-gray-600">This reset link is broken or expired. Request a new one.</p>
           <Link to="/forgot-password" className="text-sm text-[#0F6E56] hover:underline inline-block pt-2">Request a new reset link</Link>
         </div>
       </div>

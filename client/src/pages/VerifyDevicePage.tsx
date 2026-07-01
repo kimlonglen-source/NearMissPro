@@ -27,7 +27,7 @@ export function VerifyDevicePage() {
   useEffect(() => {
     if (!token) {
       setState('err');
-      setMessage('This approval link is missing its security token. Have the person try logging in again to generate a fresh one.');
+      setMessage('This approval link is broken or expired. Ask the person to try logging in again — that will send a fresh link.');
       return;
     }
     if (fired.current) return;

@@ -25,7 +25,7 @@ export function SetPasswordPage() {
     setErr('');
     if (pwd.length < 8) { setErr('Password must be at least 8 characters'); return; }
     if (pwd !== confirm) { setErr('Passwords don\'t match'); return; }
-    if (!token) { setErr('Setup link is missing its token. Contact hello@nearmisspro.co.nz.'); return; }
+    if (!token) { setErr('This setup link is broken or expired. Email hello@nearmisspro.co.nz for a new one.'); return; }
     setLoading(true);
     try {
       const res = await api.setInitialPassword(token, pwd);

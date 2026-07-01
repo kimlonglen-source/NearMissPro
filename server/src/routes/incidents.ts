@@ -64,7 +64,7 @@ router.post('/', async (req: Request, res: Response) => {
       if (lockedEnd) {
         res.status(409).json({
           error: 'period_locked',
-          message: 'That date falls inside a report that has already been signed off. You can save this near miss under today\'s date instead — it will appear on the current period\'s report.',
+          message: 'That date is locked — the report for that period has already been signed off. Save this near miss under today\'s date instead, and it will land on the current report.',
         });
         return;
       }

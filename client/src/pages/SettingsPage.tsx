@@ -33,7 +33,7 @@ function auditActionLabel(action: string): string {
     // Reports
     case 'report_generated': return 'Report generated';
     case 'report_signed_off': return 'Report signed off';
-    case 'report_unlocked': return 'Report unlocked for amendment';
+    case 'report_unlocked': return 'Report reopened for changes';
     case 'report_amended': return 'Report amended after sign-off';
     case 'report_deleted': return 'Draft report deleted';
     // Passwords / authentication

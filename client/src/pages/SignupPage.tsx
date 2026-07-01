@@ -98,7 +98,7 @@ export function SignupPage() {
           <Field label="Manager name" required>
             <input type="text" required value={form.managerName} onChange={e => setForm({ ...form, managerName: e.target.value })} className="input-field" placeholder="e.g. Sarah Smith" />
           </Field>
-          <Field label="Dispensary email" required hint="Where we'll send password reset links and updates. Use the dispensary inbox the manager or owner checks.">
+          <Field label="Dispensary email" required hint="We'll send password resets and important emails here. Use the inbox your manager checks.">
             <input type="email" required value={form.pharmacyEmail} onChange={e => setForm({ ...form, pharmacyEmail: e.target.value })} className="input-field" placeholder="dispensary@your-pharmacy.co.nz" />
           </Field>
           <Field label="Phone" required hint="So we can call if there's a question on your application.">

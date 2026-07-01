@@ -438,7 +438,7 @@ function ThreeSteps() {
       icon: <ClipboardPlus size={20} />,
       title: 'Capture',
       body: 'Staff log a near miss in under a minute. Anonymous, structured, with a patient-reached gate that catches dispensing errors and routes them correctly.',
-      bullets: ['60-second form', 'High-risk drug alerts', 'Blocks accidental patient info'],
+      bullets: ['60-second form', 'High-risk drug alerts', 'Stops accidental patient info'],
     },
     {
       icon: <BarChart3 size={20} />,
