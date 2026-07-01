@@ -327,7 +327,7 @@ export function ReportPage() {
         {(!report.locked || lastMeetingReview.trim()) && (
           <div className="mb-8 mt-4">
             <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
-              Review of last meeting’s actions — did they work?
+              Manager’s notes on last meeting’s actions
               {lastMeetingReviewEdited && <EditBadge />}
             </p>
             {!report.locked ? (
@@ -373,29 +373,11 @@ export function ReportPage() {
           </div>
         )}
 
-        {/* What to look at — repeating patterns only. The heatmap and
-            weekly trend used to sit here too but were dropped from the
-            report because they duplicate what the dashboard already
-            shows and compete with the actual near-miss cards for the
-            manager's attention at the meeting. */}
-        {report.pattern_alerts && report.pattern_alerts.length > 0 && (
-          <>
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What to look at</h2>
-            <div className="mb-6">
-              <p className="text-sm text-gray-700 mb-3">
-                {report.pattern_alerts.length === 1
-                  ? <>One drug + error pair came up more than once this period.</>
-                  : <>{report.pattern_alerts.length} drug + error pairs came up more than once this period.</>}
-                {' '}Discuss a prevention action for each.
-              </p>
-              <ul className="space-y-3">
-                {report.pattern_alerts.map((p, i) => (
-                  <PatternAlertRow key={i} drug={p.drug} errorType={p.errorType} count={p.count} />
-                ))}
-              </ul>
-            </div>
-          </>
-        )}
+        {/* "What to look at" (pattern alerts) used to sit here but was
+            removed — it duplicated the "Needs attention" rows in the
+            panel above almost word for word (same patterns, same
+            counts), and the prevention-action prompt it carried is
+            already agenda item 3. */}
 
         {/* Near misses this period — grouped by pattern. Repeats of the
             same (drug, error type) pair collapse into ONE card with the
@@ -620,44 +602,4 @@ export function ReportPage() {
   );
 }
 
-// ── Pattern alert row — fetches its own intervention timeline ───────
-// Each hotspot has a shared intervention log (pattern_interventions table).
-// The row renders the list inline so the team sees "what we've tried" next
-// to "how often it's happening" when reviewing the report.
-function PatternAlertRow({ drug, errorType, count }: { drug: string; errorType: string; count: number }) {
-  interface Intervention { id: string; note: string; created_at: string; }
-  const [interventions, setInterventions] = useState<Intervention[]>([]);
-  useEffect(() => {
-    let cancelled = false;
-    api.listInterventions(drug, errorType)
-      .then(r => { if (!cancelled) setInterventions(r.interventions); })
-      .catch(() => { /* empty list is fine */ });
-    return () => { cancelled = true; };
-  }, [drug, errorType]);
-  const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
-  return (
-    <li className="text-sm text-[#633806] leading-snug">
-      <div>
-        <span className="font-semibold">{drug}</span> with "<span className="italic">{errorType}</span>" —{' '}
-        <span className="font-semibold">{count} incidents</span> this period.
-      </div>
-      <div className="mt-1 pl-4 text-xs">
-        {interventions.length > 0 ? (
-          <>
-            <p className="font-semibold mb-0.5">Actions tried:</p>
-            <ul className="space-y-0.5">
-              {interventions.map(iv => (
-                <li key={iv.id} className="leading-snug">
-                  • <span className="text-[#633806]/70">{fmt(iv.created_at)} —</span> {iv.note}
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <p className="italic text-[#633806]/60">No actions logged yet.</p>
-        )}
-      </div>
-    </li>
-  );
-}
 
