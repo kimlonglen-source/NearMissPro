@@ -618,55 +618,52 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     (highRiskIncidents as Array<{ drug_name?: string | null; dispensed_drug?: string | null }>).map(i => highRiskCategoryFor(i.drug_name) || highRiskCategoryFor(i.dispensed_drug)).filter((c): c is string => !!c)
   )];
 
-  // Period summary — a single flowing paragraph that weaves together the
-  // headline number, the most-affected pattern (if any), the top
-  // contributing factors WITH their fixes inline, and any high-risk
-  // callouts. Reads as one cohesive story rather than a series of
-  // bulleted facts followed by a separate factor panel.
-  const summaryParts: string[] = [];
+  // Period summary — short labelled bullet lines instead of a flowing
+  // paragraph. Managers said the paragraph form was hard to read aloud
+  // and hard to scan; a fixed label at the start of each line ("What
+  // happened", "Biggest pattern"…) means staff always know where to
+  // look for each fact. Rendered with whitespace-pre-wrap so the
+  // newlines survive on screen and in print.
+  const bulletLines: string[] = [];
 
-  // Opener: count + trend + top pattern (when there's a real pattern).
-  if (comparisonNarrative) {
-    summaryParts.push(comparisonNarrative);
-  } else if (incidentCount > 0) {
-    let line = `${incidentCount} near miss${incidentCount > 1 ? 'es' : ''} this period.`;
+  if (incidentCount > 0) {
+    // 1. What happened — count + trend vs last period.
+    let happened: string;
+    if (prevIncidents && prevIncidents.length > 0) {
+      const netDelta = incidentCount - prevIncidents.length;
+      happened = netDelta < 0
+        ? `${incidentCount} near misses — ${Math.abs(netDelta)} fewer than last period.`
+        : netDelta > 0
+          ? `${incidentCount} near misses — ${netDelta} more than last period.`
+          : `${incidentCount} near misses — same as last period.`;
+    } else {
+      happened = `${incidentCount} near miss${incidentCount > 1 ? 'es' : ''} recorded.`;
+    }
+    if (wins.length > 0) happened += ` ${wins.length} earlier pattern${wins.length > 1 ? 's' : ''} resolved.`;
+    bulletLines.push(`• What happened: ${happened}`);
+
+    // 2. Biggest pattern — names the actual drug and error.
     if (topPairLabel && topPairCount >= 2) {
-      line += ` ${topPairLabel.charAt(0).toUpperCase() + topPairLabel.slice(1)} happened ${topPairCount} times.`;
+      bulletLines.push(`• Biggest pattern: ${topPairLabel} — ${topPairCount} times this period.`);
     }
-    summaryParts.push(line);
-  }
 
-  // Factor + fix inline — up to the top 3, woven into the paragraph.
-  // First factor uses "The biggest cause was X (N of M) — <fix>." The
-  // second and beyond use "X also came up N times — <fix>." This reads
-  // as a continuous narrative instead of a bulleted list.
-  const meaningfulFactors = topFactors.filter(([, count]) => count >= 2).slice(0, 3);
-  if (meaningfulFactors.length > 0 && incidentCount > 0) {
-    const [firstName, firstCount] = meaningfulFactors[0];
-    summaryParts.push(`The biggest cause was ${firstName.toLowerCase()} (${firstCount} of ${incidentCount}) — ${inlineFixFor(firstName)}.`);
-    for (let i = 1; i < meaningfulFactors.length; i++) {
-      const [name, count] = meaningfulFactors[i];
-      summaryParts.push(`${name.charAt(0).toUpperCase() + name.slice(1).toLowerCase()} also came up ${count} time${count > 1 ? 's' : ''} — ${inlineFixFor(name)}.`);
+    // 3. Biggest cause + its fix.
+    const meaningfulFactors = topFactors.filter(([, count]) => count >= 2).slice(0, 1);
+    if (meaningfulFactors.length > 0) {
+      const [firstName, firstCount] = meaningfulFactors[0];
+      bulletLines.push(`• Biggest cause: ${firstName.toLowerCase()} (${firstCount} of ${incidentCount}) — ${inlineFixFor(firstName)}.`);
     }
+
+    // 4. When they clustered — only when there's a real cluster.
+    if (peakLine) bulletLines.push(`• When: ${peakLine.charAt(0).toLowerCase()}${peakLine.slice(1)}`);
+
+    // 5. High-risk callout — stands out as its own line.
+    if (highRiskLine) bulletLines.push(`• High-risk: ${highRiskLine}`);
   }
-
-  // When errors clustered (peak time-of-day + day) — woven into the
-  // paragraph so the heatmap insight reads as part of the narrative.
-  if (peakLine) summaryParts.push(peakLine);
-
-  // High-risk drug callout — separate sentence so it stands out.
-  if (highRiskLine) summaryParts.push(highRiskLine);
-
-  // The closing "At the meeting, focus on X" line was here. It's been
-  // removed because the agenda below already contains the action prompt
-  // ("Decide ONE specific change… what targets X?"), and having both the
-  // summary and the agenda point at the same action made the report feel
-  // like it was repeating itself. Summary now ends with the facts; the
-  // agenda owns the meeting flow.
 
   const stubSummaryText = incidentCount === 0
-    ? 'No near misses were recorded this period. Continue to encourage staff to report all near misses — a low count may indicate under-reporting rather than the absence of any.'
-    : summaryParts.join(' ').replace(/\s+/g, ' ').trim();
+    ? 'No near misses were recorded this period. Keep encouraging staff to report — a quiet log usually means under-reporting, not zero risk.'
+    : bulletLines.join('\n');
 
   // Agenda — runs the meeting. Four items, max. A community pharmacy
   // team meeting is ~30 minutes; nine bullet points just gets skipped.
@@ -743,13 +740,14 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
 
   const summarySize = await getPharmacySize(pharmacyId);
   const summarySizeNote = pharmacySizeContext(summarySize);
-  const summarySystemBase = `You are a NZ community pharmacy safety advisor writing the period summary for a team-meeting report. Audience is the dispensary team — techs and pharmacists.
+  const summarySystemBase = `You are a NZ community pharmacy safety advisor writing the period summary for a team-meeting report. Audience is the dispensary team — techs and pharmacists, some with English as a second language.
 
-Write MAXIMUM 3 short sentences in plain language. The manager should be able to read this aloud in under 30 seconds. No markdown, no bold, no bullets. British spelling.
+Output EXACTLY three lines, each starting with "• " and a fixed label, in this order:
+• What happened: <one short sentence — what dominated the period: drug, near-miss type, or factor>
+• Biggest pattern: <one short sentence naming the actual drug and error, with the count>
+• What we're changing: <one short sentence — the single most useful concrete change>
 
-Cover, in this order: what dominated the period (drug, near-miss type, or factor); one concrete change to make; and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL. Always say "near miss" when describing the events — these are events caught before reaching the patient, so calling them "errors" is technically incorrect.
-
-Skip preamble like "this period saw" or "it is recommended that". Don't restate counts the report already shows.`;
+Hard rules: each line maximum 20 words after the label. Plain language, no markdown/bold, British spelling. NZ shop-floor terms: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL. Always say "near miss", never "error" (an error implies it reached the patient). One NZ reference maximum across all three lines (Medsafe, NZ Formulary, Pharmac, Pharmacy Council NZ, HQSC), only if directly relevant. No preamble, no extra lines.`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
