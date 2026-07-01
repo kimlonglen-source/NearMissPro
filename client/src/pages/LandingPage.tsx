@@ -280,7 +280,7 @@ function RecordStage() {
           </div>
           <div className="flex flex-wrap gap-1.5">
             <span ref={el => { targetRefs.current[2] = el; }} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#E1F5EE] border border-[#1D9E75] text-[#085041] animate-[pulse_1.2s_ease-in-out_infinite]">Final pharmacist check</span>
-            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Technician query</span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Technician spotted it</span>
           </div>
         </div>
       ) : step >= 3 ? (
@@ -306,7 +306,7 @@ function RecordStage() {
             <span className="text-sm font-medium text-gray-800">What was happening at the time?</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <span ref={el => { targetRefs.current[3] = el; }} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF8EB] border border-[#BA7517] text-[#633806] animate-[pulse_1.2s_ease-in-out_infinite]">Interruption / distraction</span>
+            <span ref={el => { targetRefs.current[3] = el; }} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF8EB] border border-[#BA7517] text-[#633806] animate-[pulse_1.2s_ease-in-out_infinite]">Interruption or distraction</span>
             <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">High volume</span>
           </div>
         </div>
@@ -351,7 +351,7 @@ function ReviewStage() {
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E1F5EE] text-[#085041] flex-shrink-0 animate-[fadeIn_0.3s_ease]">✓ Accepted</span>
           )}
         </div>
-        <p className="text-[11px] text-gray-500 mb-2.5">12 May · Final pharmacist check · Communication gap</p>
+        <p className="text-[11px] text-gray-500 mb-2.5">12 May · Final pharmacist check · Message not passed on</p>
 
         <div className="bg-[#F0FAF5] border border-[#C8E6D8] rounded-lg p-2.5 mb-2.5">
           <p className="text-[10px] font-bold text-[#085041] uppercase tracking-wider mb-1">AI Recommendation</p>

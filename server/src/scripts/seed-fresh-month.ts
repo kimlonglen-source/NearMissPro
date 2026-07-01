@@ -39,29 +39,29 @@ const INCIDENTS: Incident[] = [
   // Pantoprazole pattern carrying over (the new "needs attention")
   { daysAgo: 26, hour: 11, error_step: 'Drug picked from shelf', error_types: ['Wrong drug picked'], drug_name: 'Pantoprazole', dispensed_drug: 'Omeprazole', where_caught: 'Final pharmacist check', factors: ['Similar drug names', 'Similar packaging'], outcome: 'accepted' },
   { daysAgo: 22, hour: 14, error_step: 'Drug picked from shelf', error_types: ['Wrong drug picked'], drug_name: 'Pantoprazole', dispensed_drug: 'Omeprazole', where_caught: 'Initial pharmacist check', factors: ['Similar drug names'], outcome: 'accepted' },
-  { daysAgo: 18, hour: 12, error_step: 'Drug picked from shelf', error_types: ['Wrong drug picked'], drug_name: 'Pantoprazole', dispensed_drug: 'Omeprazole', where_caught: 'Final pharmacist check', factors: ['Similar drug names', 'High volume period'], outcome: 'modified', notes: 'Caught at final check before label printed.' },
+  { daysAgo: 18, hour: 12, error_step: 'Drug picked from shelf', error_types: ['Wrong drug picked'], drug_name: 'Pantoprazole', dispensed_drug: 'Omeprazole', where_caught: 'Final pharmacist check', factors: ['Similar drug names', 'Busy period'], outcome: 'modified', notes: 'Caught at final check before label printed.' },
   // Atorvastatin once-only (the pattern from prior month is now resolved)
-  { daysAgo: 24, hour: 13, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '20mg', dispensed_strength: '40mg', where_caught: 'Final pharmacist check', factors: ['High volume period'], outcome: 'accepted' },
+  { daysAgo: 24, hour: 13, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '20mg', dispensed_strength: '40mg', where_caught: 'Final pharmacist check', factors: ['Busy period'], outcome: 'accepted' },
   // Warfarin (high-risk)
-  { daysAgo: 20, hour: 10, error_step: 'Labelling', error_types: ['Wrong directions'], drug_name: 'Warfarin', where_caught: 'Final pharmacist check', factors: ['Communication gap'], outcome: 'modified', notes: 'Direction read "5mg twice daily" instead of "5mg daily".' },
+  { daysAgo: 20, hour: 10, error_step: 'Labelling', error_types: ['Wrong directions'], drug_name: 'Warfarin', where_caught: 'Final pharmacist check', factors: ['Message not passed on'], outcome: 'modified', notes: 'Direction read "5mg twice daily" instead of "5mg daily".' },
   // Insulin (high-risk)
   { daysAgo: 15, hour: 11, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Insulin glargine', prescribed_strength: '100u/ml', dispensed_strength: '300u/ml', where_caught: 'Final pharmacist check', factors: ['Similar packaging', 'Unfamiliar drug'], outcome: 'accepted' },
   // Codeine
-  { daysAgo: 12, hour: 15, error_step: 'Labelling', error_types: ['Wrong directions'], drug_name: 'Codeine phosphate', where_caught: 'Final pharmacist check', factors: ['Process not followed'], outcome: 'accepted' },
+  { daysAgo: 12, hour: 15, error_step: 'Labelling', error_types: ['Wrong directions'], drug_name: 'Codeine phosphate', where_caught: 'Final pharmacist check', factors: ['Usual process skipped'], outcome: 'accepted' },
   // Methotrexate (high-risk)
   { daysAgo: 10, hour: 12, error_step: 'Labelling', error_types: ['Wrong directions'], drug_name: 'Methotrexate', where_caught: 'Final pharmacist check', factors: ['Unfamiliar drug'], outcome: 'accepted', notes: 'Directions said daily instead of weekly — caught at final check.' },
   // Salbutamol formulation
-  { daysAgo: 8, hour: 14, error_step: 'Drug picked from shelf', error_types: ['Wrong formulation'], drug_name: 'Salbutamol', correct_formulation: 'Inhaler', dispensed_formulation: 'Nebule', where_caught: 'Technician query', factors: ['Similar packaging'], outcome: 'accepted' },
+  { daysAgo: 8, hour: 14, error_step: 'Drug picked from shelf', error_types: ['Wrong formulation'], drug_name: 'Salbutamol', correct_formulation: 'Inhaler', dispensed_formulation: 'Nebule', where_caught: 'Technician spotted it', factors: ['Similar packaging'], outcome: 'accepted' },
   // Quantity miscount
-  { daysAgo: 6, hour: 11, error_step: 'Counted / measured', error_types: ['Wrong quantity counted'], drug_name: 'Tramadol', where_caught: 'Final pharmacist check', factors: ['Interruption / distraction'], outcome: 'accepted' },
+  { daysAgo: 6, hour: 11, error_step: 'Counted / measured', error_types: ['Wrong quantity counted'], drug_name: 'Tramadol', where_caught: 'Final pharmacist check', factors: ['Interruption or distraction'], outcome: 'accepted' },
   // Allergy override
-  { daysAgo: 5, hour: 16, error_step: 'Script entered into dispensary software', error_types: ['Allergy missed or overridden'], drug_name: 'Amoxicillin', where_caught: 'Initial pharmacist check', factors: ['Communication gap'], outcome: 'modified', notes: 'Allergy alert dismissed without review.' },
+  { daysAgo: 5, hour: 16, error_step: 'Script entered into dispensary software', error_types: ['Allergy warning ignored'], drug_name: 'Amoxicillin', where_caught: 'Initial pharmacist check', factors: ['Message not passed on'], outcome: 'modified', notes: 'Allergy alert dismissed without review.' },
   // Wrong patient (no drug — exercises the new "non-drug" path)
-  { daysAgo: 4, hour: 13, error_step: 'Script entered into dispensary software', error_types: ['Wrong patient'], where_caught: 'Data entry check', factors: ['Interruption / distraction'], outcome: 'accepted' },
+  { daysAgo: 4, hour: 13, error_step: 'Script entered into dispensary software', error_types: ['Wrong patient'], where_caught: 'Data entry check', factors: ['Interruption or distraction'], outcome: 'accepted' },
   // Pack size
-  { daysAgo: 3, hour: 10, error_step: 'Drug picked from shelf', error_types: ['Wrong pack size'], drug_name: 'Paracetamol', where_caught: 'Technician query', factors: ['High volume period'], outcome: 'accepted' },
+  { daysAgo: 3, hour: 10, error_step: 'Drug picked from shelf', error_types: ['Wrong pack size'], drug_name: 'Paracetamol', where_caught: 'Technician spotted it', factors: ['Busy period'], outcome: 'accepted' },
   // CD register
-  { daysAgo: 2, hour: 14, error_step: 'Controlled drug dispensing', error_types: ['Register not signed'], drug_name: 'Methadone', where_caught: 'Final pharmacist check', factors: ['Process not followed'], outcome: 'modified', notes: 'CD register entry missed.' },
+  { daysAgo: 2, hour: 14, error_step: 'Controlled drug dispensing', error_types: ['Register not signed'], drug_name: 'Methadone', where_caught: 'Final pharmacist check', factors: ['Usual process skipped'], outcome: 'modified', notes: 'CD register entry missed.' },
 ];
 
 function bucketTimeOfDay(d: Date): string {
