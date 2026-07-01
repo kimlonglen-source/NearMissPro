@@ -54,7 +54,7 @@ export function LiveHotspotBanner({ from, to }: { from?: string; to?: string }) 
               {hotspots.length} repeat pattern{hotspots.length === 1 ? '' : 's'} in this period — consider acting now
             </h3>
             <p className="text-xs text-[#633806]/70 mt-0.5">
-              Each of these has happened 2 or more times in the date range you're reviewing. Tap <span className="font-semibold">Log action</span> to record a change you've made (or are making) so it's captured before the next review.
+              Each has happened 2 or more times in this period. Tap <span className="font-semibold">Log action</span> to record what you've changed (or are changing) so it lands on the next report.
             </p>
           </div>
         </div>
@@ -200,7 +200,7 @@ function LogActionModal({ hotspot, onClose, onSaved }: { hotspot: Hotspot; onClo
             </ul>
           </div>
         ) : (
-          <p className="text-xs text-gray-400 mb-3 italic">No prior actions logged for this pattern.</p>
+          <p className="text-xs text-gray-400 mb-3 italic">No actions recorded yet for this pattern.</p>
         )}
 
         <div className="flex items-center justify-between mb-1">
@@ -219,7 +219,7 @@ function LogActionModal({ hotspot, onClose, onSaved }: { hotspot: Hotspot; onClo
           className="input-field text-sm w-full"
           autoFocus
         />
-        <p className="text-[11px] text-gray-400 mt-1">{note.length}/500. This will appear in the monthly report's Pattern Alerts section.</p>
+        <p className="text-[11px] text-gray-400 mt-1">{note.length}/500. This will appear on the next monthly report.</p>
 
         <div className="flex gap-2 mt-4">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">

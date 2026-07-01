@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { LiveHotspotBanner } from '../components/LiveHotspotBanner';
-import { summarizeIncident } from '../lib/incidentSummary';
+import { summarizeIncident, narrateIncidentContext } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
 import { usePatternMap, findPattern } from '../lib/usePatternMap';
 import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar, Sparkles } from 'lucide-react';
@@ -202,7 +202,7 @@ export function DashboardPage() {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
           <div className="text-xl font-bold text-[#0F6E56]">{reviewedList.length}</div>
-          <div className="text-[11px] text-gray-500">Decided</div>
+          <div className="text-[11px] text-gray-500">Reviewed</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
           <div className="text-xl font-bold">{peakTime}</div>
@@ -217,7 +217,7 @@ export function DashboardPage() {
       {activeIncidents.length > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-            <span>{pendingList.length > 0 ? `${pendingList.length} near ${pendingList.length === 1 ? 'miss' : 'misses'} still to decide` : 'All near misses decided'}</span>
+            <span>{pendingList.length > 0 ? `${pendingList.length} near ${pendingList.length === 1 ? 'miss' : 'misses'} still to review` : 'All near misses reviewed'}</span>
             <span>{reviewedList.length}/{activeIncidents.length}</span>
           </div>
           <div className="w-full h-2 bg-gray-200 rounded-full">
@@ -350,7 +350,7 @@ export function DashboardPage() {
                         {usePatternAction ? (
                           <>
                             <p className="text-xs font-bold text-[#085041] uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                              <Sparkles size={11} /> Pattern action ({pattern!.count} incidents)
+                              <Sparkles size={11} /> Pattern action ({pattern!.count} near {pattern!.count === 1 ? 'miss' : 'misses'} in this pattern)
                             </p>
                             <p className="text-[10px] text-[#085041]/60 mb-2">
                               Your logged action for {pattern!.drug} · {pattern!.errorType}. Same answer on every incident in this pattern.
@@ -477,7 +477,7 @@ export function DashboardPage() {
               <>
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 size={20} className="text-[#085041]" />
-                  <p className="text-sm font-bold text-[#085041]">All {activeIncidents.length} near {activeIncidents.length === 1 ? 'miss' : 'misses'} decided</p>
+                  <p className="text-sm font-bold text-[#085041]">All {activeIncidents.length} near {activeIncidents.length === 1 ? 'miss' : 'misses'} reviewed</p>
                 </div>
                 <p className="text-xs text-[#085041]/70 mb-4">
                   {existingReport ? 'You can generate an updated report with your latest reviews.' : 'Generate the report for your team meeting and compliance file.'}
@@ -520,7 +520,7 @@ export function DashboardPage() {
             <textarea className="input-field" rows={3} placeholder="Reason (required)" value={voidReason} onChange={e => setVoidReason(e.target.value)} autoFocus />
             <div className="flex gap-3 mt-4">
               <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200" onClick={() => { setVoidId(null); setVoidReason(''); }}>Cancel</button>
-              <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700" disabled={busy || !voidReason.trim()} onClick={doVoid}>Void incident</button>
+              <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700" disabled={busy || !voidReason.trim()} onClick={doVoid}>Void near miss</button>
             </div>
           </div>
         </div>
@@ -548,8 +548,7 @@ function TrendStrip({ data, range, onRangeChange }: {
     <div className="bg-white rounded-xl border border-gray-200 p-3 mb-4">
       <div className="flex items-center justify-between mb-2">
         <div className="text-xs font-medium text-gray-600">
-          Trend — last {range === '6m' ? '6 months' : range}{' '}
-          <span className="text-gray-400">({total} total)</span>
+          Last {range === '6m' ? '6 months' : range === '4w' ? '4 weeks' : range === '8w' ? '8 weeks' : '12 weeks'}: {total} near {total === 1 ? 'miss' : 'misses'}
         </div>
         <div className="flex gap-1">
           {chips.map(c => (
@@ -561,7 +560,7 @@ function TrendStrip({ data, range, onRangeChange }: {
         </div>
       </div>
       {data.length === 0 ? (
-        <div className="h-10 flex items-center justify-center text-[11px] text-gray-300">No data in range</div>
+        <div className="h-10 flex items-center justify-center text-[11px] text-gray-300">Nothing to show for this range yet.</div>
       ) : (
         <>
           <div className="flex items-end gap-[2px] h-10">
@@ -572,7 +571,7 @@ function TrendStrip({ data, range, onRangeChange }: {
                 <div key={pt.weekStart}
                   className={`flex-1 rounded-sm ${pt.count > 0 ? 'bg-[#0F6E56]' : 'bg-gray-100'}`}
                   style={{ height: `${h}px` }}
-                  title={`Week of ${weekLabel}: ${pt.count} incident${pt.count === 1 ? '' : 's'}`}
+                  title={`Week of ${weekLabel}: ${pt.count} near ${pt.count === 1 ? 'miss' : 'misses'}`}
                 />
               );
             })}
@@ -601,16 +600,13 @@ function TrendStrip({ data, range, onRangeChange }: {
 // can scan a queue of many incidents without parsing field labels.
 // Same helper drives the printed report so the two views stay in sync.
 function SummarySentence({ inc }: { inc: Incident }) {
-  const when = new Date(inc.occurred_at || inc.submitted_at).toLocaleString('en-NZ', {
-    day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
-  });
+  // Two-line shape matching the printed report so the manager sees the
+  // same story on screen and on paper: bold headline, then a narrative
+  // context sentence pulled from the shared helper.
   return (
-    <p className="text-sm leading-relaxed text-gray-800">
-      <span className="font-semibold">{summarizeIncident(inc)}</span>
-      {inc.error_step && <span className="text-gray-500"> · {inc.error_step}</span>}
-      <span className="text-gray-500"> · {when}</span>
-      {inc.where_caught && <span className="text-gray-500"> · Caught at {inc.where_caught}</span>}
-      {inc.factors.length > 0 && <span className="text-gray-500"> · Factor{inc.factors.length > 1 ? 's' : ''}: {inc.factors.join(', ')}</span>}
-    </p>
+    <div className="text-sm leading-relaxed">
+      <p className="font-semibold text-gray-900">{summarizeIncident(inc)}</p>
+      <p className="text-gray-600 mt-1">{narrateIncidentContext(inc)}</p>
+    </div>
   );
 }
