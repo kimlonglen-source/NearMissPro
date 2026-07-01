@@ -21,7 +21,6 @@ export const STAGES: Stage[] = [
       { label: 'Wrong drug entered', common: true },
       { label: 'Wrong strength entered', common: true },
       { label: 'Wrong directions', common: true },
-      { label: 'Directions unclear or abbreviated', common: true },
       { label: 'Wrong quantity entered', common: false },
       { label: 'Wrong number of days supply', common: false },
       { label: 'Wrong frequency', common: false },
