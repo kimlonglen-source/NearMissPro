@@ -224,8 +224,14 @@ export function isNonDrugError(subLabel: string): boolean {
     l.includes('register not signed') ||
     l.includes('bag mixed') ||
     l.includes('bag missing') ||
+    l.includes('bag collected') ||
     l.includes('pso treated') ||
     l.includes('wrong day') ||
-    l.includes('handed to wrong')
+    l.includes('handed to wrong') ||
+    l.includes('initials missing') ||
+    l.includes('safe left') ||
+    l.includes('out-of-date prescription') ||
+    l.includes('forged or altered') ||
+    l.includes('nzeps')
   );
 }
