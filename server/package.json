@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "seed": "node --loader tsx src/scripts/seed-test-data.ts",
     "seed-fresh-month": "node --loader tsx src/scripts/seed-fresh-month.ts",
+    "seed-three-reports": "node --loader tsx src/scripts/seed-three-reports.ts",
     "founder-setup": "node --loader tsx src/scripts/founder-setup.ts"
   },
   "dependencies": {
