@@ -144,7 +144,7 @@ export function DashboardPage() {
       <div className="max-w-md mx-auto px-4 py-12 text-center">
         <Calendar size={40} className="mx-auto mb-4 text-[#0F6E56]" />
         <h1 className="text-xl font-bold text-gray-900 mb-2">Start a review</h1>
-        <p className="text-sm text-gray-500 mb-6">Select the date range for the incidents you want to review.</p>
+        <p className="text-sm text-gray-500 mb-6">Pick the date range for the near misses you want to review.</p>
 
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4 text-left">
           <div>
@@ -160,7 +160,7 @@ export function DashboardPage() {
         <button onClick={() => { setPeriodSet(true); load(); }}
           disabled={!dateFrom || !dateTo}
           className="w-full mt-4 py-3.5 rounded-xl font-semibold text-sm bg-[#0F6E56] text-white hover:bg-[#0B5A46] disabled:bg-gray-200 disabled:text-gray-400">
-          Load incidents
+          Load near misses
         </button>
 
         <button onClick={() => nav('/reports')} className="mt-4 text-sm text-gray-500 hover:text-[#0F6E56] flex items-center gap-1 mx-auto">
@@ -178,7 +178,7 @@ export function DashboardPage() {
       {/* Header with period */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Review incidents</h1>
+          <h1 className="text-xl font-bold text-gray-900">Review near misses</h1>
           <p className="text-xs text-gray-500">{fmtDate(dateFrom)} — {fmtDate(dateTo)}</p>
         </div>
         <button onClick={() => setPeriodSet(false)} className="text-sm text-gray-500 hover:text-[#0F6E56]">Change dates</button>
@@ -194,19 +194,19 @@ export function DashboardPage() {
       <div className="grid grid-cols-4 gap-3 mb-4">
         <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
           <div className="text-xl font-bold">{activeIncidents.length}</div>
-          <div className="text-[11px] text-gray-500">Active</div>
+          <div className="text-[11px] text-gray-500">Near misses</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
           <div className="text-xl font-bold text-[#BA7517]">{pendingList.length}</div>
-          <div className="text-[11px] text-gray-500">Pending</div>
+          <div className="text-[11px] text-gray-500">Still to decide</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
           <div className="text-xl font-bold text-[#0F6E56]">{reviewedList.length}</div>
-          <div className="text-[11px] text-gray-500">Reviewed</div>
+          <div className="text-[11px] text-gray-500">Decided</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
           <div className="text-xl font-bold">{peakTime}</div>
-          <div className="text-[11px] text-gray-500">Peak time</div>
+          <div className="text-[11px] text-gray-500">Busiest time</div>
         </div>
       </div>
 
@@ -217,7 +217,7 @@ export function DashboardPage() {
       {activeIncidents.length > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-            <span>{pendingList.length > 0 ? `${pendingList.length} incident${pendingList.length > 1 ? 's' : ''} still to review` : 'All incidents reviewed'}</span>
+            <span>{pendingList.length > 0 ? `${pendingList.length} near ${pendingList.length === 1 ? 'miss' : 'misses'} still to decide` : 'All near misses decided'}</span>
             <span>{reviewedList.length}/{activeIncidents.length}</span>
           </div>
           <div className="w-full h-2 bg-gray-200 rounded-full">
@@ -231,8 +231,8 @@ export function DashboardPage() {
       {activeIncidents.length === 0 && (
         <div className="text-center py-12">
           <Clock size={32} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-sm font-medium text-gray-500">No incidents recorded in this period</p>
-          <p className="text-xs text-gray-400 mt-1">Try a different date range, or check back later.</p>
+          <p className="text-sm font-medium text-gray-500">No near misses recorded in this period</p>
+          <p className="text-xs text-gray-400 mt-1">Try a different date range.</p>
           <button onClick={() => setPeriodSet(false)} className="btn-outline text-sm mt-4">Change dates</button>
         </div>
       )}
@@ -477,7 +477,7 @@ export function DashboardPage() {
               <>
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 size={20} className="text-[#085041]" />
-                  <p className="text-sm font-bold text-[#085041]">All {activeIncidents.length} incidents reviewed</p>
+                  <p className="text-sm font-bold text-[#085041]">All {activeIncidents.length} near {activeIncidents.length === 1 ? 'miss' : 'misses'} decided</p>
                 </div>
                 <p className="text-xs text-[#085041]/70 mb-4">
                   {existingReport ? 'You can generate an updated report with your latest reviews.' : 'Generate the report for your team meeting and compliance file.'}
@@ -490,7 +490,7 @@ export function DashboardPage() {
             ) : (
               <>
                 <p className="text-sm font-medium text-gray-500">Generate report</p>
-                <p className="text-xs text-gray-400 mt-1">Decide each of the {pendingList.length} remaining incident{pendingList.length > 1 ? 's' : ''} above first. If a near miss doesn't warrant a system change, choose "No — won't change anything".</p>
+                <p className="text-xs text-gray-400 mt-1">Decide each of the {pendingList.length} remaining near {pendingList.length === 1 ? 'miss' : 'misses'} above first. If one doesn't warrant a system change, choose "No — won't change anything".</p>
               </>
             )}
           </div>
@@ -506,7 +506,7 @@ export function DashboardPage() {
         </button>
         {voidedIncidents.length > 0 && (
           <button onClick={() => nav('/voided')} className="text-sm text-gray-500 hover:text-[#0F6E56] flex items-center gap-1">
-            <XCircle size={14} /> View voided incidents ({voidedIncidents.length})
+            <XCircle size={14} /> View voided near misses ({voidedIncidents.length})
           </button>
         )}
       </div>
@@ -515,8 +515,8 @@ export function DashboardPage() {
       {voidId && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-[#791F1F] mb-2">Void this incident</h3>
-            <p className="text-sm text-gray-500 mb-3">The incident will be excluded from reports. You can restore it later from the Voided page if needed.</p>
+            <h3 className="text-lg font-bold text-[#791F1F] mb-2">Void this near miss</h3>
+            <p className="text-sm text-gray-500 mb-3">This near miss will be excluded from reports. You can restore it later from the Voided page if needed.</p>
             <textarea className="input-field" rows={3} placeholder="Reason (required)" value={voidReason} onChange={e => setVoidReason(e.target.value)} autoFocus />
             <div className="flex gap-3 mt-4">
               <button className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200" onClick={() => { setVoidId(null); setVoidReason(''); }}>Cancel</button>
