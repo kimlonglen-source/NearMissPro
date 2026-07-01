@@ -8,6 +8,7 @@ import { PeriodComparison } from '../components/PeriodComparison';
 import { FactorPanel } from '../components/FactorPanel';
 import { summarizeIncident, narrateIncidentContext } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
+import { normalizeDrugName } from '../lib/normalize';
 import { Printer, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle, Trash2 } from 'lucide-react';
 
 interface Incident {
@@ -27,6 +28,36 @@ interface Report {
   next_review_date?: string;
 }
 interface AckRow { name: string; role: string; initials: string; date: string; }
+
+// Group incidents that share the same (drug, error types) pattern so
+// repeats render as ONE card with the occurrences listed inside it.
+// Groups keep the position of their first occurrence so the report
+// still reads roughly newest-first. Incidents with no drug name only
+// group when their error types match exactly (e.g. two "Bag missing
+// an item" entries).
+function groupIncidents(incidents: Incident[]): Incident[][] {
+  const keyOf = (inc: Incident) =>
+    `${normalizeDrugName(inc.drug_name)}|||${[...(inc.error_types || [])].sort().join('+')}`;
+  const order: string[] = [];
+  const byKey = new Map<string, Incident[]>();
+  for (const inc of incidents) {
+    const key = keyOf(inc);
+    if (!byKey.has(key)) { byKey.set(key, []); order.push(key); }
+    byKey.get(key)!.push(inc);
+  }
+  return order.map(k => byKey.get(k)!);
+}
+
+// High-risk chip — pulled out so both the single and grouped card
+// branches render it identically.
+function isHighRiskInfoChip(isHighRisk: boolean, info: { category: string } | null) {
+  if (!isHighRisk || !info) return null;
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F] mb-1.5">
+      ⚠ High-risk · {info.category}
+    </span>
+  );
+}
 
 export function ReportPage() {
   const { id } = useParams();
@@ -366,73 +397,95 @@ export function ReportPage() {
           </>
         )}
 
-        {/* Near misses this period — unified card style (one grey border
-            on every card; high-risk via red chip + bold drug name, not
-            via a coloured border) so the visual rhythm stays even down
-            the page. */}
+        {/* Near misses this period — grouped by pattern. Repeats of the
+            same (drug, error type) pair collapse into ONE card with the
+            occurrences listed inside it, so a manager reading 24 near
+            misses isn't re-reading the same story four times. One-off
+            near misses keep the full card. */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Near misses this period</h2>
         {activeIncidents.length === 0 ? (
           <p className="text-sm text-gray-400 mb-6">No active incidents in this period.</p>
         ) : (
           <div className="space-y-3 mb-6">
-            {activeIncidents.map(inc => {
-              const rec = inc.recommendations?.[0];
+            {groupIncidents(activeIncidents).map(group => {
+              const first = group[0];
+              const rec = first.recommendations?.[0];
               const outcome = rec?.manager_outcome;
-              const highRiskInfo = checkHighRisk(inc.drug_name) || checkHighRisk(inc.dispensed_drug);
+              const highRiskInfo = checkHighRisk(first.drug_name) || checkHighRisk(first.dispensed_drug);
               const isHighRisk = !!highRiskInfo;
+              const pattern = findPattern(patternMap, first.drug_name || null, first.error_types);
+              const usePatternAction = !!pattern && !!pattern.latestAction;
+              const isGroup = group.length > 1;
+
               return (
-                <div key={inc.id} className="border border-gray-200 rounded-xl p-4">
-                  {outcome && (
+                <div key={first.id} className="border border-gray-200 rounded-xl p-4">
+                  {isGroup ? (
+                    <span className="float-right text-xs font-bold px-2 py-0.5 rounded-full bg-[#FDF8EB] text-[#633806] border border-[#BA7517]/40">
+                      × {group.length} this period
+                    </span>
+                  ) : outcome && (
                     <span className={`float-right text-xs font-semibold px-2 py-0.5 rounded-full ${outcome === 'accepted' ? 'bg-[#E1F5EE] text-[#085041]' : outcome === 'modified' ? 'bg-[#EEEDFE] text-[#3C3489]' : 'bg-gray-100 text-gray-600'}`}>
                       {outcome === 'accepted' ? '✓ Accepted' : outcome === 'modified' ? '✓ Modified' : '✓ No action'}
                     </span>
                   )}
 
-                  {isHighRisk && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F] mb-1.5">
-                      ⚠ High-risk · {highRiskInfo!.category}
-                    </span>
-                  )}
+                  {isHighRiskInfoChip(isHighRisk, highRiskInfo)}
 
                   <p className={`text-sm leading-snug mb-1.5 pr-24 ${isHighRisk ? 'font-bold text-[#791F1F]' : 'font-semibold text-gray-900'}`}>
-                    {summarizeIncident(inc)}
+                    {summarizeIncident(first)}
                   </p>
 
-                  <p className="text-xs text-gray-600 leading-snug mb-3">
-                    {narrateIncidentContext(inc)}
-                  </p>
-
-                  {inc.notes && (
-                    <p className="text-xs text-gray-500 italic mb-3 pl-2 border-l-2 border-gray-200">"{inc.notes}"</p>
+                  {isGroup ? (
+                    <ul className="text-xs text-gray-600 leading-snug mb-3 space-y-1">
+                      {group.map(inc => {
+                        const o = inc.recommendations?.[0]?.manager_outcome;
+                        return (
+                          <li key={inc.id} className="flex items-baseline gap-1.5">
+                            <span className="text-gray-400">•</span>
+                            <span className="flex-1">
+                              {narrateIncidentContext(inc)}
+                              {inc.notes && <span className="italic text-gray-500"> "{inc.notes}"</span>}
+                            </span>
+                            {o && (
+                              <span className="text-[10px] font-semibold text-gray-500 whitespace-nowrap">
+                                {o === 'accepted' ? '✓ Accepted' : o === 'modified' ? '✓ Modified' : '✓ No action'}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <>
+                      <p className="text-xs text-gray-600 leading-snug mb-3">
+                        {narrateIncidentContext(first)}
+                      </p>
+                      {first.notes && (
+                        <p className="text-xs text-gray-500 italic mb-3 pl-2 border-l-2 border-gray-200">"{first.notes}"</p>
+                      )}
+                    </>
                   )}
 
-                  {rec && (() => {
-                    const pattern = findPattern(patternMap, inc.drug_name || null, inc.error_types);
-                    const usePatternAction = !!pattern && !!pattern.latestAction;
-                    return (
-                      <div className="bg-gray-50 rounded-lg p-3 mt-2">
-                        <div className="text-xs font-semibold text-gray-600 mb-1">
-                          {usePatternAction
-                            ? `Pattern action — ${pattern!.count} incidents in this pattern`
-                            : outcome === 'modified' ? 'Action agreed (rewritten by pharmacist-in-charge)'
-                            : outcome === 'accepted' ? 'Action agreed'
-                            : outcome === 'no_action' ? 'No system change required'
-                            : 'Recommendation'}
-                        </div>
-                        {usePatternAction ? (
-                          <p className="text-sm text-gray-800">{pattern!.latestAction!.note}</p>
-                        ) : outcome === 'modified' && rec.manager_text ? (
-                          <>
-                            <p className="text-sm text-gray-800">{rec.manager_text}</p>
-                            <p className="text-sm text-gray-400 line-through mt-1">{rec.ai_text}</p>
-                            <p className="text-[10px] text-gray-400 italic mt-0.5">Modified from AI suggestion</p>
-                          </>
-                        ) : (
-                          <p className="text-sm text-gray-800">{rec.ai_text}</p>
-                        )}
+                  {rec && (
+                    <div className="bg-gray-50 rounded-lg p-3 mt-2">
+                      <div className="text-xs font-semibold text-gray-600 mb-1">
+                        {usePatternAction
+                          ? `Pattern action — the same fix covers all ${pattern!.count}`
+                          : isGroup ? 'Action agreed (applies to the whole pattern)'
+                          : outcome === 'modified' ? 'Action agreed (rewritten by pharmacist-in-charge)'
+                          : outcome === 'accepted' ? 'Action agreed'
+                          : outcome === 'no_action' ? 'No system change required'
+                          : 'Recommendation'}
                       </div>
-                    );
-                  })()}
+                      {usePatternAction ? (
+                        <p className="text-sm text-gray-800">{pattern!.latestAction!.note}</p>
+                      ) : outcome === 'modified' && rec.manager_text ? (
+                        <p className="text-sm text-gray-800">{rec.manager_text}</p>
+                      ) : (
+                        <p className="text-sm text-gray-800">{rec.ai_text}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
