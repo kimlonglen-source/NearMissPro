@@ -55,7 +55,6 @@ export const STAGES: Stage[] = [
       { label: 'Damaged tablets', common: false },
       { label: 'Wrong pack size', common: false },
       { label: 'Recalled stock dispensed', common: false },
-      { label: 'Section 29 paperwork missing', common: false },
     ],
   },
   {
