@@ -16,11 +16,14 @@ export const STAGES: Stage[] = [
   {
     label: 'Script entered into dispensary software',
     subErrors: [
+      { label: 'Typo / mistyped', common: true },
+      { label: 'Autocomplete picked wrong drug', common: true },
       { label: 'Wrong patient', common: true },
       { label: 'Wrong drug entered', common: true },
       { label: 'Wrong strength entered', common: true },
       { label: 'Wrong directions', common: true },
       { label: 'Wrong quantity entered', common: false },
+      { label: 'Wrong days supply entered', common: false },
       { label: 'Repeat dispensed too early', common: false },
       { label: 'Allergy missed or overridden', common: false },
       { label: 'Interaction missed', common: false },
@@ -52,6 +55,7 @@ export const STAGES: Stage[] = [
       { label: 'Wrong strength picked', common: true },
       { label: 'Wrong formulation picked', common: true },
       { label: 'Wrong brand (bioequivalence)', common: true },
+      { label: 'Pharmac brand change confusion', common: true },
       { label: 'Wrong drug \u2014 sound-alike name', common: false },
       { label: 'Expired stock', common: false },
       { label: 'Damaged tablets', common: false },
@@ -80,6 +84,7 @@ export const STAGES: Stage[] = [
       { label: 'Wrong CAL applied', common: true },
       { label: 'Label on wrong item / wrong bottle', common: true },
       { label: 'Missing label entirely', common: true },
+      { label: 'Directions unclear or abbreviated', common: true },
       { label: 'Pharmacist initials missing', common: false },
     ],
   },
@@ -87,6 +92,7 @@ export const STAGES: Stage[] = [
     label: 'Bagging / handed to patient',
     subErrors: [
       { label: 'Wrong patient given the bag', common: true },
+      { label: 'Wrong bag collected from pickup shelf', common: true },
       { label: 'Counselling missed', common: true },
       { label: 'Bag missing an item', common: true },
       { label: 'Bag mixed up between patients', common: true },
@@ -158,6 +164,9 @@ export const FACTORS = [
   'Illegible prescription',
   'Unusual dose / strength',
   'New staff member',
+  'Trainee or intern involved',
+  'Shift changeover',
+  'Language barrier',
   'Unfamiliar drug',
   'Process not followed',
   'Communication gap',
@@ -166,7 +175,8 @@ export const FACTORS_DEFAULT_VISIBLE = 7;
 
 export const FORMULATIONS = [
   'Tablet', 'Capsule', 'Liquid', 'Cream', 'Ointment',
-  'Patch', 'Injection', 'Drops', 'Inhaler', 'Spray',
+  'Patch', 'Injection', 'Drops', 'Ear drops', 'Inhaler',
+  'Nebules', 'Spray', 'Sachet', 'Suppository', 'Compliance pack / DAA',
 ];
 
 export const DRUG_SUGGESTIONS = [
