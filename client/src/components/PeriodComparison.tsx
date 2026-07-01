@@ -117,7 +117,7 @@ export function PeriodComparison({ from, to, data: preFetched, maxRows = 6 }: Pr
 
       {hiddenCount > 0 && (
         <p className="text-[11px] text-gray-400 mt-2">
-          {hiddenCount} more pattern{hiddenCount === 1 ? '' : 's'} not shown — see the printed report for the full list.
+          Showing the top {maxRows} on each side. {hiddenCount} more pattern{hiddenCount === 1 ? '' : 's'} not shown — pick the biggest change{hiddenCount === 1 ? '' : 's'} to focus on at the meeting.
         </p>
       )}
     </div>

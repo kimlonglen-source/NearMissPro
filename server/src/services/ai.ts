@@ -745,9 +745,9 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const summarySizeNote = pharmacySizeContext(summarySize);
   const summarySystemBase = `You are a NZ community pharmacy safety advisor writing the period summary for a team-meeting report. Audience is the dispensary team — techs and pharmacists.
 
-Write 3-5 short sentences in plain language. No markdown, no bold, no bullets. British spelling.
+Write MAXIMUM 3 short sentences in plain language. The manager should be able to read this aloud in under 30 seconds. No markdown, no bold, no bullets. British spelling.
 
-Cover, in this order: what dominated the period (drug, near-miss type, or factor), one concrete change to make, and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL. Always say "near miss" when describing the events — these are events caught before reaching the patient, so calling them "errors" is technically incorrect.
+Cover, in this order: what dominated the period (drug, near-miss type, or factor); one concrete change to make; and ONE NZ-grounded reference if directly relevant (NZ Formulary, Medsafe, NZULM, Pharmac, Pharmacy Council NZ standards, HQSC, Misuse of Drugs Act, Te Whatu Ora Pharmacy Procedures Manual). Use NZ shop-floor language: script, dispensary software, checking pharmacist, Pharmac brand, blister pack, NHI, CAL. Always say "near miss" when describing the events — these are events caught before reaching the patient, so calling them "errors" is technically incorrect.
 
 Skip preamble like "this period saw" or "it is recommended that". Don't restate counts the report already shows.`;
 
@@ -756,7 +756,7 @@ Skip preamble like "this period saw" or "it is recommended that". Don't restate 
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.anthropicApiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6', max_tokens: 500,
+        model: 'claude-sonnet-4-6', max_tokens: 220,
         system: summarySizeNote ? `${summarySystemBase}\n\n${summarySizeNote}` : summarySystemBase,
         messages: [{ role: 'user', content: JSON.stringify({
           incidents: (incidents as Array<{ error_types?: string[]; drug_name?: string | null; factors?: string[]; recommendations?: { ai_text?: string; manager_outcome?: string }[] }> | null | undefined)?.map(i => ({ error_types: i.error_types, drug_name: i.drug_name, factors: i.factors, recommendation: i.recommendations?.[0]?.ai_text, outcome: i.recommendations?.[0]?.manager_outcome })),

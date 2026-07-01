@@ -6,7 +6,6 @@ import { ShieldIcon } from '../components/Logo';
 import { usePatternMap, findPattern } from '../lib/usePatternMap';
 import { PeriodComparison } from '../components/PeriodComparison';
 import { FactorPanel } from '../components/FactorPanel';
-import { WorkflowHeatmap } from '../components/WorkflowHeatmap';
 import { summarizeIncident, narrateIncidentContext } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
 import { Printer, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle, Trash2 } from 'lucide-react';
@@ -286,34 +285,37 @@ export function ReportPage() {
 
         {/* What worked — wins lead so the meeting opens positively. */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What worked</h2>
-        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={5} />
+        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={3} />
 
         {/* Review of last meeting's actions — Pharmacy Council Standard 1.8
             wants visible evidence that prior actions were followed up.
-            Always rendered (empty by default) so the manager has a spot
-            to record "we moved the methadone register on 12 May and have
-            had no methadone errors since." */}
-        <div className="mb-8 mt-4">
-          <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
-            Review of last meeting’s actions — did they work?
-            {lastMeetingReviewEdited && <EditBadge />}
-          </p>
-          {!report.locked ? (
-            <>
-              <textarea
-                value={lastMeetingReview}
-                onChange={e => { setLastMeetingReview(e.target.value); setLastMeetingReviewEdited(true); }}
-                onBlur={autoSaveOnBlur}
-                rows={Math.max(3, Math.ceil(lastMeetingReview.length / 90))}
-                placeholder="What did the team agree to do last meeting, and did it work? e.g. 'Moved the methadone register on 12 May — no methadone errors since.'"
-                className="no-print w-full p-3 rounded-lg border border-gray-200 text-sm bg-white leading-relaxed"
-              />
-              <p className="hidden print:block text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{lastMeetingReview || ' '}</p>
-            </>
-          ) : (
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{lastMeetingReview || ' '}</p>
-          )}
-        </div>
+            While the report is a draft, always render (the manager needs
+            a place to type). Once signed off, only render if there's
+            actually content — an empty heading on a printed report reads
+            as "the manager forgot." */}
+        {(!report.locked || lastMeetingReview.trim()) && (
+          <div className="mb-8 mt-4">
+            <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
+              Review of last meeting’s actions — did they work?
+              {lastMeetingReviewEdited && <EditBadge />}
+            </p>
+            {!report.locked ? (
+              <>
+                <textarea
+                  value={lastMeetingReview}
+                  onChange={e => { setLastMeetingReview(e.target.value); setLastMeetingReviewEdited(true); }}
+                  onBlur={autoSaveOnBlur}
+                  rows={Math.max(3, Math.ceil(lastMeetingReview.length / 90))}
+                  placeholder="What did the team agree to do last meeting, and did it work? e.g. 'Moved the methadone register on 12 May — no methadone errors since.'"
+                  className="no-print w-full p-3 rounded-lg border border-gray-200 text-sm bg-white leading-relaxed"
+                />
+                <p className="hidden print:block text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{lastMeetingReview || ' '}</p>
+              </>
+            ) : (
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{lastMeetingReview}</p>
+            )}
+          </div>
+        )}
         {/* "Notes from last meeting" only shows when the manager has
             typed something. We deliberately suppress the auto-generated
             comparison narrative here (phrases like "X more near misses
@@ -340,34 +342,27 @@ export function ReportPage() {
           </div>
         )}
 
-        {/* What to look at — patterns + heatmap + trend. Each visual gets
-            a short caption above it so it can be read aloud without the
-            manager having to interpret the chart on the spot. */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What to look at</h2>
-
+        {/* What to look at — repeating patterns only. The heatmap and
+            weekly trend used to sit here too but were dropped from the
+            report because they duplicate what the dashboard already
+            shows and compete with the actual near-miss cards for the
+            manager's attention at the meeting. */}
         {report.pattern_alerts && report.pattern_alerts.length > 0 && (
-          <div className="mb-6">
-            <p className="text-sm text-gray-700 mb-3">
-              {report.pattern_alerts.length === 1
-                ? <>One drug + error pair came up more than once this period.</>
-                : <>{report.pattern_alerts.length} drug + error pairs came up more than once this period.</>}
-              {' '}Discuss a prevention action for each.
-            </p>
-            <ul className="space-y-3">
-              {report.pattern_alerts.map((p, i) => (
-                <PatternAlertRow key={i} drug={p.drug} errorType={p.errorType} count={p.count} />
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <p className="text-sm text-gray-700 mb-2">When are near misses happening? The heatmap below shows when in the week they cluster.</p>
-        <WorkflowHeatmap from={report.period_start} to={report.period_end} />
-
-        {report.trend_data && report.trend_data.length > 0 && (
           <>
-            <p className="text-sm text-gray-700 mb-2 mt-4">Weekly trend — are we logging more or fewer near misses each week?</p>
-            <ReportTrendChart data={report.trend_data} />
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What to look at</h2>
+            <div className="mb-6">
+              <p className="text-sm text-gray-700 mb-3">
+                {report.pattern_alerts.length === 1
+                  ? <>One drug + error pair came up more than once this period.</>
+                  : <>{report.pattern_alerts.length} drug + error pairs came up more than once this period.</>}
+                {' '}Discuss a prevention action for each.
+              </p>
+              <ul className="space-y-3">
+                {report.pattern_alerts.map((p, i) => (
+                  <PatternAlertRow key={i} drug={p.drug} errorType={p.errorType} count={p.count} />
+                ))}
+              </ul>
+            </div>
           </>
         )}
 
@@ -613,45 +608,3 @@ function PatternAlertRow({ drug, errorType, count }: { drug: string; errorType: 
   );
 }
 
-// ── Report trend chart — prints cleanly to B&W on paper too ─────────
-function ReportTrendChart({ data }: { data: { weekStart: string; count: number }[] }) {
-  const max = Math.max(1, ...data.map(d => d.count));
-  const total = data.reduce((a, b) => a + b.count, 0);
-  const fmt = (s: string) => new Date(s).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
-  return (
-    <div className="rounded-xl p-4 mb-6 border border-gray-200 bg-white">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase text-gray-600">Weekly trend</span>
-        <span className="text-[11px] text-gray-400">{total} incidents over {data.length} weeks</span>
-      </div>
-      <div className="flex items-end gap-1 h-16">
-        {data.map(pt => {
-          const h = pt.count === 0 ? 2 : Math.max(6, (pt.count / max) * 56);
-          return (
-            <div key={pt.weekStart} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-              <div
-                className={`w-full rounded-sm ${pt.count > 0 ? 'bg-[#0F6E56] print:bg-gray-800' : 'bg-gray-200'}`}
-                style={{ height: `${h}px` }}
-                title={`Week of ${fmt(pt.weekStart)}: ${pt.count}`}
-              />
-              {pt.count > 0 && <span className="text-[9px] text-gray-500 leading-none">{pt.count}</span>}
-            </div>
-          );
-        })}
-      </div>
-      {/* Month labels — only on the first bar of each new month */}
-      <div className="flex gap-1 mt-1">
-        {data.map((pt, i) => {
-          const d = new Date(pt.weekStart);
-          const prev = i > 0 ? new Date(data[i - 1].weekStart) : null;
-          const isNewMonth = !prev || d.getMonth() !== prev.getMonth();
-          return (
-            <div key={pt.weekStart} className="flex-1 text-[9px] text-gray-500 leading-none min-w-0">
-              {isNewMonth ? d.toLocaleDateString('en-NZ', { month: 'short' }) : ''}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
