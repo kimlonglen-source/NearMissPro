@@ -86,3 +86,53 @@ export function summarizeIncident(inc: IncidentForSummary): string {
   // Pure error type, no drug context
   return `${errorType}.`;
 }
+
+// Turn an incident's context fields (date, where caught, time of day,
+// factors) into a single flowing sentence the manager can read aloud
+// at the review meeting. Replaces the bullet-separated metadata line
+// so each incident on the report reads as a small narrative:
+//
+//   "Caught at the final pharmacist check on 15 May 2026 (Morning 8–12pm).
+//    Factors: similar packaging, busy period."
+//
+// Handles missing fields gracefully — anything absent is just dropped
+// rather than showing "—" placeholders.
+export interface IncidentForNarrative {
+  occurred_at?: string | null;
+  submitted_at?: string;
+  where_caught?: string | null;
+  time_of_day?: string | null;
+  factors?: string[] | null;
+}
+
+export function narrateIncidentContext(inc: IncidentForNarrative): string {
+  const dateStr = new Date(inc.occurred_at || inc.submitted_at || Date.now())
+    .toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  let sentence: string;
+  const wc = inc.where_caught;
+  if (!wc) {
+    sentence = `Logged on ${dateStr}`;
+  } else if (wc === 'Technician spotted it') {
+    sentence = `A technician spotted it on ${dateStr}`;
+  } else if (wc === 'Data entry check') {
+    sentence = `Caught at data entry on ${dateStr}`;
+  } else if (wc === 'Initial pharmacist check' || wc === 'Final pharmacist check') {
+    sentence = `Caught at the ${wc.toLowerCase()} on ${dateStr}`;
+  } else {
+    // Custom "where caught" chip from the pharmacy — render as-is.
+    sentence = `Caught: ${wc} — on ${dateStr}`;
+  }
+
+  if (inc.time_of_day) {
+    sentence += ` (${inc.time_of_day})`;
+  }
+  sentence += '.';
+
+  if (inc.factors && inc.factors.length > 0) {
+    const factorsList = inc.factors.map(f => f.toLowerCase()).join(', ');
+    sentence += ` Factors: ${factorsList}.`;
+  }
+
+  return sentence;
+}

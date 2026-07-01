@@ -7,7 +7,7 @@ import { usePatternMap, findPattern } from '../lib/usePatternMap';
 import { PeriodComparison } from '../components/PeriodComparison';
 import { FactorPanel } from '../components/FactorPanel';
 import { WorkflowHeatmap } from '../components/WorkflowHeatmap';
-import { summarizeIncident } from '../lib/incidentSummary';
+import { summarizeIncident, narrateIncidentContext } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
 import { Printer, Save, Plus, Loader2, ArrowLeft, CheckCircle2, RotateCcw, AlertTriangle, Trash2 } from 'lucide-react';
 
@@ -403,11 +403,8 @@ export function ReportPage() {
                     {summarizeIncident(inc)}
                   </p>
 
-                  <p className="text-xs text-gray-500 leading-snug mb-3">
-                    {fmtDate(inc.occurred_at || inc.submitted_at)}
-                    {inc.where_caught && <> · Caught at {inc.where_caught}</>}
-                    {inc.time_of_day && <> · {inc.time_of_day}</>}
-                    {inc.factors.length > 0 && <> · Factors: {inc.factors.join(', ')}</>}
+                  <p className="text-xs text-gray-600 leading-snug mb-3">
+                    {narrateIncidentContext(inc)}
                   </p>
 
                   {inc.notes && (
