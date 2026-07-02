@@ -41,7 +41,7 @@ function Hero() {
             <Sparkles size={12} /> Built for NZ community pharmacy
           </div>
           <h1 className="text-4xl md:text-6xl font-bold leading-[1.05] mb-6 tracking-tight">
-            Logging a near miss takes seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">The monthly review does itself.</span>
+            Logging a near miss takes seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">The monthly review takes minutes, not an afternoon.</span>
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
             The two jobs nobody enjoys — writing dispensing near misses in the logbook, then making sense of them at review time — both become quick and painless. Staff log in under a minute; your review report is ready in minutes, not a lost afternoon. Built for NZ community pharmacy.
