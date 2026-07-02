@@ -25,6 +25,7 @@ interface Report {
   trend_data?: { weekStart: string; count: number }[];
   last_meeting_review?: string;
   next_review_date?: string;
+  scripts_dispensed?: number | null;
 }
 interface AckRow { name: string; role: string; initials: string; date: string; }
 
@@ -334,6 +335,9 @@ export function ReportPage() {
 
         <p className="text-xs text-gray-500 mb-8">
           {activeIncidents.length} near miss{activeIncidents.length === 1 ? '' : 'es'}
+          {report.scripts_dispensed && report.scripts_dispensed > 0 && activeIncidents.length > 0 && (
+            <> from {report.scripts_dispensed.toLocaleString('en-NZ')} scripts ({((activeIncidents.length / report.scripts_dispensed) * 100) >= 0.1 ? ((activeIncidents.length / report.scripts_dispensed) * 100).toFixed(1) : ((activeIncidents.length / report.scripts_dispensed) * 100).toFixed(2)}%)</>
+          )}
           {' · '}{actionsCount} action{actionsCount === 1 ? '' : 's'} taken
           {' · '}{activeIncidents.filter(i => i.recommendations?.[0]?.manager_outcome).length} of {activeIncidents.length} reviewed
           {peakTime !== '-' && <> · peak time {peakTime}</>}

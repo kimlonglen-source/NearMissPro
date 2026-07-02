@@ -112,10 +112,19 @@ export function DashboardPage() {
     try { await api.voidIncident(voidId, voidReason.trim()); await load(); setVoidId(null); setVoidReason(''); } finally { setBusy(false); }
   };
 
+  // Total scripts dispensed for the period — typed in by the manager
+  // from their dispensary software. Powers the near-miss-rate bullet
+  // on the report summary. Optional: leave blank and the report just
+  // shows counts.
+  const [scriptsDispensed, setScriptsDispensed] = useState('');
   const handleReport = async () => {
     setBusy(true);
     try {
-      const report = await api.generateReport({ periodStart: dateFrom, periodEnd: dateTo, generatedBy: pharmacyName || 'Manager' });
+      const n = parseInt(scriptsDispensed, 10);
+      const report = await api.generateReport({
+        periodStart: dateFrom, periodEnd: dateTo, generatedBy: pharmacyName || 'Manager',
+        scriptsDispensed: Number.isFinite(n) && n > 0 ? n : null,
+      });
       nav(`/reports/${(report as { id: string }).id}`);
     } finally { setBusy(false); }
   };
@@ -481,9 +490,22 @@ export function DashboardPage() {
                   <CheckCircle2 size={20} className="text-[#085041]" />
                   <p className="text-sm font-bold text-[#085041]">All {activeIncidents.length} near {activeIncidents.length === 1 ? 'miss' : 'misses'} reviewed</p>
                 </div>
-                <p className="text-xs text-[#085041]/70 mb-4">
+                <p className="text-xs text-[#085041]/70 mb-3">
                   {existingReport ? 'You can generate an updated report with your latest reviews.' : 'Generate the report for your team meeting and compliance file.'}
                 </p>
+                <label className="block text-xs font-medium text-[#085041] mb-1">
+                  Total scripts dispensed this period (optional)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  inputMode="numeric"
+                  value={scriptsDispensed}
+                  onChange={e => setScriptsDispensed(e.target.value)}
+                  placeholder="e.g. 8200 — from your dispensary software"
+                  className="input-field text-sm mb-1"
+                />
+                <p className="text-[11px] text-[#085041]/60 mb-4">If you enter this, the report shows your near-miss rate — e.g. "24 of 8,200 scripts — 0.3%".</p>
                 <button onClick={handleReport} disabled={busy}
                   className="w-full py-3.5 rounded-xl font-semibold text-sm bg-[#0F6E56] text-white hover:bg-[#0B5A46] flex items-center justify-center gap-2">
                   <FileText size={16} /> {existingReport ? 'Generate updated report' : 'Generate report'}

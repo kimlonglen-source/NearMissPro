@@ -463,7 +463,18 @@ export async function getTrendSeries(pharmacyId: string, since: string, until?: 
   return keys.map(k => ({ weekStart: k, count: counts[k] }));
 }
 
-export async function generatePeriodSummary(pharmacyId: string, periodStart: string, periodEnd: string): Promise<{ summary: string; agenda: string[]; previousSummary?: string }> {
+// Deterministic near-miss-rate bullet, appended AFTER the AI/stub
+// summary so the maths never depends on the model. Only present when
+// the manager entered the period's script total.
+function rateLine(incidentCount: number, scriptsDispensed: number | null | undefined): string {
+  if (!scriptsDispensed || scriptsDispensed <= 0 || incidentCount <= 0) return '';
+  const pct = (incidentCount / scriptsDispensed) * 100;
+  const pctLabel = pct >= 0.1 ? pct.toFixed(1) : pct.toFixed(2);
+  const oneIn = Math.round(scriptsDispensed / incidentCount);
+  return `• Near-miss rate: ${incidentCount} of ${scriptsDispensed.toLocaleString('en-NZ')} scripts dispensed — ${pctLabel}% (about 1 in ${oneIn.toLocaleString('en-NZ')} scripts).`;
+}
+
+export async function generatePeriodSummary(pharmacyId: string, periodStart: string, periodEnd: string, scriptsDispensed?: number | null): Promise<{ summary: string; agenda: string[]; previousSummary?: string }> {
   // YYYY-MM-DD coerces to midnight UTC; bump to end-of-day so incidents
   // submitted later on periodEnd still count.
   const endBound = /^\d{4}-\d{2}-\d{2}$/.test(periodEnd) ? `${periodEnd}T23:59:59.999Z` : periodEnd;
@@ -665,6 +676,9 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     if (highRiskLine) bulletLines.push(`• High-risk: ${highRiskLine}`);
   }
 
+  const rate = rateLine(incidentCount, scriptsDispensed);
+  if (rate) bulletLines.push(rate);
+
   const stubSummaryText = incidentCount === 0
     ? 'No near misses were recorded this period. Keep encouraging staff to report — a quiet log usually means under-reporting, not zero risk.'
     : bulletLines.join('\n');
@@ -777,8 +791,11 @@ Hard rules: each line maximum 20 words after the label. Plain language, no markd
       throw new Error(`Anthropic ${response.status} ${response.statusText}: ${body}`);
     }
     const result = await response.json();
+    const aiSummary = result.content?.[0]?.text || stub.summary;
     return {
-      summary: result.content?.[0]?.text || stub.summary,
+      // Rate bullet is appended deterministically — the AI is never
+      // trusted with the arithmetic.
+      summary: rate && aiSummary !== stub.summary ? `${aiSummary}\n${rate}` : aiSummary,
       agenda: stub.agenda,
       // "Last period improvements" is now seeded with the comparison
       // narrative (computed above) so it shows what actually happened

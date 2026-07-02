@@ -185,10 +185,10 @@ const PERIOD_3_INCIDENTS: Incident[] = [
 ];
 
 const PERIODS = [
-  { monthsAgo: 4, incidents: PERIOD_0_INCIDENTS },
-  { monthsAgo: 3, incidents: PERIOD_1_INCIDENTS },
-  { monthsAgo: 2, incidents: PERIOD_2_INCIDENTS },
-  { monthsAgo: 1, incidents: PERIOD_3_INCIDENTS },
+  { monthsAgo: 4, incidents: PERIOD_0_INCIDENTS, scriptsDispensed: 7890 },
+  { monthsAgo: 3, incidents: PERIOD_1_INCIDENTS, scriptsDispensed: 8120 },
+  { monthsAgo: 2, incidents: PERIOD_2_INCIDENTS, scriptsDispensed: 8340 },
+  { monthsAgo: 1, incidents: PERIOD_3_INCIDENTS, scriptsDispensed: 8010 },
 ];
 
 function bucketTimeOfDay(d: Date): string {
@@ -343,7 +343,7 @@ async function seed() {
     const bounds = monthBounds(period.monthsAgo);
     try {
       const [{ summary, agenda, previousSummary }, hotspots, trend] = await Promise.all([
-        generatePeriodSummary(ph.id, bounds.start, bounds.end),
+        generatePeriodSummary(ph.id, bounds.start, bounds.end, period.scriptsDispensed),
         detectDrugErrorHotspots(ph.id, bounds.start, bounds.end),
         getTrendSeries(ph.id, bounds.start, bounds.end),
       ]);
@@ -359,6 +359,7 @@ async function seed() {
         agenda_items: agenda.map(text => ({ text, edited: false })),
         pattern_alerts: hotspots,
         trend_data: trend,
+        scripts_dispensed: period.scriptsDispensed,
       }).select().single();
 
       if (reportErr || !report) {

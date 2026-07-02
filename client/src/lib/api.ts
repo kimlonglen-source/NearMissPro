@@ -232,7 +232,7 @@ class Api {
   bulkAccept(managerName: string) { return this.req<{ updated: number }>('/recommendations/bulk-accept', { method: 'POST', body: JSON.stringify({ managerName }) }); }
 
   // Reports
-  generateReport(data: { periodStart: string; periodEnd: string; generatedBy: string; isCustomRange?: boolean }) {
+  generateReport(data: { periodStart: string; periodEnd: string; generatedBy: string; isCustomRange?: boolean; scriptsDispensed?: number | null }) {
     return this.req<Record<string, unknown>>('/reports/generate', { method: 'POST', body: JSON.stringify(data) });
   }
   getReports() { return this.req<Record<string, unknown>[]>('/reports'); }

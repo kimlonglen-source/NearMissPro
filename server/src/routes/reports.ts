@@ -11,9 +11,13 @@ router.use(requireRole('manager', 'founder'));
 // ── Generate report ─────────────────────────────────────────
 router.post('/generate', async (req: Request, res: Response) => {
   try {
-    const { periodStart, periodEnd, generatedBy } = z.object({
+    const { periodStart, periodEnd, generatedBy, scriptsDispensed } = z.object({
       periodStart: z.string(), periodEnd: z.string(), generatedBy: z.string(),
       isCustomRange: z.boolean().optional(),
+      // Total scripts dispensed for the period, from the pharmacy's
+      // dispensary software. Optional — powers the near-miss-rate
+      // bullet in the summary when provided.
+      scriptsDispensed: z.number().int().positive().max(10_000_000).optional().nullable(),
     }).parse(req.body);
 
     // Idempotency guard: a double-click or retried request must not
@@ -32,7 +36,7 @@ router.post('/generate', async (req: Request, res: Response) => {
     // Run summary, hotspot detection, and trend series in parallel —
     // they each hit the DB independently.
     const [{ summary, agenda, previousSummary }, hotspots, trend] = await Promise.all([
-      generatePeriodSummary(req.auth!.pharmacyId, periodStart, periodEnd),
+      generatePeriodSummary(req.auth!.pharmacyId, periodStart, periodEnd, scriptsDispensed),
       detectDrugErrorHotspots(req.auth!.pharmacyId, periodStart, periodEnd),
       getTrendSeries(req.auth!.pharmacyId, periodStart, periodEnd),
     ]);
@@ -50,6 +54,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       agenda_items: agenda.map(text => ({ text, edited: false })),
       pattern_alerts: hotspots,
       trend_data: trend,
+      scripts_dispensed: scriptsDispensed ?? null,
     }).select().single();
 
     if (error) throw error;

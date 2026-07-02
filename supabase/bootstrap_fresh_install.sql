@@ -795,3 +795,14 @@ CREATE INDEX IF NOT EXISTS idx_password_setup_tokens_pharmacy
   ON password_setup_tokens(pharmacy_id, created_at DESC);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON password_setup_tokens TO service_role;
+
+-- ── migrate_compliance_v2.sql ──
+-- Account-deletion requests + CQI report enrichments.
+ALTER TABLE pharmacies ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMPTZ;
+ALTER TABLE pharmacies ADD COLUMN IF NOT EXISTS deletion_requested_by TEXT;
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS last_meeting_review TEXT;
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS next_review_date DATE;
+
+-- ── migrate_scripts_dispensed.sql ──
+-- Near-miss rate denominator, entered by the manager at report time.
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS scripts_dispensed INTEGER;
