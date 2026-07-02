@@ -687,9 +687,9 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // ── 1. OPEN ──
   let openItem = 'Read "This month at a glance" (section 1, below) out loud to the team. Remind everyone: we don\'t track who reported what — this is about learning, not blame.';
   if (wins.length > 0) {
-    openItem += ` Good news to share — ${wins.length} pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting. Thank the team.`;
+    openItem += ` Good news to share — ${wins.length} problem${wins.length > 1 ? 's have' : ' has'} not happened again since the last meeting. Thank the team.`;
   } else if (recurring.length > 0) {
-    openItem += ` Worth flagging — ${recurring.length} pattern${recurring.length > 1 ? 's are' : ' is'} reducing. Action is helping but not done yet.`;
+    openItem += ` Worth flagging — ${recurring.length} problem${recurring.length > 1 ? 's are' : ' is'} happening less often. The changes are helping but not done yet.`;
   }
   agendaItems.push(openItem);
 
@@ -712,7 +712,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
       decideItem += ` The biggest factor this period was "${topFactors[0][0]}" — a good place to focus.`;
     }
     if (concerns.length > 0) {
-      decideItem += ` Also revisit ${concerns.length} pattern${concerns.length > 1 ? 's' : ''} where last month\'s action hasn\'t worked yet.`;
+      decideItem += ` Also revisit ${concerns.length} problem${concerns.length > 1 ? 's' : ''} where last month\'s change hasn\'t worked yet.`;
     }
     agendaItems.push(decideItem);
   }
