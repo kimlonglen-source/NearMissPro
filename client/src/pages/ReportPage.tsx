@@ -76,8 +76,6 @@ export function ReportPage() {
   const [picName, setPicName] = useState('');
   const [picEdited, setPicEdited] = useState(false);
   const [ackRows, setAckRows] = useState<AckRow[]>([]);
-  const [lastMeetingReview, setLastMeetingReview] = useState('');
-  const [lastMeetingReviewEdited, setLastMeetingReviewEdited] = useState(false);
   const [nextReviewDate, setNextReviewDate] = useState('');
   const [nextReviewDateEdited, setNextReviewDateEdited] = useState(false);
 
@@ -91,7 +89,6 @@ export function ReportPage() {
         setPeriodSummary(rpt.period_summary || '');
         setAgenda(rpt.agenda_items || []);
         setPicName(rpt.generated_by || '');
-        setLastMeetingReview(rpt.last_meeting_review || '');
         setNextReviewDate(rpt.next_review_date || '');
         setAckRows([
           { name: rpt.generated_by || '', role: 'Pharmacist-in-charge', initials: '', date: '' },
@@ -113,14 +110,13 @@ export function ReportPage() {
         period_summary: periodSummary,
         agenda_items: agenda,
         generated_by: picName,
-        last_meeting_review: lastMeetingReview,
         next_review_date: nextReviewDate || null,
       });
       // Clear the "edited" flags so the Save button disappears, and refresh
       // local state so a second edit-then-save cycle starts clean.
       setPrevEdited(false); setSummaryEdited(false); setAgendaEdited(false); setPicEdited(false);
-      setLastMeetingReviewEdited(false); setNextReviewDateEdited(false);
-      setReport({ ...report, previous_period_summary: prevSummary, period_summary: periodSummary, agenda_items: agenda, generated_by: picName, last_meeting_review: lastMeetingReview, next_review_date: nextReviewDate });
+      setNextReviewDateEdited(false);
+      setReport({ ...report, previous_period_summary: prevSummary, period_summary: periodSummary, agenda_items: agenda, generated_by: picName, next_review_date: nextReviewDate });
       setSaveState('saved');
       setTimeout(() => setSaveState(s => (s === 'saved' ? 'idle' : s)), 2000);
     } catch {
@@ -133,7 +129,7 @@ export function ReportPage() {
   // Only fires when something has actually changed; the Save button stays
   // as a visible fallback (and shows the saved/error state).
   const autoSaveOnBlur = () => {
-    if (prevEdited || summaryEdited || agendaEdited || picEdited || lastMeetingReviewEdited || nextReviewDateEdited) saveEdits();
+    if (prevEdited || summaryEdited || agendaEdited || picEdited || nextReviewDateEdited) saveEdits();
   };
 
   const toggleCompleted = async () => {
@@ -318,35 +314,11 @@ export function ReportPage() {
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What worked</h2>
         <PeriodComparison from={report.period_start} to={report.period_end} maxRows={3} />
 
-        {/* Review of last meeting's actions — Pharmacy Council Standard 1.8
-            wants visible evidence that prior actions were followed up.
-            While the report is a draft, always render (the manager needs
-            a place to type). Once signed off, only render if there's
-            actually content — an empty heading on a printed report reads
-            as "the manager forgot." */}
-        {(!report.locked || lastMeetingReview.trim()) && (
-          <div className="mb-8 mt-4">
-            <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
-              Manager’s notes on last meeting’s actions
-              {lastMeetingReviewEdited && <EditBadge />}
-            </p>
-            {!report.locked ? (
-              <>
-                <textarea
-                  value={lastMeetingReview}
-                  onChange={e => { setLastMeetingReview(e.target.value); setLastMeetingReviewEdited(true); }}
-                  onBlur={autoSaveOnBlur}
-                  rows={Math.max(3, Math.ceil(lastMeetingReview.length / 90))}
-                  placeholder="What did the team agree to do last meeting, and did it work? e.g. 'Moved the methadone register on 12 May — no methadone errors since.'"
-                  className="no-print w-full p-3 rounded-lg border border-gray-200 text-sm bg-white leading-relaxed"
-                />
-                <p className="hidden print:block text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{lastMeetingReview || ' '}</p>
-              </>
-            ) : (
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{lastMeetingReview}</p>
-            )}
-          </div>
-        )}
+        {/* The "Manager's notes on last meeting's actions" box used to
+            live here. Removed — the comparison panel above plus logged
+            pattern actions already document what was agreed and whether
+            it worked, from real data. The last_meeting_review DB column
+            stays (harmless) in case a real pharmacy asks for it back. */}
         {/* "Notes from last meeting" only shows when the manager has
             typed something. We deliberately suppress the auto-generated
             comparison narrative here (phrases like "X more near misses
@@ -379,17 +351,25 @@ export function ReportPage() {
             counts), and the prevention-action prompt it carried is
             already agenda item 3. */}
 
-        {/* Near misses this period — grouped by pattern. Repeats of the
-            same (drug, error type) pair collapse into ONE card with the
-            occurrences listed inside it, so a manager reading 24 near
-            misses isn't re-reading the same story four times. One-off
-            near misses keep the full card. */}
+        {/* Near misses this period — two tiers so the section stays
+            short. FULL CARDS only for what the meeting should dwell on:
+            repeat patterns (2+ of the same drug+error) and anything
+            involving a high-risk medicine. Everything else — one-off,
+            routine near misses — renders as a compact one-line list at
+            the end. The full detail for those still lives in the app. */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Near misses this period</h2>
         {activeIncidents.length === 0 ? (
           <p className="text-sm text-gray-400 mb-6">No active incidents in this period.</p>
-        ) : (
+        ) : (() => {
+          const allGroups = groupIncidents(activeIncidents);
+          const isFeatured = (group: Incident[]) =>
+            group.length > 1 || group.some(i => checkHighRisk(i.drug_name) || checkHighRisk(i.dispensed_drug));
+          const featured = allGroups.filter(isFeatured);
+          const routine = allGroups.filter(g => !isFeatured(g)).flat();
+          return (
+          <>
           <div className="space-y-3 mb-6">
-            {groupIncidents(activeIncidents).map(group => {
+            {featured.map(group => {
               const first = group[0];
               const rec = first.recommendations?.[0];
               const outcome = rec?.manager_outcome;
@@ -472,7 +452,37 @@ export function ReportPage() {
               );
             })}
           </div>
-        )}
+
+          {routine.length > 0 && (
+            <div className="mb-6">
+              <p className="text-xs font-semibold text-gray-500 mb-2">
+                Other near misses this period — one-offs, no repeat pattern. Full details are in the app.
+              </p>
+              <ul className="space-y-1.5">
+                {routine.map(inc => {
+                  const o = inc.recommendations?.[0]?.manager_outcome;
+                  return (
+                    <li key={inc.id} className="text-xs leading-snug flex items-baseline gap-1.5">
+                      <span className="text-gray-400">•</span>
+                      <span className="flex-1">
+                        <span className="font-medium text-gray-800">{summarizeIncident(inc)}</span>{' '}
+                        <span className="text-gray-500">{narrateIncidentContext(inc)}</span>
+                        {inc.notes && <span className="italic text-gray-500"> "{inc.notes}"</span>}
+                      </span>
+                      {o && (
+                        <span className="text-[10px] font-semibold text-gray-500 whitespace-nowrap">
+                          {o === 'accepted' ? '✓ Accepted' : o === 'modified' ? '✓ Modified' : '✓ No action'}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+          </>
+          );
+        })()}
 
         {/* What we'll do — agenda. Numbered list, no boxes around each
             row — those made the page feel like a form. */}
