@@ -44,7 +44,7 @@ function Hero() {
             Log near misses in seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">Review in minutes.</span> Prevent the next error.
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
-            Staff record a dispensing near miss in under a minute — anonymous, so they actually do it. Come review time it's grouped for you, each with an NZ-best-practice suggestion and the report already written. And every review shows whether last month's fixes worked — the continuous-improvement record the Pharmacy Council looks for. Built for NZ community pharmacy.
+            Staff record a dispensing near miss in under a minute — anonymous, so they actually do it. Come review time it's grouped for you, each with an NZ-best-practice suggestion and the report already written. And every review shows whether last month's fixes worked — so the same mistakes stop coming back before one reaches a patient. Built for NZ community pharmacy.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <Link to="/signup" className="bg-[#0F6E56] text-white font-semibold px-6 py-3.5 rounded-xl hover:bg-[#0B5A46] transition-colors flex items-center gap-2 group">
