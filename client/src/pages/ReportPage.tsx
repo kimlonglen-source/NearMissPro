@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, PeriodComparisonData } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { ShieldIcon } from '../components/Logo';
 import { usePatternMap, findPattern } from '../lib/usePatternMap';
-import { PeriodComparison } from '../components/PeriodComparison';
 import { FactorPanel } from '../components/FactorPanel';
 import { summarizeIncident, narrateIncidentContext } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
@@ -271,7 +270,7 @@ export function ReportPage() {
             opening paragraph is. Heading uses the same teal small-caps
             style as every other section so the rhythm down the page
             stays consistent. */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">Period summary</h2>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">1. This month at a glance</h2>
         <div className="mb-2">
           {!report.locked ? (
             <>
@@ -299,46 +298,12 @@ export function ReportPage() {
           {peakTime !== '-' && <> · peak time {peakTime}</>}
         </p>
 
-        {/* What worked — wins lead so the meeting opens positively. */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">What worked</h2>
-        <PeriodComparison from={report.period_start} to={report.period_end} maxRows={3} />
-
-        {/* The "Manager's notes on last meeting's actions" box used to
-            live here. Removed — the comparison panel above plus logged
-            pattern actions already document what was agreed and whether
-            it worked, from real data. The last_meeting_review DB column
-            stays (harmless) in case a real pharmacy asks for it back. */}
-        {/* "Notes from last meeting" only shows when the manager has
-            typed something. We deliberately suppress the auto-generated
-            comparison narrative here (phrases like "X more near misses
-            than last period…", "Resolved:", "Improving:") because that
-            text duplicates the "Did our actions work?" panel above and
-            was the single biggest source of wall-of-text on this page. */}
-        {prevSummary && !/(more|fewer|same total|resolved:|improving:|needs attention:)/i.test(prevSummary) && (
-          <div className="mb-8">
-            <p className="text-[11px] font-semibold uppercase text-gray-500 mb-1.5">
-              Notes from last meeting
-              {prevEdited && <EditBadge />}
-            </p>
-            {!report.locked ? (
-              <>
-                <textarea value={prevSummary} onChange={e => { setPrevSummary(e.target.value); setPrevEdited(true); }}
-                  onBlur={autoSaveOnBlur}
-                  rows={Math.max(3, Math.ceil(prevSummary.length / 90))}
-                  className="no-print w-full p-3 rounded-lg border border-gray-200 text-sm bg-white leading-relaxed" />
-                <p className="hidden print:block text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
-              </>
-            ) : (
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{prevSummary}</p>
-            )}
-          </div>
-        )}
-
-        {/* "What to look at" (pattern alerts) used to sit here but was
-            removed — it duplicated the "Needs attention" rows in the
-            panel above almost word for word (same patterns, same
-            counts), and the prevention-action prompt it carried is
-            already agenda item 3. */}
+        {/* 2. Follow-up from last review — accounts for EVERY problem
+            from the previous period in three plain outcomes: gone,
+            getting better, still here. Replaces the old "What worked"
+            comparison panel and the "Notes from last meeting" box —
+            this section now owns the whole look-back story. */}
+        <FollowUpFromLastReview from={report.period_start} to={report.period_end} />
 
         {/* Near misses this period — every item shows two things in the
             same fixed shape: WHAT HAPPENED and WHAT WE'RE DOING. That's
@@ -347,7 +312,7 @@ export function ReportPage() {
             collapse into one entry with dated occurrence lines, so
             nobody reads the same story four times. Kept compact:
             divider lines between entries instead of boxed cards. */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Near misses this period — and what we're doing about each</h2>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">3. Near misses this period — and what we're doing about each</h2>
         {activeIncidents.length === 0 ? (
           <p className="text-sm text-gray-400 mb-6">No active incidents in this period.</p>
         ) : (
@@ -430,7 +395,7 @@ export function ReportPage() {
         {/* What we'll do — agenda. Numbered list, no boxes around each
             row — those made the page feel like a form. */}
         <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">
-          What we'll do
+          4. What we'll do at the meeting
           {agendaEdited && <EditBadge />}
         </h2>
         {/* Flex layout instead of <ol> + <li> so the number stays
@@ -468,7 +433,7 @@ export function ReportPage() {
         )}
 
         {/* ─── 6. SIGN-OFF ───────────────────────────────────── */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Sign-off</h2>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">5. Sign-off</h2>
         <h3 className="text-sm font-semibold text-gray-700 mb-1">Staff acknowledgement</h3>
         <p className="text-xs text-gray-500 mb-1">I confirm I have attended the near miss review meeting and have read and understood the incidents and actions in this report.</p>
         <p className="text-xs text-gray-400 italic mb-3 no-print">Print this report and have each staff member sign in pen at the meeting.</p>
@@ -552,6 +517,95 @@ export function ReportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ── 2. Follow-up from last review ────────────────────────────────────
+// Accounts for EVERY problem from the previous period in three plain
+// outcomes: gone / getting better / still here. The section heading
+// carries the previous period's dates so nobody has to guess what's
+// being compared. Problems that are NEW this period don't appear here
+// — they're covered in section 3.
+function FollowUpFromLastReview({ from, to }: { from: string; to: string }) {
+  const [data, setData] = useState<PeriodComparisonData | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    api.getPeriodComparison(from, to)
+      .then(r => { if (!cancelled) setData(r); })
+      .catch(() => { if (!cancelled) setData(null); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [from, to]);
+
+  if (loading) return <div className="h-16 bg-gray-50 rounded-xl animate-pulse mb-6 mt-6" />;
+  if (!data) return null;
+
+  const fmt = (s: string) => new Date(s).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  const lastPeriod = data.patterns.filter(p => p.previousCount > 0);
+  const gone = lastPeriod.filter(p => p.direction === 'resolved');
+  const less = lastPeriod.filter(p => p.direction === 'reduced');
+  const still = lastPeriod.filter(p => p.direction === 'same' || p.direction === 'increased');
+
+  const row = (p: PeriodComparisonData['patterns'][number]) => (
+    <li key={`${p.drug}|${p.errorType}`} className="text-xs text-gray-700 leading-snug">
+      <span className="font-medium">{p.drug || 'No drug recorded'}</span>
+      {' — '}{p.errorType.toLowerCase()}: {p.previousCount} → {p.currentCount}
+      {p.direction === 'resolved' && p.actionedPreviously && <span className="text-[#085041]"> (action worked)</span>}
+      {p.direction === 'increased' && p.actionedPreviously && <span className="text-[#791F1F] font-medium"> — action not enough</span>}
+    </li>
+  );
+
+  return (
+    <>
+      <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">
+        2. Follow-up from last review ({fmt(data.previousPeriod.from)} — {fmt(data.previousPeriod.to)})
+      </h2>
+      {data.previousPeriod.totalIncidents === 0 ? (
+        <p className="text-sm text-gray-500 mb-6">
+          This is the pharmacy's first review — there's no earlier period to follow up on. From the next review, this section will show what happened to each problem from the last meeting.
+        </p>
+      ) : lastPeriod.length === 0 ? (
+        <p className="text-sm text-gray-500 mb-6">
+          Nothing carried over from the last review to follow up on.
+        </p>
+      ) : (
+        <div className="mb-6">
+          <p className="text-sm text-gray-800 font-medium mb-2">What happened to last review's near misses?</p>
+          <ul className="text-sm space-y-1 mb-4">
+            {gone.length > 0 && (
+              <li className="text-[#085041] font-semibold">✓ {gone.length} {gone.length === 1 ? 'has' : 'have'} not happened again</li>
+            )}
+            {less.length > 0 && (
+              <li className="text-[#0F6E56] font-semibold">↓ {less.length} {less.length === 1 ? 'is' : 'are'} happening less often</li>
+            )}
+            {still.length > 0 && (
+              <li className="text-[#791F1F] font-semibold">⚠ {still.length} {still.length === 1 ? 'is' : 'are'} still happening — we'll talk about these today</li>
+            )}
+          </ul>
+
+          {still.length > 0 && (
+            <div className="mb-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#791F1F] mb-1">Still happening</p>
+              <ul className="space-y-0.5">{still.map(row)}</ul>
+            </div>
+          )}
+          {less.length > 0 && (
+            <div className="mb-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#0F6E56] mb-1">Happening less often</p>
+              <ul className="space-y-0.5">{less.map(row)}</ul>
+            </div>
+          )}
+          {gone.length > 0 && (
+            <div className="mb-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#085041] mb-1">Not happened again</p>
+              <ul className="space-y-0.5">{gone.map(row)}</ul>
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
