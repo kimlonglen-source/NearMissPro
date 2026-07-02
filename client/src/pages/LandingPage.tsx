@@ -40,10 +40,10 @@ function Hero() {
             <Sparkles size={12} /> Built for NZ community pharmacy
           </div>
           <h1 className="text-4xl md:text-6xl font-bold leading-[1.05] mb-6 tracking-tight">
-            Turn near misses into a <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">quality improvement loop</span> your team actually uses.
+            Your near-miss logbook, turned into a <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">ready-made review meeting</span>.
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
-            Anonymous reporting in 60 seconds. Auto-generated meeting reports. Closed-loop tracking so you can see what's actually reducing errors — and what isn't.
+            Staff log a near miss in under a minute. Your monthly review report writes itself — what changed since last time, what to do about each one, and your near-miss rate. Built for NZ community pharmacy.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <Link to="/signup" className="bg-[#0F6E56] text-white font-semibold px-6 py-3.5 rounded-xl hover:bg-[#0B5A46] transition-colors flex items-center gap-2 group">
@@ -436,21 +436,21 @@ function ThreeSteps() {
   const steps = [
     {
       icon: <ClipboardPlus size={20} />,
-      title: 'Capture',
-      body: 'Staff log a near miss in under a minute. Anonymous, structured, with a patient-reached gate that catches dispensing errors and routes them correctly.',
+      title: 'Staff log it',
+      body: 'A staff member records a near miss in under a minute. It stays anonymous, and the first question checks it was caught before the patient — so real dispensing errors go to the right process, not this one.',
       bullets: ['60-second form', 'High-risk drug alerts', 'Stops accidental patient info'],
     },
     {
       icon: <BarChart3 size={20} />,
-      title: 'Analyse',
-      body: 'Spot recurring drugs, error types, and contributing factors. See whether last month\'s actions actually reduced the patterns.',
-      bullets: ['Pattern detection', '"Did our actions work?" closed loop', 'Heatmap + weekly trend'],
+      title: 'Manager reviews',
+      body: 'The manager works through each near miss, gets a plain-English suggestion, and decides what to change. Repeats of the same problem are grouped together so nothing gets read twice.',
+      bullets: ['One decision per near miss', 'Plain-English suggestions', 'Repeats grouped automatically'],
     },
     {
       icon: <FileText size={20} />,
-      title: 'Report',
-      body: 'A one-page printable report your manager reads to the team. Auto-fills the summary, agenda, and what to discuss this month.',
-      bullets: ['One-page meeting script', 'Auto-generated agenda', 'Sign-off table for the audit log'],
+      title: 'Report for the meeting',
+      body: 'One click makes a printable report that reads like a meeting run-sheet. It shows what changed since last review, this period\'s near misses with the action for each, and your near-miss rate per scripts dispensed.',
+      bullets: ['Compares to your last report', 'Shows near-miss rate (% of scripts)', 'Sign-off table for the audit log'],
     },
   ];
   return (
@@ -458,7 +458,7 @@ function ThreeSteps() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
           <p className="text-sm font-semibold text-[#0F6E56] uppercase tracking-wide mb-3">How it works</p>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Three steps. One regulator-friendly loop.</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Three simple steps every month.</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
           {steps.map(s => (
@@ -494,13 +494,13 @@ function ClosedLoop() {
           <p className="text-sm font-semibold text-[#0F6E56] uppercase tracking-wide mb-3">The closed loop</p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-5">Prove your actions worked.</h2>
           <p className="text-gray-600 leading-relaxed mb-6">
-            Most near-miss tools are logbooks. NearMissPro closes the loop: every system change you log against a pattern is tracked against future incidents, so you can see whether what you tried actually reduced the same kind of error happening again.
+            Most near-miss tools are just logbooks. NearMissPro compares every report to your last one: each problem from last review is followed up and marked as gone, happening less, or still happening — so you can see whether what you changed actually worked.
           </p>
           <ul className="space-y-3">
             {[
-              { icon: <Shield size={16} />, text: 'Every void, restore, and decision is in the audit log with timestamp and reason.' },
-              { icon: <TrendingDown size={16} />, text: 'Pattern reduced from 5 → 1? The report shows it as "action worked".' },
-              { icon: <AlertTriangle size={16} />, text: 'Pattern got worse despite action? Flagged as "needs attention".' },
+              { icon: <TrendingDown size={16} />, text: 'A problem gone since last review shows as "not happened again".' },
+              { icon: <AlertTriangle size={16} />, text: 'Still happening despite a change? It\'s flagged for the team to rethink.' },
+              { icon: <Shield size={16} />, text: 'Every decision, void and edit is in the audit log with a timestamp.' },
             ].map((p, i) => (
               <li key={i} className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-lg bg-[#E1F5EE] text-[#0F6E56] flex items-center justify-center flex-shrink-0">
@@ -546,7 +546,8 @@ function VsPaper() {
     { paper: 'Hours of flipping through pages to review the month', us: 'Manager review in minutes — auto-grouped, AI suggestion on every incident' },
     { paper: 'Patterns only visible if you re-read every entry', us: 'Auto-detected, flagged on the dashboard mid-month so you can act early' },
     { paper: 'Monthly meeting report written from scratch every time', us: 'Auto-generated meeting script — summary, agenda, sign-off included' },
-    { paper: '"Did our actions work?" — almost impossible to answer', us: 'Pattern comparison vs prior period — built-in, on every report' },
+    { paper: 'No sense of whether things are getting better or worse', us: 'Every report compares to your last one, plus your near-miss rate per scripts dispensed' },
+    { paper: '"Did our actions work?" — almost impossible to answer', us: 'Each problem from last review followed up — gone, less often, or still happening' },
     { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log — every void, edit, and decision saved. Designed to support your CQI audit work.' },
   ];
   return (
