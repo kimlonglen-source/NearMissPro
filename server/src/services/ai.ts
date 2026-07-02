@@ -705,14 +705,16 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     agendaItems.push(reviewItem);
   }
 
-  // ── 3. DECIDE ──
-  if (incidentCount > 0) {
-    let decideItem = 'Decide on ONE change to make this month — something specific, like moving a shelf, updating a label, or tweaking a workflow. Name the person who\'ll do it and the date it\'ll be done by.';
+  // ── 3. DECIDE — only when there's genuinely something for the
+  //   team to decide. The manager has already actioned every near
+  //   miss before the meeting; the one real team-decision moment is
+  //   when a problem KEPT happening despite last month's change —
+  //   the fix failed, so the team agrees what to try next. Months
+  //   where everything is sorted get a 3-step agenda instead. ──
+  if (incidentCount > 0 && concerns.length > 0) {
+    let decideItem = `${concerns.length} problem${concerns.length > 1 ? 's are' : ' is'} still happening despite last month's change (see section 2). As a team, agree what to try next — name who'll do it and the date it'll be done by.`;
     if (topFactors.length > 0 && topFactors[0][1] >= 2) {
       decideItem += ` The biggest factor this period was "${topFactors[0][0]}" — a good place to focus.`;
-    }
-    if (concerns.length > 0) {
-      decideItem += ` Also revisit ${concerns.length} problem${concerns.length > 1 ? 's' : ''} where last month\'s change hasn\'t worked yet.`;
     }
     agendaItems.push(decideItem);
   }
