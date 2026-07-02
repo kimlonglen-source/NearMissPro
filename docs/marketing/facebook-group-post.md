@@ -7,27 +7,29 @@ Waitlist link: https://tally.so/r/D4YgQl
 
 ---
 
-Kia ora everyone,
+Kia ora team,
 
-Quick one from a fellow NZ pharmacist.
+Here's something I reckon every NZ pharmacy knows too well: the same near miss, turning up again and again.
 
-We all catch near misses every day — the wrong strength, the look-alike box, the typo spotted at the final check. We fix it, feel the relief, and move on. But the same ones keep coming back, and one day one might not get caught.
+The same look-alike box. The same strength mix-up. The same busy-Friday slip. We catch it, breathe out, fix it — and a few weeks later, there it is again.
 
-What always frustrated me is that the near-miss logbook never actually helped *prevent* the next one. So I've been building a simple tool to fix that — NearMissPro:
+We're great at catching them. We're just not set up to stop them coming back. The logbook fills up, but nothing in it tells you which problems are repeating, or whether the change you made last month actually worked.
 
-• Log a near miss in seconds — no paragraph, no names, anonymous to the team
-• It surfaces the patterns for you
-• Each month it tells you whether the change you made actually reduced them
+So I've been building something to close that gap — NearMissPro. I'm a NZ pharmacist, and I wanted a tool that:
 
-The whole point is prevention — stopping the same slip before it reaches a patient. No blame, no finger-pointing.
+• Logs a near miss in seconds — no essay, no names, anonymous to the team
+• Spots the repeats for you
+• Each month, shows you plainly whether last month's fix actually reduced them
 
-It's not live yet, but it's close. Short screen recording below so you can see how it works.
+It's all about prevention — turning a caught near miss into one that doesn't happen again, before it ever reaches a patient.
 
-On cost, for full transparency: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. That's about a dollar a day: logging a near miss drops to a few taps instead of a written paragraph, and the month pulls into a review in minutes, not hours. If it saves your checking pharmacist even half an hour a month, it's paid for itself.
+It's not live yet, but it's close — short screen recording below.
 
-Join the waitlist and I'll let you know the moment it's ready: https://tally.so/r/D4YgQl
+Cost, upfront and honest: everyone gets the first 3 months free, then $30 + GST/month per pharmacy (or $300/year), cancel anytime. That's about a dollar a day — and if it saves your checker even half an hour a month, it's already paid for itself.
 
-How does your pharmacy handle near misses at the moment? Keen to hear in the comments.
+If you'd like a look when it's ready, pop your details here and I'll flick you a message: https://tally.so/r/D4YgQl
+
+Genuinely curious though — what's the one near miss that keeps coming back in your pharmacy?
 
 ---
 
