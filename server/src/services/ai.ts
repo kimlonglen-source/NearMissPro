@@ -685,7 +685,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // script stays scannable.
 
   // ── 1. OPEN ──
-  let openItem = 'Read the Period Summary above out loud to the team. Remind everyone: we don\'t track who reported what — this is about learning, not blame.';
+  let openItem = 'Read "This month at a glance" (section 1, below) out loud to the team. Remind everyone: we don\'t track who reported what — this is about learning, not blame.';
   if (wins.length > 0) {
     openItem += ` Good news to share — ${wins.length} pattern${wins.length > 1 ? 's have' : ' has'} been resolved since the last meeting. Thank the team.`;
   } else if (recurring.length > 0) {
@@ -695,7 +695,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
 
   // ── 2. REVIEW ──
   if (incidentCount > 0) {
-    let reviewItem = 'Read out each near miss above and the action chosen. Make sure the team understands what we\'re changing — and note anything they\'d want handled differently next time.';
+    let reviewItem = 'Go through the follow-up (section 2) and each near miss (section 3) with the action chosen. Make sure the team understands what we\'re changing — and note anything they\'d want handled differently next time.';
     if (topPairLabel && topPairCount >= 2) {
       reviewItem += ` Start with ${topPairLabel} — it came up ${topPairCount} times this period.`;
     }

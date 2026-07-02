@@ -266,11 +266,52 @@ export function ReportPage() {
         </div>
         <div className="h-[2px] bg-[#0F6E56] mb-6" />
 
+        {/* How to run this meeting — the agenda leads the report. The
+            manager picks up the printed page at the team meeting and
+            the first thing they see is the four-step run sheet; the
+            content it references (summary, follow-up, near misses,
+            sign-off) follows below in the order the steps use it. */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">
+          How to run this meeting
+          {agendaEdited && <EditBadge />}
+        </h2>
+        {/* Flex layout instead of <ol> + <li> so the number stays
+            aligned with the FIRST line of each agenda item even when
+            the textarea wraps to multiple rows. */}
+        <div className="space-y-3 mb-6">
+          {agenda.map((item, i) => (
+            <div key={i} className="flex gap-3 items-start">
+              <span className="text-sm font-medium text-gray-500 pt-2 select-none">{i + 1}.</span>
+              <div className="flex-1">
+                {!report.locked ? (
+                  <>
+                    <textarea value={item.text}
+                      className="no-print w-full text-sm leading-relaxed p-2 rounded-lg border border-gray-200 bg-white resize-none"
+                      rows={Math.max(2, Math.ceil(item.text.length / 90))}
+                      onChange={e => {
+                        const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
+                        setAgenda(next); setAgendaEdited(true);
+                      }}
+                      onBlur={autoSaveOnBlur} />
+                    <p className="hidden print:block text-sm leading-relaxed">{item.text}</p>
+                  </>
+                ) : (
+                  <p className="text-sm leading-relaxed">{item.text}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        {!report.locked && (
+          <button onClick={() => { setAgenda([...agenda, { text: '', edited: true }]); setAgendaEdited(true); }}
+            className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add item</button>
+        )}
+
         {/* Period summary — labelled so the reader knows what this
             opening paragraph is. Heading uses the same teal small-caps
             style as every other section so the rhythm down the page
             stays consistent. */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4">1. This month at a glance</h2>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">1. This month at a glance</h2>
         <div className="mb-2">
           {!report.locked ? (
             <>
@@ -392,48 +433,8 @@ export function ReportPage() {
           </div>
         )}
 
-        {/* What we'll do — agenda. Numbered list, no boxes around each
-            row — those made the page feel like a form. */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">
-          4. What we'll do at the meeting
-          {agendaEdited && <EditBadge />}
-        </h2>
-        {/* Flex layout instead of <ol> + <li> so the number stays
-            aligned with the FIRST line of each agenda item even when
-            the textarea wraps to multiple rows. Was: numbers floated
-            to the bottom of the box because <li> let the textarea
-            push everything down. */}
-        <div className="space-y-3 mb-6">
-          {agenda.map((item, i) => (
-            <div key={i} className="flex gap-3 items-start">
-              <span className="text-sm font-medium text-gray-500 pt-2 select-none">{i + 1}.</span>
-              <div className="flex-1">
-                {!report.locked ? (
-                  <>
-                    <textarea value={item.text}
-                      className="no-print w-full text-sm leading-relaxed p-2 rounded-lg border border-gray-200 bg-white resize-none"
-                      rows={Math.max(2, Math.ceil(item.text.length / 90))}
-                      onChange={e => {
-                        const next = [...agenda]; next[i] = { text: e.target.value, edited: true };
-                        setAgenda(next); setAgendaEdited(true);
-                      }}
-                      onBlur={autoSaveOnBlur} />
-                    <p className="hidden print:block text-sm leading-relaxed">{item.text}</p>
-                  </>
-                ) : (
-                  <p className="text-sm leading-relaxed">{item.text}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        {!report.locked && (
-          <button onClick={() => { setAgenda([...agenda, { text: '', edited: true }]); setAgendaEdited(true); }}
-            className="btn-outline text-xs mb-6 no-print"><Plus size={12} /> Add item</button>
-        )}
-
-        {/* ─── 6. SIGN-OFF ───────────────────────────────────── */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">5. Sign-off</h2>
+        {/* ─── SIGN-OFF ───────────────────────────────────── */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">4. Sign-off</h2>
         <h3 className="text-sm font-semibold text-gray-700 mb-1">Staff acknowledgement</h3>
         <p className="text-xs text-gray-500 mb-1">I confirm I have attended the near miss review meeting and have read and understood the incidents and actions in this report.</p>
         <p className="text-xs text-gray-400 italic mb-3 no-print">Print this report and have each staff member sign in pen at the meeting.</p>
