@@ -21,11 +21,11 @@ What always frustrated me is that the near-miss logbook never actually helped *p
 
 The whole point is prevention — stopping the same slip before it reaches a patient. No blame, no finger-pointing.
 
-It's not live yet — I'm building it with real NZ pharmacies in mind, and I'd genuinely love your honest feedback, good or bad. Short screen recording below so you can see how it works.
+It's not live yet, but it's close. Short screen recording below so you can see how it works.
 
 On cost, for full transparency: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. That's about a dollar a day: logging a near miss drops to a few taps instead of a written paragraph, and the month pulls into a review in minutes, not hours. If it saves your checking pharmacist even half an hour a month, it's paid for itself.
 
-Join the waitlist to get in early and help shape it: https://tally.so/r/D4YgQl
+Join the waitlist and I'll let you know the moment it's ready: https://tally.so/r/D4YgQl
 
 How does your pharmacy handle near misses at the moment? Keen to hear in the comments.
 
@@ -35,7 +35,7 @@ How does your pharmacy handle near misses at the moment? Keen to hear in the com
 - Everyone gets the first 3 months free (trial).
 - Then $30 NZD/month per pharmacy, or $300/year (saving $60). Excl GST.
 - Auto-renews, cancel anytime, no lock-in.
-- Waitlist perk = early access + a say in how it's built (NOT a separate free deal).
+- Waitlist perk = early access / first to know when it launches (NOT a separate free deal, NOT co-design).
 
 ## Value framing (price vs time)
 - ~$30/month ≈ about $1 a day per pharmacy.
