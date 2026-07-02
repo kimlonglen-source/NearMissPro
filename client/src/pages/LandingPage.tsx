@@ -22,6 +22,7 @@ export function LandingPage() {
       <ClosedLoop />
       <VsPaper />
       <Pricing />
+      <Faq />
       <SignupForm />
       <MarketingFooter />
     </div>
@@ -665,6 +666,84 @@ function Pricing() {
             <p className="text-xs text-gray-400 text-center mt-3">No card required during trial</p>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+// Collapsible FAQ — answers the objections that stop a cautious
+// pharmacist signing up. Security answers are deliberately honest:
+// no certification claims, and they lead with "we don't collect
+// patient data, so we can't leak it" — the truest, strongest point.
+function Faq() {
+  const groups: { heading: string; items: { q: string; a: string }[] }[] = [
+    {
+      heading: 'Privacy & security',
+      items: [
+        { q: 'Is it really anonymous?', a: 'Yes. The system never records which staff member logged a near miss. Your manager sees what happened, not who reported it — that\'s what keeps people reporting honestly.' },
+        { q: 'What patient information do you collect?', a: 'None. The recording form has no patient fields, and the notes box blocks NHI numbers, dates of birth, phone numbers and names before anything is saved. There is no patient record to expose — even in a worst-case breach.' },
+        { q: 'Does the AI see our patient data? Could it leak?', a: 'The AI only ever receives the near-miss details (drug, error type, contributing factors) to write its suggestion — no patient identity, because none is collected. Data sent to the AI is not used to train it, and you can turn AI suggestions off entirely and still use everything else.' },
+        { q: 'Where does our data live, and is it encrypted?', a: 'In a secure database hosted in Sydney, Australia. Encrypted in transit and at rest. Each pharmacy can only ever see its own data. We never sell data.' },
+        { q: 'What if a device is lost or leaves the pharmacy?', a: 'A brand-new device (like a home computer) can\'t just log in — it needs email approval sent to your dispensary inbox first. And because there\'s no patient data in the app, a lost device can\'t leak patient records. Most pharmacies simply run it on the dispensary computer, which never leaves the counter.' },
+        { q: 'What happens if there\'s a breach?', a: 'If data is ever accessed without authorisation, we notify your dispensary email within 72 hours with what was affected and what we\'ve done — and report serious breaches to the Office of the Privacy Commissioner, as the Privacy Act 2020 requires.' },
+      ],
+    },
+    {
+      heading: 'Using it day to day',
+      items: [
+        { q: 'What device does it run on?', a: 'Your dispensary computer, in any web browser — no install needed. It also works on a phone or tablet if you want one on the bench.' },
+        { q: 'Will my staff actually use it?', a: 'It\'s a 60-second form, anonymous, with drug autocomplete — designed to be quicker than writing in the paper logbook, so it actually gets done.' },
+        { q: 'Does it replace our paper logbook?', a: 'Yes — it\'s your logbook, plus the monthly review and the report done for you.' },
+        { q: 'What about a dispensing error that reached the patient?', a: 'That\'s not a near miss. The first question on the form catches it and points you to the right process (Pharmacy Council / CARM) — this tool is for events caught in time.' },
+      ],
+    },
+    {
+      heading: 'Compliance & pricing',
+      items: [
+        { q: 'Does this help with Pharmacy Council CQI expectations?', a: 'It\'s built around the continuous-improvement cycle — capture, review, act, and check whether last month\'s changes worked — and keeps a full timestamped audit trail. It\'s designed to support your CQI work (we\'re not certified by any regulator; the tool assists the work you\'re responsible for).' },
+        { q: 'What does it cost?', a: '$30/month or $300/year per pharmacy — all your staff included. Three months free to start, no card required.' },
+        { q: 'Can I cancel and get our data out?', a: 'Cancel any time. You can download all your data as a single file whenever you like — for your records, an inspector, or to take with you.' },
+      ],
+    },
+  ];
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <section className="px-5 py-20 bg-white">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-10">
+          <p className="text-sm font-semibold text-[#0F6E56] uppercase tracking-wide mb-3">Questions pharmacists ask</p>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Before you start your trial.</h2>
+        </div>
+        <div className="space-y-6">
+          {groups.map(g => (
+            <div key={g.heading}>
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">{g.heading}</p>
+              <div className="space-y-2">
+                {g.items.map(item => {
+                  const id = item.q;
+                  const isOpen = open === id;
+                  return (
+                    <div key={id} className="border border-gray-200 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setOpen(isOpen ? null : id)}
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-gray-50"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">{item.q}</span>
+                        <span className={`text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-45' : ''}`}>+</span>
+                      </button>
+                      {isOpen && (
+                        <p className="px-4 pb-4 text-sm text-gray-600 leading-relaxed">{item.a}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-sm text-gray-500 mt-8">
+          Still have a question? Email <a href="mailto:hello@nearmisspro.co.nz" className="text-[#0F6E56] font-medium hover:underline">hello@nearmisspro.co.nz</a>.
+        </p>
       </div>
     </section>
   );
