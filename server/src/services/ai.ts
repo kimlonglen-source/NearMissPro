@@ -642,19 +642,17 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const bulletLines: string[] = [];
 
   if (incidentCount > 0) {
-    // 1. What happened — count + trend vs last period.
+    // 1. What happened — BOTH raw counts side by side, then the trend
+    //    word, so the reader never has to do the subtraction.
     let happened: string;
     if (prevIncidents && prevIncidents.length > 0) {
       const netDelta = incidentCount - prevIncidents.length;
-      happened = netDelta < 0
-        ? `${incidentCount} near misses — ${Math.abs(netDelta)} fewer than last period.`
-        : netDelta > 0
-          ? `${incidentCount} near misses — ${netDelta} more than last period.`
-          : `${incidentCount} near misses — same as last period.`;
+      const trendWord = netDelta < 0 ? `down ${Math.abs(netDelta)}` : netDelta > 0 ? `up ${netDelta}` : 'no change';
+      happened = `${incidentCount} near misses this period vs ${prevIncidents.length} last period — ${trendWord}.`;
     } else {
       happened = `${incidentCount} near miss${incidentCount > 1 ? 'es' : ''} recorded.`;
     }
-    if (wins.length > 0) happened += ` ${wins.length} earlier pattern${wins.length > 1 ? 's' : ''} resolved.`;
+    if (wins.length > 0) happened += ` ${wins.length} earlier problem${wins.length > 1 ? 's' : ''} resolved.`;
     bulletLines.push(`• What happened: ${happened}`);
 
     // 2. Biggest pattern — names the actual drug and error.
@@ -678,6 +676,15 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
 
   const rate = rateLine(incidentCount, scriptsDispensed);
   if (rate) bulletLines.push(rate);
+
+  // Deterministic vs-last-period line for the AI path. The stub's
+  // "What happened" bullet already carries both counts; the AI writes
+  // its own opening line, so this guarantees the raw numbers appear
+  // regardless of what the model produces.
+  const vsDelta = prevIncidents && prevIncidents.length > 0 ? incidentCount - prevIncidents.length : null;
+  const vsLine = (prevIncidents && prevIncidents.length > 0 && incidentCount > 0)
+    ? `• Vs last period: ${incidentCount} near misses this period, ${prevIncidents.length} last period (${vsDelta === 0 ? 'no change' : vsDelta! > 0 ? `up ${vsDelta}` : `down ${Math.abs(vsDelta!)}`}).`
+    : '';
 
   const stubSummaryText = incidentCount === 0
     ? 'No near misses were recorded this period. Keep encouraging staff to report — a quiet log usually means under-reporting, not zero risk.'
@@ -792,10 +799,14 @@ Hard rules: each line maximum 20 words after the label. Plain language, no markd
     }
     const result = await response.json();
     const aiSummary = result.content?.[0]?.text || stub.summary;
+    // Vs-last-period + rate bullets are appended deterministically —
+    // the AI is never trusted with the arithmetic. Skipped when the
+    // AI call fell back to the stub (which already includes them).
+    const extras = aiSummary !== stub.summary
+      ? [vsLine, rate].filter(Boolean).join('\n')
+      : '';
     return {
-      // Rate bullet is appended deterministically — the AI is never
-      // trusted with the arithmetic.
-      summary: rate && aiSummary !== stub.summary ? `${aiSummary}\n${rate}` : aiSummary,
+      summary: extras ? `${aiSummary}\n${extras}` : aiSummary,
       agenda: stub.agenda,
       // "Last period improvements" is now seeded with the comparison
       // narrative (computed above) so it shows what actually happened
