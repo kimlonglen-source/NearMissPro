@@ -9,27 +9,33 @@ A green-light target to decide on before starting: e.g. *"If 15–20 NZ pharmaci
 
 ## 1. Waitlist form (paste into Tally.so or Google Forms — no code, no hosting)
 
-**Form title:** NearMissPro — join the waitlist
+**Form title:** Be first to try NearMissPro
 
-**Intro blurb:**
-> NearMissPro is a simple tool for NZ community pharmacies to log near misses in seconds, spot the patterns, and run the monthly quality-improvement review the Pharmacy Council looks for — no blame, no names.
+**Intro blurb (pain-led):**
+> Near misses are the one thing every pharmacy catches — but nobody has time to log. So the same mistakes keep coming back, and the monthly review never really proves whether last month's fix worked.
 >
-> It's in development now. Join the waitlist to be among the first to try it, and to help shape it around how pharmacies actually work.
+> NearMissPro fixes both pains: log a near miss in seconds, and see plainly whether what you changed is actually reducing them — the continuous-improvement record the Pharmacy Council looks for. No blame, no names.
+>
+> It's in development now, built by a NZ pharmacist. Join the waitlist for early access and to help shape it around how your pharmacy really works.
 
-**Questions:**
-1. Your name — *(short text, required)*
-2. Pharmacy name — *(short text, required)*
+**Questions (first three required — keep the rest optional for more sign-ups):**
+1. Your name — *(short answer, required)*
+2. Pharmacy name — *(short answer, required)*
 3. Email — *(email, required)*
-4. Region — *(short text or dropdown, optional)* — e.g. Auckland, Waikato, Canterbury
-5. Your role — *(multiple choice, optional)* — Owner / Pharmacist / Pharmacy technician / Manager / Other
-6. How do you record near misses now? — *(long text, optional)* — e.g. paper log, a book, a spreadsheet, we don't really
-7. Would you be open to a quick chat or an early look? — *(yes/no, optional)*
+4. Your role — *(multiple choice, optional)* — Owner / Pharmacist / Pharmacy technician / Dispensary manager / Other
+5. How does your team record near misses now? — *(multiple choice, optional)* — Paper logbook or book by the bench / A spreadsheet / In our dispensary software / We don't really record them / Other
+6. What frustrates you most about near misses today? — *(multiple choice, optional)* — Staff are too busy to log them / The monthly review takes too long / We never know if our fixes actually worked / The same mistakes keep coming back / Nothing turns the logbook into real change / Other
+7. Would you like an early look, or a quick chat? — *(multiple choice, optional)* — Yes / No
+
+> Questions 5 and 6 double as market research: they tell you which pain to lead with when you introduce the product.
+
+**Submit button:** rename to `Join the waitlist`
 
 **Privacy line (place just above the submit button):**
 > We'll only use your details to tell you when NearMissPro launches and, if you've said yes, to invite you to an early look. We won't share your details with anyone, and you can ask us to remove you at any time by emailing hello@nearmisspro.co.nz.
 
 **Thank-you message (after submit):**
-> Thanks — you're on the list. We'll be in touch as NearMissPro gets closer to launch. In the meantime, if a colleague at another pharmacy would find this useful, feel free to pass the link along.
+> Thanks — you're on the list. You've just helped shape a tool built to stop the same near misses coming back. We'll be in touch as NearMissPro gets closer to launch. If a colleague at another pharmacy feels this pain too, feel free to pass the link along.
 
 ---
 
