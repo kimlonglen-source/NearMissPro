@@ -16,6 +16,7 @@ export function LandingPage() {
     <div className="min-h-screen bg-white text-gray-900">
       <MarketingHeader />
       <Hero />
+      <TwoPains />
       <ComplianceBadges />
       <ThreeSteps />
       <ClosedLoop />
@@ -40,10 +41,10 @@ function Hero() {
             <Sparkles size={12} /> Built for NZ community pharmacy
           </div>
           <h1 className="text-4xl md:text-6xl font-bold leading-[1.05] mb-6 tracking-tight">
-            Your near-miss logbook, turned into a <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">ready-made review meeting</span>.
+            Logging a near miss takes seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">The monthly review does itself.</span>
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
-            Staff log a near miss in under a minute. Your monthly review report writes itself — what changed since last time, what to do about each one, and your near-miss rate. Built for NZ community pharmacy.
+            The two jobs nobody enjoys — writing near misses in the logbook, then making sense of them at review time — both become quick and painless. Staff log in under a minute; your review report is ready in minutes, not a lost afternoon. Built for NZ community pharmacy.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <Link to="/signup" className="bg-[#0F6E56] text-white font-semibold px-6 py-3.5 rounded-xl hover:bg-[#0B5A46] transition-colors flex items-center gap-2 group">
@@ -415,6 +416,40 @@ function PrintStage() {
   );
 }
 
+// The two moments that actually hurt in a pharmacy — recording (staff)
+// and reviewing (manager). Named plainly, each with the fix, so a
+// prospect sees their own problem in the first scroll.
+function TwoPains() {
+  return (
+    <section className="px-5 py-16 bg-gradient-to-b from-white to-gray-50">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-10">
+          <p className="text-sm font-semibold text-[#0F6E56] uppercase tracking-wide mb-3">The two jobs no one enjoys</p>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">We fixed both of them.</h2>
+        </div>
+        <div className="grid md:grid-cols-2 gap-5">
+          <div className="bg-white rounded-2xl p-7 border border-gray-200">
+            <div className="w-11 h-11 rounded-xl bg-[#E1F5EE] flex items-center justify-center mb-4 text-[#0F6E56]">
+              <ClipboardPlus size={20} />
+            </div>
+            <h3 className="font-bold text-lg mb-2">Recording — for staff</h3>
+            <p className="text-sm text-gray-500 mb-3"><span className="font-semibold text-gray-700">The pain:</span> stopping mid-dispense to hand-write in the logbook. So near misses go unreported.</p>
+            <p className="text-sm text-gray-600 leading-relaxed"><span className="font-semibold text-[#0F6E56]">The fix:</span> a 60-second form with drug autocomplete. Anonymous, so staff aren't afraid to log. Quick enough that they actually do it.</p>
+          </div>
+          <div className="bg-white rounded-2xl p-7 border border-gray-200">
+            <div className="w-11 h-11 rounded-xl bg-[#E1F5EE] flex items-center justify-center mb-4 text-[#0F6E56]">
+              <BarChart3 size={20} />
+            </div>
+            <h3 className="font-bold text-lg mb-2">Reviewing — for the manager</h3>
+            <p className="text-sm text-gray-500 mb-3"><span className="font-semibold text-gray-700">The pain:</span> an afternoon flipping through the book, grouping by hand, writing a report from scratch.</p>
+            <p className="text-sm text-gray-600 leading-relaxed"><span className="font-semibold text-[#0F6E56]">The fix:</span> near misses grouped for you, an NZ-best-practice suggestion on each, and a printable review report ready in minutes.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ComplianceBadges() {
   const items = ['Pharmacy Council NZ', 'Medsafe', 'HQSC', 'Te Whatu Ora', 'NZ Formulary', 'Misuse of Drugs Act'];
   return (
@@ -443,8 +478,8 @@ function ThreeSteps() {
     {
       icon: <BarChart3 size={20} />,
       title: 'Manager reviews',
-      body: 'The manager works through each near miss, gets a plain-English suggestion, and decides what to change. Repeats of the same problem are grouped together so nothing gets read twice.',
-      bullets: ['One decision per near miss', 'Plain-English suggestions', 'Repeats grouped automatically'],
+      body: 'The manager works through each near miss and gets a suggested action drawn from NZ community-pharmacy best practice (Medsafe, NZ Formulary, Pharmacy Council, HQSC). Accept it, reword it, or decide no change is needed. Repeats are grouped so nothing is read twice.',
+      bullets: ['Suggestions from NZ best practice', 'One decision per near miss', 'Repeats grouped automatically'],
     },
     {
       icon: <FileText size={20} />,
