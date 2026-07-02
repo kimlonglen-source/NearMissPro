@@ -31,7 +31,20 @@ router.post('/generate', async (req: Request, res: Response) => {
       .eq('period_end', periodEnd)
       .limit(1)
       .maybeSingle();
-    if (existing) { res.status(200).json(existing); return; }
+    if (existing) {
+      // The idempotency guard used to silently discard a freshly
+      // typed scripts-dispensed number. If the manager provided one
+      // and the existing DRAFT doesn't have it yet, save it so the
+      // report's rate line appears. Signed-off reports stay frozen.
+      if (scriptsDispensed && !existing.scripts_dispensed && existing.locked !== true) {
+        const { data: updated } = await supabase.from('reports')
+          .update({ scripts_dispensed: scriptsDispensed })
+          .eq('id', existing.id)
+          .select().single();
+        res.status(200).json(updated || existing); return;
+      }
+      res.status(200).json(existing); return;
+    }
 
     // Run summary, hotspot detection, and trend series in parallel —
     // they each hit the DB independently.
