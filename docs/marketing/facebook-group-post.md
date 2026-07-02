@@ -1,7 +1,7 @@
 # Facebook post — NZ community pharmacy group
 
-Warmer, peer-to-peer tone (a group of fellow pharmacy folk, not prospects).
-Attach the screen recording; post the video rather than just a link for better reach.
+Mod approved, and asked for cost transparency — pricing line included below.
+Attach the screen recording (post video, not just a link).
 Waitlist link: https://tally.so/r/D4YgQl
 
 ---
@@ -22,15 +22,19 @@ The whole point is prevention — stopping the same slip before it reaches a pat
 
 It's not live yet — I'm building it with real NZ pharmacies in mind, and I'd genuinely love your honest feedback, good or bad. Short screen recording below so you can see how it works.
 
-Waitlist pharmacies get **free early access** while I build it: https://tally.so/r/D4YgQl
+On cost, for full transparency: it's free for waitlist pharmacies while I build it. At launch there's a 3-month free trial, then a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in.
+
+Join the waitlist for free early access: https://tally.so/r/D4YgQl
 
 How does your pharmacy handle near misses at the moment? Keen to hear in the comments.
 
-(Mods — happy to take this down if promo isn't allowed, just give me a nudge.)
-
 ---
 
-## Tips
-- Message a group admin first to ask if promo is allowed — groups where you ask tend to be warmer.
-- Post the video directly (not just the link) — video gets more reach in FB groups.
-- Reply to every comment — engagement boosts reach, and "we just use a book" replies are market research.
+## Planned pricing (from the Terms — keep consistent everywhere)
+- Free for waitlist pharmacies during development.
+- 3-month free trial at launch.
+- Then $30 NZD/month per pharmacy, or $300/year (saving $60). Excl GST.
+- Auto-renews, cancel anytime.
+
+## Reply sent to the mod
+> Thanks so much — really appreciate it! Happy to be upfront on cost: it's free for waitlist pharmacies while I'm building it. At launch there's a 3-month free trial, then it's a simple subscription — $30 + GST per month per pharmacy (or $300/year), cancel anytime, no lock-in. I'll make sure that's clear in the post so nobody's surprised. Ngā mihi, Kim
