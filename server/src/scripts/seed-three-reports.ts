@@ -185,6 +185,7 @@ const PERIOD_3_INCIDENTS: Incident[] = [
 ];
 
 const PERIODS = [
+  { monthsAgo: 4, incidents: PERIOD_0_INCIDENTS },
   { monthsAgo: 3, incidents: PERIOD_1_INCIDENTS },
   { monthsAgo: 2, incidents: PERIOD_2_INCIDENTS },
   { monthsAgo: 1, incidents: PERIOD_3_INCIDENTS },
@@ -228,8 +229,17 @@ function stubRecommendation(inc: Incident): string {
 }
 
 async function findPharmacy(): Promise<{ id: string; name: string } | null> {
-  const { data } = await supabase.from('pharmacies').select('id, name, subscription_status').order('created_at', { ascending: true });
+  const { data, error } = await supabase.from('pharmacies').select('id, name, subscription_status').order('created_at', { ascending: true });
+  if (error) {
+    console.error('Could not read the pharmacies table:', error.message);
+    console.error('Check server/.env has the right SUPABASE_URL and SUPABASE_SERVICE_KEY.');
+    return null;
+  }
   if (!data || data.length === 0) return null;
+  console.log('Pharmacies in the database:');
+  for (const p of data) {
+    console.log(`  - ${p.name}  (status: ${p.subscription_status})`);
+  }
   const demo = data.find(p => p.name?.toLowerCase().includes('demo') || p.name?.toLowerCase().includes('test'))
     || data.find(p => p.subscription_status === 'trial' || p.subscription_status === 'active')
     || data[0];
@@ -267,7 +277,8 @@ async function seed() {
     console.error('No pharmacy found. Sign up a pharmacy first, or approve a pending signup.');
     process.exit(1);
   }
-  console.log(`Seeding into: ${ph.name} (${ph.id})\n`);
+  console.log(`\n>>> Seeding into: ${ph.name}`);
+  console.log('>>> IMPORTANT: log in to the app as THIS pharmacy to see the reports.\n');
 
   await cleanup(ph.id);
 
@@ -302,8 +313,9 @@ async function seed() {
       }).select().single();
 
       if (error || !incident) {
-        console.error(`  insert failed for day ${inc.dayOfMonth}:`, error?.message);
-        continue;
+        console.error(`  !! Near-miss insert FAILED for day ${inc.dayOfMonth}: ${error?.message || 'no row returned'}`);
+        console.error('     Fix the error above and re-run the seed.');
+        process.exit(1);
       }
       totalInserted++;
 
@@ -325,7 +337,8 @@ async function seed() {
     }
   }
 
-  console.log('\n— Generating 3 locked historical reports (real generator — matches the app)');
+  console.log(`\n— Generating ${PERIODS.length} locked historical reports (real generator — matches the app)`);
+  let reportsCreated = 0;
   for (const period of PERIODS) {
     const bounds = monthBounds(period.monthsAgo);
     try {
@@ -335,7 +348,7 @@ async function seed() {
         getTrendSeries(ph.id, bounds.start, bounds.end),
       ]);
 
-      const { data: report } = await supabase.from('reports').insert({
+      const { data: report, error: reportErr } = await supabase.from('reports').insert({
         pharmacy_id: ph.id,
         period_start: bounds.start,
         period_end: bounds.end,
@@ -348,23 +361,38 @@ async function seed() {
         trend_data: trend,
       }).select().single();
 
-      if (report) {
-        console.log(`  Report ${bounds.start} → ${bounds.end}  (id: ${report.id})`);
-        await supabase.from('audit_log').insert({
-          pharmacy_id: ph.id, action: 'report_signed_off',
-          performed_by: GENERATED_BY,
-          details: { report_id: report.id, report_period: `${bounds.start} — ${bounds.end}`, locked_at: new Date().toISOString(), incident_count: period.incidents.length },
-        });
+      if (reportErr || !report) {
+        console.error(`  !! Report insert FAILED for ${bounds.start}: ${reportErr?.message || 'no row returned'}`);
+        console.error('     Fix the error above and re-run the seed.');
+        process.exit(1);
       }
+
+      reportsCreated++;
+      console.log(`  ✓ Report ${bounds.start} → ${bounds.end}`);
+      console.log(`    open it at: http://localhost:5173/reports/${report.id}`);
+      await supabase.from('audit_log').insert({
+        pharmacy_id: ph.id, action: 'report_signed_off',
+        performed_by: GENERATED_BY,
+        details: { report_id: report.id, report_period: `${bounds.start} — ${bounds.end}`, locked_at: new Date().toISOString(), incident_count: period.incidents.length },
+      });
     } catch (err) {
-      console.error(`  Report for ${bounds.start} failed:`, err instanceof Error ? err.message : err);
+      console.error(`  !! Report for ${bounds.start} FAILED:`, err instanceof Error ? err.message : err);
+      console.error('     Fix the error above and re-run the seed.');
+      process.exit(1);
     }
   }
+
+  // Read-back proof: don't trust "inserted", count what's actually there.
+  const { count: reportCount } = await supabase.from('reports')
+    .select('id', { count: 'exact', head: true })
+    .eq('pharmacy_id', ph.id);
 
   console.log(`\nDone.`);
   console.log(`  ${totalInserted} near misses created`);
   console.log(`  ${totalRecs} recommendations created (all with manager outcomes)`);
-  console.log(`  3 locked historical reports created via live generator`);
+  console.log(`  ${reportsCreated} locked historical reports created this run`);
+  console.log(`  ${reportCount ?? '?'} reports now exist in total for ${ph.name}`);
+  console.log(`\n>>> In the app: log in as "${ph.name}", go to Reports.`);
   console.log(`\nTo wipe later:`);
   console.log(`  delete from incidents where notes like '${NOTE_TAG}%';`);
   console.log(`  delete from reports where generated_by = '${GENERATED_BY}';`);
