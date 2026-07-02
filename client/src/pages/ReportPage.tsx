@@ -239,7 +239,7 @@ export function ReportPage() {
             <ShieldIcon size={36} />
             <div>
               <div className="text-lg font-bold"><span className="text-[#0F6E56]">NearMiss</span> <span className="text-[#1A1A1A]">Pro</span></div>
-              <div className="text-xs text-gray-500">Near miss quality improvement report</div>
+              <div className="text-xs text-gray-500">Dispensing near miss — quality improvement report</div>
             </div>
           </div>
           <div className="text-right text-sm text-gray-600">

@@ -568,9 +568,9 @@ export function RecordPage() {
     return (
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h1 className="text-lg font-bold text-gray-900 mb-1">Before you log this</h1>
+          <h1 className="text-lg font-bold text-gray-900 mb-1">Logging a dispensing near miss</h1>
           <p className="text-sm text-gray-600 mb-5 leading-relaxed">
-            Was the error caught <span className="font-semibold">before</span> the medication was handed to the patient?
+            Was it caught <span className="font-semibold">before</span> the medicine was handed to the patient?
           </p>
           <div className="space-y-2">
             <button onClick={() => { tap(); setGate('yes'); }}

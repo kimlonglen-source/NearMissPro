@@ -44,7 +44,7 @@ function Hero() {
             Logging a near miss takes seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">The monthly review does itself.</span>
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
-            The two jobs nobody enjoys — writing near misses in the logbook, then making sense of them at review time — both become quick and painless. Staff log in under a minute; your review report is ready in minutes, not a lost afternoon. Built for NZ community pharmacy.
+            The two jobs nobody enjoys — writing dispensing near misses in the logbook, then making sense of them at review time — both become quick and painless. Staff log in under a minute; your review report is ready in minutes, not a lost afternoon. Built for NZ community pharmacy.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <Link to="/signup" className="bg-[#0F6E56] text-white font-semibold px-6 py-3.5 rounded-xl hover:bg-[#0B5A46] transition-colors flex items-center gap-2 group">
@@ -433,7 +433,7 @@ function TwoPains() {
               <ClipboardPlus size={20} />
             </div>
             <h3 className="font-bold text-lg mb-2">Recording — for staff</h3>
-            <p className="text-sm text-gray-500 mb-3"><span className="font-semibold text-gray-700">The pain:</span> stopping mid-dispense to hand-write in the logbook. So near misses go unreported.</p>
+            <p className="text-sm text-gray-500 mb-3"><span className="font-semibold text-gray-700">The pain:</span> stopping mid-dispense to hand-write in the logbook. So dispensing near misses go unreported.</p>
             <p className="text-sm text-gray-600 leading-relaxed"><span className="font-semibold text-[#0F6E56]">The fix:</span> a 60-second form with drug autocomplete. Anonymous, so staff aren't afraid to log. Quick enough that they actually do it.</p>
           </div>
           <div className="bg-white rounded-2xl p-7 border border-gray-200">
