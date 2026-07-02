@@ -79,7 +79,7 @@ const MONTHS: { label: string; incidents: Incident[] }[] = [
       // Quantity miscount
       { daysAgo: 40, hour: 12, error_step: 'Counted / measured', error_types: ['Wrong quantity counted'], drug_name: 'Tramadol', where_caught: 'Final pharmacist check', factors: ['Interruption or distraction'], outcome: 'accepted' },
       // Pharmac brand
-      { daysAgo: 38, hour: 16, error_step: 'Drug picked from shelf', error_types: ['Wrong Pharmac brand supplied'], drug_name: 'Quetiapine', where_caught: 'Final pharmacist check', factors: ['Usual process skipped'], outcome: 'no_action' },
+      { daysAgo: 38, hour: 16, error_step: 'Drug picked from shelf', error_types: ['Wrong brand supplied'], drug_name: 'Quetiapine', where_caught: 'Final pharmacist check', factors: ['Usual process skipped'], outcome: 'no_action' },
     ],
   },
   {

@@ -202,10 +202,10 @@ export function triggersFor(subLabel: string): {
       l.includes('brand'),
     strength: l.includes('strength'),
     quantity:
-      (l.includes('quantity') || l.includes('volume') || l.includes('dose')) &&
+      (l.includes('quantity') || l.includes('volume') || l.includes('days supply')) &&
       !l.includes('allergy') &&
       !l.includes('overridden') &&
-      !l.includes('wrong day'),
+      !l.includes('wrong day '),
     formulation: l.includes('formulation'),
   };
 }
@@ -222,17 +222,17 @@ export function isNonDrugError(subLabel: string): boolean {
     l.includes('nhi') ||
     l.includes('hpi') ||
     l.includes('subsidy') ||
-    l.includes('register not signed') ||
     l.includes('bag mixed') ||
     l.includes('bag missing') ||
     l.includes('bag collected') ||
-    l.includes('pso treated') ||
-    l.includes('wrong day') ||
-    l.includes('handed to wrong') ||
+    l.includes('pso') ||               // "…(PSO) treated as patient script" — paren broke the old 'pso treated'
+    l.includes('wrong day') ||         // "Wrong day or time slot" (compliance pack)
+    l.includes('wrong patient given') ||
     l.includes('initials missing') ||
     l.includes('safe left') ||
     l.includes('out-of-date prescription') ||
     l.includes('forged or altered') ||
-    l.includes('nzeps')
+    l.includes('nzeps') ||
+    l.includes('e-prescription')
   );
 }

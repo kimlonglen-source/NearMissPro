@@ -37,8 +37,13 @@ router.post('/generate', async (req: Request, res: Response) => {
       // and the existing DRAFT doesn't have it yet, save it so the
       // report's rate line appears. Signed-off reports stay frozen.
       if (scriptsDispensed && !existing.scripts_dispensed && existing.locked !== true) {
+        // Regenerate the summary too, so the "near-miss rate" bullet
+        // actually appears in the summary text — updating the column
+        // alone left the summary paragraph without the rate while the
+        // stats line showed one (self-contradiction).
+        const { summary } = await generatePeriodSummary(req.auth!.pharmacyId, periodStart, periodEnd, scriptsDispensed);
         const { data: updated } = await supabase.from('reports')
-          .update({ scripts_dispensed: scriptsDispensed })
+          .update({ scripts_dispensed: scriptsDispensed, period_summary: summary })
           .eq('id', existing.id)
           .select().single();
         res.status(200).json(updated || existing); return;
@@ -102,8 +107,22 @@ router.patch('/:id', async (req: Request, res: Response) => {
       .single();
     if (readErr || !before) { res.status(404).json({ error: 'Report not found' }); return; }
 
+    // Whitelist the columns a manager may edit. Never spread req.body:
+    // that let a client rewrite period_start/period_end (shrinking the
+    // locked-period window), move the row to another pharmacy_id, or
+    // silently change generated_at / trend_data with no audit trail.
+    const patch = z.object({
+      period_summary: z.string().optional(),
+      previous_period_summary: z.string().nullable().optional(),
+      agenda_items: z.array(z.object({ text: z.string(), edited: z.boolean() })).optional(),
+      generated_by: z.string().optional(),
+      last_meeting_review: z.string().nullable().optional(),
+      next_review_date: z.string().nullable().optional(),
+      locked: z.boolean().optional(),
+    }).parse(req.body);
+
     const { data: after, error } = await supabase.from('reports')
-      .update(req.body).eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId).select().single();
+      .update(patch).eq('id', req.params.id).eq('pharmacy_id', req.auth!.pharmacyId).select().single();
     if (error) throw error;
 
     // Human-friendly period label so the audit log entry can be
@@ -169,6 +188,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
 
     res.json(after);
   } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }
     console.error('[reports] patch failed:', err);
     res.status(500).json({ error: 'Failed' });
   }

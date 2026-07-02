@@ -555,8 +555,12 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   const buildPatternMap = (rows: { drug_name?: string | null; error_types?: string[] | null; recommendations?: { manager_outcome?: string | null }[] }[]): Map<string, PatStat> => {
     const m = new Map<string, PatStat>();
     for (const r of rows || []) {
-      if (!r.drug_name) continue;
-      const drug = r.drug_name.trim(); if (!drug) continue;
+      // Key by the normalised drug name so the agenda's "still
+      // happening" count uses the SAME grouping as the report's
+      // follow-up section (period-comparison endpoint also uses
+      // normalizeDrugName). Without this, "Atorvastatin" and
+      // "atorvastatin" split into two and the counts disagree.
+      const drug = normalizeDrugName(r.drug_name); if (!drug) continue;
       const wasActioned = Array.isArray(r.recommendations)
         && r.recommendations.some(rc => rc.manager_outcome === 'accepted' || rc.manager_outcome === 'modified');
       for (const et of r.error_types || []) {
