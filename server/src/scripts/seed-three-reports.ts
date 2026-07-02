@@ -1,14 +1,18 @@
-// Backdated seed for THREE full historical reports so the pharmacy
+// Backdated seed for FOUR full historical reports so the pharmacy
 // owner can see how a real report history looks.
 //
 // Creates:
+//   - Period 0 (about 4 months ago): 25 near misses  -> locked report
 //   - Period 1 (about 3 months ago): 25 near misses  -> locked report
 //   - Period 2 (about 2 months ago): 27 near misses  -> locked report
 //   - Period 3 (about 1 month ago):  23 near misses  -> locked report
 //
 // Each period is a calendar month. Reports are generated with the
 // live period-summary + hotspot + trend helpers so their layout
-// matches what a manager would see today.
+// matches what a manager would see today. Period 0 exists so that
+// even the OLDEST visible report has a previous period to compare
+// against — every report's "Follow-up from last review" section has
+// real data instead of the first-review placeholder.
 //
 // Run from project root:
 //   npm -w server run seed-three-reports
@@ -41,13 +45,47 @@ type Incident = {
   outcome: 'accepted' | 'modified' | 'no_action';
 };
 
-// ── Data for each of the three months ──────────────────────────────
-// Same drug patterns recur so the "Did our actions work?" panel has
-// something interesting to show:
-//   Atorvastatin wrong-strength: 6 -> 3 -> 1 (action working)
-//   Pantoprazole look-alike:      0 -> 2 -> 4 (new pattern, growing)
-//   Methadone process errors:     2 -> 1 -> 1 (steady low-level)
-//   Warfarin (high-risk):         1 -> 1 -> 2
+// ── Data for each of the four months ────────────────────────────────
+// Same drug patterns recur so the follow-up section has something
+// interesting to show:
+//   Atorvastatin wrong-strength: 7 -> 6 -> 3 -> 1 (action working)
+//   Simvastatin sound-alike:     3 -> 0 -> 0 -> 0 (resolved after period 0)
+//   Pantoprazole look-alike:     0 -> 0 -> 2 -> 4 (new pattern, growing)
+//   Methadone process errors:    2 -> 2 -> 1 -> 1 (steady low-level)
+//   Warfarin (high-risk):        1 -> 1 -> 1 -> 2
+
+const PERIOD_0_INCIDENTS: Incident[] = [
+  // Atorvastatin at its worst — 7 this month, before any action
+  { dayOfMonth: 1, hour: 11, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '20mg', dispensed_strength: '40mg', where_caught: 'Final pharmacist check', factors: ['Similar packaging', 'Busy period'], outcome: 'accepted' },
+  { dayOfMonth: 4, hour: 13, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '40mg', dispensed_strength: '80mg', where_caught: 'Final pharmacist check', factors: ['Similar packaging'], outcome: 'accepted' },
+  { dayOfMonth: 7, hour: 10, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '10mg', dispensed_strength: '20mg', where_caught: 'Initial pharmacist check', factors: ['Similar packaging', 'Busy period'], outcome: 'accepted' },
+  { dayOfMonth: 11, hour: 14, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '20mg', dispensed_strength: '80mg', where_caught: 'Final pharmacist check', factors: ['Similar packaging'], outcome: 'modified' },
+  { dayOfMonth: 15, hour: 12, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '40mg', dispensed_strength: '10mg', where_caught: 'Final pharmacist check', factors: ['Busy period'], outcome: 'accepted' },
+  { dayOfMonth: 20, hour: 15, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '20mg', dispensed_strength: '40mg', where_caught: 'Final pharmacist check', factors: ['Similar packaging'], outcome: 'accepted' },
+  { dayOfMonth: 26, hour: 11, error_step: 'Drug picked from shelf', error_types: ['Wrong strength picked'], drug_name: 'Atorvastatin', prescribed_strength: '10mg', dispensed_strength: '40mg', where_caught: 'Initial pharmacist check', factors: ['Similar packaging', 'Busy period'], outcome: 'accepted' },
+  // Simvastatin sound-alike — 3 this month, resolved entirely after this period
+  { dayOfMonth: 3, hour: 12, error_step: 'Drug picked from shelf', error_types: ['Wrong drug — sound-alike name'], drug_name: 'Simvastatin', dispensed_drug: 'Atorvastatin', where_caught: 'Initial pharmacist check', factors: ['Similar drug names'], outcome: 'accepted' },
+  { dayOfMonth: 13, hour: 14, error_step: 'Drug picked from shelf', error_types: ['Wrong drug — sound-alike name'], drug_name: 'Simvastatin', dispensed_drug: 'Atorvastatin', where_caught: 'Final pharmacist check', factors: ['Similar drug names', 'Busy period'], outcome: 'modified' },
+  { dayOfMonth: 23, hour: 10, error_step: 'Drug picked from shelf', error_types: ['Wrong drug — sound-alike name'], drug_name: 'Simvastatin', dispensed_drug: 'Atorvastatin', where_caught: 'Initial pharmacist check', factors: ['Similar drug names'], outcome: 'accepted' },
+  // Methadone / CD
+  { dayOfMonth: 6, hour: 14, error_step: 'Controlled drug dispensing', error_types: ['CD register entry missed'], drug_name: 'Methadone', where_caught: 'Final pharmacist check', factors: ['Usual process skipped'], outcome: 'modified' },
+  { dayOfMonth: 18, hour: 11, error_step: 'Controlled drug dispensing', error_types: ['CD second-check skipped'], drug_name: 'Methadone', where_caught: 'Final pharmacist check', factors: ['Busy period'], outcome: 'accepted' },
+  // High-risk
+  { dayOfMonth: 9, hour: 10, error_step: 'Script entered into dispensary software', error_types: ['Wrong strength entered'], drug_name: 'Warfarin', prescribed_strength: '1mg', dispensed_strength: '3mg', where_caught: 'Data entry check', factors: ['Interruption or distraction'], outcome: 'accepted' },
+  { dayOfMonth: 12, hour: 13, error_step: 'Labelling', error_types: ['Wrong directions'], drug_name: 'Methotrexate', where_caught: 'Final pharmacist check', factors: ['Unfamiliar drug'], outcome: 'modified', notes: 'Directions labelled daily instead of weekly.' },
+  // One-offs
+  { dayOfMonth: 2, hour: 12, error_step: 'Script entered into dispensary software', error_types: ['Typo / mistyped'], drug_name: 'Metformin', where_caught: 'Data entry check', factors: ['Busy period'], outcome: 'accepted' },
+  { dayOfMonth: 5, hour: 15, error_step: 'Counted / measured', error_types: ['Wrong quantity counted'], drug_name: 'Tramadol', where_caught: 'Final pharmacist check', factors: ['Interruption or distraction'], outcome: 'accepted' },
+  { dayOfMonth: 8, hour: 13, error_step: 'Bagging / handed to patient', error_types: ['Counselling missed or wrong'], drug_name: 'Prednisone', where_caught: 'Final pharmacist check', factors: ['Busy period'], outcome: 'no_action' },
+  { dayOfMonth: 10, hour: 16, error_step: 'Bagging / handed to patient', error_types: ['Wrong patient given the bag'], where_caught: 'Final pharmacist check', factors: ['Similar patient name'], outcome: 'accepted' },
+  { dayOfMonth: 14, hour: 11, error_step: 'Drug picked from shelf', error_types: ['Wrong formulation picked'], drug_name: 'Salbutamol', correct_formulation: 'Inhaler', dispensed_formulation: 'Nebules', where_caught: 'Technician spotted it', factors: ['Similar packaging'], outcome: 'accepted' },
+  { dayOfMonth: 16, hour: 14, error_step: 'Labelling', error_types: ['Missing warning label (CAL)'], drug_name: 'Codeine phosphate', where_caught: 'Final pharmacist check', factors: ['Usual process skipped'], outcome: 'modified' },
+  { dayOfMonth: 17, hour: 10, error_step: 'Drug picked from shelf', error_types: ['Wrong pack size'], drug_name: 'Paracetamol', where_caught: 'Technician spotted it', factors: ['Busy period'], outcome: 'accepted' },
+  { dayOfMonth: 19, hour: 13, error_step: 'Bagging / handed to patient', error_types: ['Bag missing an item'], where_caught: 'Final pharmacist check', factors: ['Busy period'], outcome: 'accepted' },
+  { dayOfMonth: 21, hour: 12, error_step: 'Script entered into dispensary software', error_types: ['Typo / mistyped'], drug_name: 'Sertraline', where_caught: 'Data entry check', factors: ['Interruption or distraction'], outcome: 'accepted' },
+  { dayOfMonth: 22, hour: 15, error_step: 'Script entered into dispensary software', error_types: ['Allergy warning ignored'], drug_name: 'Amoxicillin', where_caught: 'Initial pharmacist check', factors: ['Usual process skipped'], outcome: 'modified', notes: 'Penicillin allergy alert dismissed without checking.' },
+  { dayOfMonth: 24, hour: 11, error_step: 'Compliance pack packing', error_types: ['Wrong day or time slot'], where_caught: 'Final pharmacist check', factors: ['Interruption or distraction'], outcome: 'accepted' },
+];
 
 const PERIOD_1_INCIDENTS: Incident[] = [
   // Atorvastatin cluster — the dominant pattern this period
