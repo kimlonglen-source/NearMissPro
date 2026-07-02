@@ -16,8 +16,10 @@ We all catch near misses every day — the wrong strength, the look-alike box, t
 What always frustrated me is that the near-miss logbook never actually helped *prevent* the next one. So I've been building a simple tool to fix that — NearMissPro:
 
 • Log a near miss in seconds — no paragraph, no names, anonymous to the team
-• It surfaces the patterns for you
+• It surfaces the patterns, then suggests simple, practical fixes grounded in NZ pharmacy best practice
 • Each month it tells you whether the change you made actually reduced them
+
+The AI only ever *suggests* — every recommendation is advisory, and the pharmacist stays in complete control of what to act on.
 
 The whole point is prevention — stopping the same slip before it reaches a patient. No blame, no finger-pointing.
 
