@@ -22,7 +22,7 @@ The whole point is prevention — stopping the same slip before it reaches a pat
 
 It's not live yet — I'm building it with real NZ pharmacies in mind, and I'd genuinely love your honest feedback, good or bad. Short screen recording below so you can see how it works.
 
-On cost, for full transparency: it's free for waitlist pharmacies while I build it. At launch there's a 3-month free trial, then a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. To put that in perspective — it's about a dollar a day. Logging a near miss drops to a few taps instead of writing it up, and it pulls the month together into a review in minutes, not hours. If it saves your checking pharmacist even half an hour a month, it's paid for itself.
+On cost, for full transparency: it's free for waitlist pharmacies while I build it, then a 3-month free trial at launch, then $30 + GST/month per pharmacy (or $300/year) — cancel anytime, no lock-in. That's about a dollar a day: logging a near miss drops to a few taps instead of a written paragraph, and the month pulls into a review in minutes, not hours. If it saves your checking pharmacist even half an hour a month, it's paid for itself.
 
 Join the waitlist for free early access: https://tally.so/r/D4YgQl
 
