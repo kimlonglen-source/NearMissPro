@@ -705,6 +705,9 @@ function Faq() {
       heading: 'Compliance & pricing',
       items: [
         { q: 'Does this help with Pharmacy Council CQI expectations?', a: 'It\'s built around the continuous-improvement cycle — capture, review, act, and check whether last month\'s changes worked — and keeps a full timestamped audit trail. It\'s designed to support your CQI work (we\'re not certified by any regulator; the tool assists the work you\'re responsible for).' },
+        { q: 'Is an electronic near-miss log OK instead of the paper book?', a: 'Yes. The Pharmacy Council\'s standards let pharmacies keep records electronically as long as they\'re secure, accurate and can be retrieved when needed — the near-miss log is a CQI record, not a statutory register, so there\'s no requirement to keep it on paper. An electronic log with a timestamped audit trail is easier to defend at review than a handwritten book.' },
+        { q: 'Can records be changed or deleted after the fact?', a: 'Every action — a decision, an edit, a void, a restore, a report sign-off — is written to a timestamped audit log you can\'t quietly overwrite. Once a report is signed off, the near misses on it are locked; changing anything afterwards has to be done openly and is recorded. That tamper-evidence is the point: it shows an inspector the record is trustworthy.' },
+        { q: 'Is our data backed up?', a: 'Yes — the database is backed up daily. For your own peace of mind we also recommend downloading your data from Settings periodically, so you always hold an independent copy.' },
         { q: 'What does it cost?', a: '$30/month or $300/year per pharmacy — all your staff included. Three months free to start, no card required.' },
         { q: 'Can I cancel and get our data out?', a: 'Cancel any time. You can download all your data as a single file whenever you like — for your records, an inspector, or to take with you.' },
       ],
