@@ -41,10 +41,10 @@ function Hero() {
             <Sparkles size={12} /> Built for NZ community pharmacy
           </div>
           <h1 className="text-4xl md:text-6xl font-bold leading-[1.05] mb-6 tracking-tight">
-            Logging a near miss takes seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">The monthly review takes minutes, not an afternoon.</span>
+            Logging a near miss takes seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">The write-up for your review is done in minutes, not an afternoon.</span>
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
-            The two jobs nobody enjoys — writing dispensing near misses in the logbook, then making sense of them at review time — both become quick and painless. Staff log in under a minute; your review report is ready in minutes, not a lost afternoon. Built for NZ community pharmacy.
+            The two jobs nobody enjoys — writing dispensing near misses in the logbook, then making sense of them at review time — both become quick. Staff log in under a minute; the grouping, the suggestions and the report are done for you, so you walk into the meeting ready to decide. Built for NZ community pharmacy.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <Link to="/signup" className="bg-[#0F6E56] text-white font-semibold px-6 py-3.5 rounded-xl hover:bg-[#0B5A46] transition-colors flex items-center gap-2 group">
@@ -442,7 +442,7 @@ function TwoPains() {
             </div>
             <h3 className="font-bold text-lg mb-2">Reviewing — for the manager</h3>
             <p className="text-sm text-gray-500 mb-3"><span className="font-semibold text-gray-700">The pain:</span> an afternoon flipping through the book, grouping by hand, writing a report from scratch.</p>
-            <p className="text-sm text-gray-600 leading-relaxed"><span className="font-semibold text-[#0F6E56]">The fix:</span> near misses grouped for you, an NZ-best-practice suggestion on each, and a printable review report ready in minutes.</p>
+            <p className="text-sm text-gray-600 leading-relaxed"><span className="font-semibold text-[#0F6E56]">The fix:</span> near misses grouped for you, an NZ-best-practice suggestion on each, and a printable review report ready in minutes — so the only thing left is deciding and doing.</p>
           </div>
         </div>
       </div>
