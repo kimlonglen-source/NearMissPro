@@ -63,7 +63,9 @@ export function DashboardPage() {
     setLoading(true);
     try {
       const [res, reports] = await Promise.all([
-        api.getIncidents({ from: dateFrom, to: dateTo }),
+        // limit 1000 — the manager must be able to review every near
+        // miss in the period, not just the first 50 (default page size).
+        api.getIncidents({ from: dateFrom, to: dateTo, limit: '1000' }),
         api.getReports(),
       ]);
       // Check if a report already exists for this date range

@@ -8,6 +8,12 @@ import { env } from '../config/env.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { sendEmail, escapeHtml } from '../services/email.js';
 
+// Escape LIKE/ILIKE wildcards so a pharmacy name is matched literally.
+// Without this, a submitted "%" or "_" is treated as a wildcard — an
+// attacker could target a pharmacy by partial name (e.g. "Riverdale%")
+// to trigger its reset/lockout emails without knowing the exact name.
+const escapeLike = (s: string) => s.replace(/[%_\\]/g, '\\$&');
+
 const router = Router();
 
 // Parse a User-Agent string into a short human label for the
@@ -51,12 +57,21 @@ router.post('/staff/login', async (req: Request, res: Response) => {
 
     const { data: pharmacy } = await supabase
       .from('pharmacies').select('id, name, password_hash, login_attempts, locked_until, manager_email, subscription_status, trial_ends_at')
-      .ilike('name', name).single();
+      .ilike('name', escapeLike(name)).single();
 
     if (!pharmacy) { res.status(401).json({ error: 'Invalid pharmacy name or password' }); return; }
 
     if (pharmacy.locked_until && new Date(pharmacy.locked_until) > new Date()) {
       res.status(423).json({ error: 'Account locked. Contact your manager.' }); return;
+    }
+
+    // Lockout window has expired — reset the counter so a legitimate
+    // user gets a fresh 10 attempts. Without this, login_attempts stays
+    // at 10 after the 30-min window, and the next wrong password
+    // instantly re-locks (attempts=11) with zero retry budget.
+    if (pharmacy.locked_until && new Date(pharmacy.locked_until) <= new Date() && (pharmacy.login_attempts || 0) > 0) {
+      await supabase.from('pharmacies').update({ login_attempts: 0, locked_until: null }).eq('id', pharmacy.id);
+      pharmacy.login_attempts = 0;
     }
 
     // Block login for pharmacies whose lifecycle hasn't reached
@@ -251,7 +266,7 @@ router.post('/check-device-trust', async (req: Request, res: Response) => {
     }).parse(req.body);
     const deviceIdHash = crypto.createHash('sha256').update(deviceId).digest('hex');
     const { data: pharmacy } = await supabase.from('pharmacies')
-      .select('id').ilike('name', pharmacyName).single();
+      .select('id').ilike('name', escapeLike(pharmacyName)).single();
     if (!pharmacy) { res.json({ trusted: false }); return; }
     const { data: trusted } = await supabase.from('trusted_devices')
       .select('id').eq('pharmacy_id', pharmacy.id).eq('device_id_hash', deviceIdHash).maybeSingle();
@@ -974,7 +989,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const { pharmacyName } = forgotSchema.parse(req.body);
     const { data: pharmacy } = await supabase.from('pharmacies')
       .select('id, name, manager_email')
-      .ilike('name', pharmacyName).single();
+      .ilike('name', escapeLike(pharmacyName)).single();
     if (!pharmacy || !pharmacy.manager_email) {
       console.log('[forgot-password] no pharmacy or no manager_email:', pharmacyName);
       return;

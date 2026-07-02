@@ -84,7 +84,10 @@ export function ReportPage() {
           ...Array(5).fill(null).map(() => ({ name: '', role: '', initials: '', date: '' })),
         ]);
         // Load only active incidents (exclude voided)
-        return api.getIncidents({ from: rpt.period_start, to: rpt.period_end, status: 'active' });
+        // limit 1000 — a report/review must load EVERY near miss in the
+        // period, not the default first 50, or the counts (summary,
+        // stats, sign-off snapshot) disagree with the visible list.
+        return api.getIncidents({ from: rpt.period_start, to: rpt.period_end, status: 'active', limit: '1000' });
       }).then((d: { incidents: unknown[] }) => setIncidents(d.incidents as Incident[])),
     ]).finally(() => setLoading(false));
   }, [id]);

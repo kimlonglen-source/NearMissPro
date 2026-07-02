@@ -31,3 +31,31 @@ export const env = {
   smtpPassword: process.env.SMTP_PASSWORD || '',
   emailFrom: process.env.EMAIL_FROM || 'hello@nearmisspro.co.nz',
 } as const;
+
+// Production safety gate. The dev fallbacks above (default JWT secret,
+// founder123 password, accept-any-MFA) are intentional conveniences for
+// localhost. On a deployed instance they'd leave founder login and token
+// signing wide open — so refuse to start if they're still at their
+// defaults when NODE_ENV=production. Fail loud at boot, never silently
+// run insecure.
+if (env.nodeEnv === 'production') {
+  const problems: string[] = [];
+  if (!process.env.JWT_SECRET || env.jwtSecret.startsWith('dev-secret')) {
+    problems.push('JWT_SECRET is missing or still the dev default');
+  }
+  if (env.jwtSecret.length < 32) {
+    problems.push('JWT_SECRET must be at least 32 characters');
+  }
+  if (!env.founderPassword) {
+    problems.push('FOUNDER_PASSWORD is not set (founder login would accept "founder123")');
+  }
+  if (!env.founderTotpSecret) {
+    problems.push('FOUNDER_TOTP_SECRET is not set (founder MFA would accept any 6 digits)');
+  }
+  if (problems.length > 0) {
+    console.error('\nRefusing to start — insecure production configuration:');
+    for (const p of problems) console.error(`  • ${p}`);
+    console.error('\nSet these in the server environment and restart.\n');
+    process.exit(1);
+  }
+}

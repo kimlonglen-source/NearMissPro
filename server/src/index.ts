@@ -39,16 +39,30 @@ const authLimiter = rateLimit({
   skip: (req) => req.path === '/check-device-trust' || req.path === '/verify-device',
 });
 
+// Several write endpoints call the Anthropic API and so cost real money
+// per request: each new near miss triggers a Claude recommendation,
+// each report a period summary, each intervention/custom-chip a Claude
+// check. A runaway client loop or abuse could quietly burn the API
+// budget. Cap the *writes* generously — plenty for a busy dispensary
+// day, low enough to stop a runaway. Reads (GET) are cheap and polled
+// frequently by the dashboard, so they're skipped.
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 150,
+  message: { error: 'Too many requests — please wait a few minutes and try again.' },
+  skip: (req) => req.method === 'GET',
+});
+
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/incidents', incidentRoutes);
+app.use('/api/incidents', aiLimiter, incidentRoutes);
 app.use('/api/options', optionRoutes);
 app.use('/api/recommendations', recommendationRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/api/reports', aiLimiter, reportRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/interventions', interventionRoutes);
+app.use('/api/interventions', aiLimiter, interventionRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/marketing', authLimiter, marketingRoutes);
-app.use('/api/custom-options', customOptionRoutes);
+app.use('/api/custom-options', aiLimiter, customOptionRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', version: '2.0.0' }));
 

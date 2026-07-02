@@ -32,23 +32,36 @@ router.post('/generate', async (req: Request, res: Response) => {
       .limit(1)
       .maybeSingle();
     if (existing) {
-      // The idempotency guard used to silently discard a freshly
-      // typed scripts-dispensed number. If the manager provided one
-      // and the existing DRAFT doesn't have it yet, save it so the
-      // report's rate line appears. Signed-off reports stay frozen.
-      if (scriptsDispensed && !existing.scripts_dispensed && existing.locked !== true) {
-        // Regenerate the summary too, so the "near-miss rate" bullet
-        // actually appears in the summary text — updating the column
-        // alone left the summary paragraph without the rate while the
-        // stats line showed one (self-contradiction).
-        const { summary } = await generatePeriodSummary(req.auth!.pharmacyId, periodStart, periodEnd, scriptsDispensed);
-        const { data: updated } = await supabase.from('reports')
-          .update({ scripts_dispensed: scriptsDispensed, period_summary: summary })
-          .eq('id', existing.id)
-          .select().single();
-        res.status(200).json(updated || existing); return;
-      }
-      res.status(200).json(existing); return;
+      // A signed-off report is frozen — the printed, acknowledged copy
+      // must never change out from under a sign-off. Return it as-is.
+      if (existing.locked === true) { res.status(200).json(existing); return; }
+
+      // A DRAFT, though, is meant to be regenerated. Between the first
+      // "Generate" and sign-off the manager may void near misses or
+      // change decisions — after which the stored summary + agenda go
+      // stale while sections 2 and 3 recompute live, so the report
+      // contradicts itself (summary says 10, list shows 8). Clicking
+      // "Generate updated report" must rebuild the summary and agenda
+      // from current data. We preserve any agenda lines the manager
+      // hand-edited, and carry forward the scripts figure (using a
+      // freshly typed one when provided).
+      const effectiveScripts = scriptsDispensed ?? existing.scripts_dispensed ?? null;
+      const { summary, agenda } = await generatePeriodSummary(
+        req.auth!.pharmacyId, periodStart, periodEnd, effectiveScripts,
+      );
+
+      const oldAgenda: { text: string; edited: boolean }[] = existing.agenda_items || [];
+      const editedItems = oldAgenda.filter(a => a.edited);
+      const freshAgenda = agenda.map(text => ({ text, edited: false }));
+      const mergedAgenda = editedItems.length
+        ? [...editedItems, ...freshAgenda.filter(f => !editedItems.some(e => e.text === f.text))]
+        : freshAgenda;
+
+      const { data: updated } = await supabase.from('reports')
+        .update({ period_summary: summary, agenda_items: mergedAgenda, scripts_dispensed: effectiveScripts })
+        .eq('id', existing.id)
+        .select().single();
+      res.status(200).json(updated || existing); return;
     }
 
     // Run summary, hotspot detection, and trend series in parallel —

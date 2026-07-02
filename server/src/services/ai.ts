@@ -559,9 +559,10 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
       // Key by the normalised drug name so the agenda's "still
       // happening" count uses the SAME grouping as the report's
       // follow-up section (period-comparison endpoint also uses
-      // normalizeDrugName). Without this, "Atorvastatin" and
-      // "atorvastatin" split into two and the counts disagree.
-      const drug = normalizeDrugName(r.drug_name); if (!drug) continue;
+      // normalizeDrugName). No skip on missing drug — drug-less
+      // recurring problems (bag mix-ups, wrong day) must count too, and
+      // the endpoint counts them, so skipping here would desync the two.
+      const drug = normalizeDrugName(r.drug_name);
       const wasActioned = Array.isArray(r.recommendations)
         && r.recommendations.some(rc => rc.manager_outcome === 'accepted' || rc.manager_outcome === 'modified');
       for (const et of r.error_types || []) {

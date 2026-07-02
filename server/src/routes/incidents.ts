@@ -149,8 +149,10 @@ router.get('/', async (req: Request, res: Response) => {
       query = query.lte('submitted_at', toBound);
     }
 
-    const p = parseInt(page as string, 10);
-    const l = parseInt(limit as string, 10);
+    const p = Math.max(1, parseInt(page as string, 10) || 1);
+    // Clamp page size to a sane max so a report can pull a full month
+    // (limit=1000) but no caller can request an unbounded range.
+    const l = Math.min(1000, Math.max(1, parseInt(limit as string, 10) || 50));
     query = query.range((p - 1) * l, p * l - 1);
 
     const { data, error, count } = await query;
@@ -296,7 +298,10 @@ router.get('/stats/period-comparison', requireRole('manager', 'founder'), async 
       for (const r of rows) {
         const display = (r.drug_name || '').trim();
         const drugKey = normalizeDrugName(display);
-        if (!drugKey) continue;
+        // No `continue` on missing drug — drug-less recurring problems
+        // (bag mix-ups, wrong patient, wrong day) must still be tracked
+        // period-to-period, or the follow-up section under-reports them.
+        // They key on error type alone (empty drug part).
         const wasActioned = Array.isArray(r.recommendations)
           && r.recommendations.some(rc => rc.manager_outcome === 'accepted' || rc.manager_outcome === 'modified');
         for (const et of r.error_types || []) {
