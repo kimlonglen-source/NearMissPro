@@ -17,7 +17,34 @@
 // ready to feed straight into a `.gte(start).lte(end)` query on
 // submitted_at.
 
+import { supabase } from '../config/supabase.js';
+
 export interface PrevPeriod { prevStartIso: string; prevEndIso: string; }
+
+// The baseline a report compares against. Managers review "last time
+// vs this time", and reviews aren't always a clean calendar month
+// apart, so we compare against the PREVIOUS GENERATED REPORT's period
+// when one exists. Only when there's no earlier report do we fall back
+// to the previous-calendar-month window below (e.g. the very first
+// review, or an ad-hoc range on the dashboard before any report).
+export async function comparisonBaseline(
+  pharmacyId: string, fromStr: string, toStr: string,
+): Promise<PrevPeriod> {
+  const { data } = await supabase.from('reports')
+    .select('period_start, period_end')
+    .eq('pharmacy_id', pharmacyId)
+    .lt('period_end', fromStr)          // strictly before this period
+    .order('period_end', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (data?.period_start && data?.period_end) {
+    return {
+      prevStartIso: `${data.period_start}T00:00:00.000Z`,
+      prevEndIso: `${data.period_end}T23:59:59.999Z`,
+    };
+  }
+  return previousPeriodBounds(fromStr, toStr);
+}
 
 // fromStr / toStr are 'YYYY-MM-DD'. Returns the previous period bounds.
 export function previousPeriodBounds(fromStr: string, toStr: string): PrevPeriod {
