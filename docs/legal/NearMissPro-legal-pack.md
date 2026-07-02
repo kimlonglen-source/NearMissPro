@@ -43,9 +43,11 @@ These are the points I'm genuinely unsure about — the highest-value use of you
 
 7. **Consumer law.** Customers are businesses (pharmacies). **Do the Consumer Guarantees Act 1993 / Fair Trading Act 1986 apply, and does my liability limitation hold given they're B2B?**
 
+8. **Billing and subscription terms.** Clause 4 of the Terms sets the pricing, auto-renewal, refund, and cancellation rules. **Are these sound and enforceable?** I'm not building the automated payment system yet (I'll invoice the first few pharmacies by hand), so I only need the *terms* checked now, not the payment-processing setup.
+
 ## What I am NOT asking you to review yet
 
-Billing/subscription mechanics, refunds, and Stripe payment terms — I'm not charging anyone during the trial, so those can wait until I convert the first pharmacy to paid.
+The **Stripe payment-processing integration** (PCI/point-of-sale mechanics) — I'm not building the automated billing system until pharmacies start converting from trial to paid, so that specific piece can wait. I do want the billing *terms* themselves reviewed now (question 8 above), so this is a single review.
 
 ---
 ---
