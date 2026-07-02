@@ -308,7 +308,7 @@ function RecordStage() {
           </div>
           <div className="flex flex-wrap gap-1.5">
             <span ref={el => { targetRefs.current[3] = el; }} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FDF8EB] border border-[#BA7517] text-[#633806] animate-[pulse_1.2s_ease-in-out_infinite]">Interruption or distraction</span>
-            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">High volume</span>
+            <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-300 text-gray-600">Busy period</span>
           </div>
         </div>
       ) : step >= 4 ? (
@@ -387,30 +387,25 @@ function PrintStage() {
             <span className="text-[#0F6E56]">NearMiss</span> Pro
           </span>
         </div>
-        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">Period summary</p>
-        <p className="text-[9px] text-gray-700 leading-relaxed mb-3">
-          6 fewer near misses than last period (17 vs 23). 4 patterns resolved, 2 need attention. The biggest cause was high-volume periods…
-        </p>
+        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">1. This month at a glance</p>
+        <ul className="text-[9px] text-gray-700 leading-relaxed mb-3 space-y-0.5">
+          <li>• 17 near misses this period vs 23 last — down 6</li>
+          <li>• Near-miss rate: 17 of 8,010 scripts — 0.2%</li>
+          <li>• Biggest cause: busy period</li>
+        </ul>
 
-        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">What worked</p>
-        <div className="space-y-1 mb-3">
-          {[
-            { d: 'Amoxicillin · Allergy missed', s: '4 → 0', tone: 'text-[#085041]' },
-            { d: 'Atorvastatin · Wrong strength', s: '5 → 2', tone: 'text-[#085041]' },
-            { d: 'Pantoprazole · Wrong drug', s: '1 → 3', tone: 'text-[#791F1F]' },
-          ].map((r, i) => (
-            <div key={i} className="flex items-center justify-between text-[9px]">
-              <span className="text-gray-700">{r.d}</span>
-              <span className={`font-semibold ${r.tone}`}>{r.s}</span>
-            </div>
-          ))}
+        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">2. Follow-up from last review</p>
+        <div className="space-y-1 mb-3 text-[9px] font-semibold">
+          <p className="text-[#085041]">✓ 4 have not happened again</p>
+          <p className="text-[#0F6E56]">↓ 2 are happening less often</p>
+          <p className="text-[#791F1F]">⚠ 1 is still happening — discuss today</p>
         </div>
 
-        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">What we'll do</p>
-        <ol className="text-[9px] text-gray-700 space-y-1 list-decimal list-inside">
-          <li>Open the meeting — read this summary aloud…</li>
-          <li>Walk through the log — start with Pantoprazole…</li>
-        </ol>
+        <p className="text-[8px] uppercase tracking-wider text-[#0F6E56] font-bold border-b border-[#0F6E56]/30 pb-1 mb-2">3. Near misses — what we're doing</p>
+        <div className="text-[9px] text-gray-700 leading-snug">
+          <p className="font-semibold">Warfarin — wrong strength <span className="text-[#633806]">×2</span></p>
+          <p className="text-[#085041]">What we're doing: colour-coded bins for Warfarin strengths.</p>
+        </div>
       </div>
     </div>
   );
