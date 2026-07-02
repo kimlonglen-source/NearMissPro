@@ -16,7 +16,7 @@ A green-light target to decide on before starting: e.g. *"If 15–20 NZ pharmaci
 >
 > NearMissPro helps you do exactly that: log a near miss in seconds, see the pattern, make one small change — then check next month whether it actually reduced them. Fewer repeat near misses. Fewer chances for one to reach a patient. No blame, no names.
 >
-> It's in development now, built by a NZ pharmacist. Join the waitlist and you'll get **early access — free** — while we build it, plus a real say in how it works.
+> It's in development now, built by a NZ pharmacist. Join the waitlist and you'll be among the first to try it — and everyone gets the first 3 months free.
 
 **Optional highlighted callout (add as its own Text block, just under the intro):**
 > ⭐ Waitlist pharmacies get free early access. No card, no cost while it's in development.
@@ -28,7 +28,7 @@ A green-light target to decide on before starting: e.g. *"If 15–20 NZ pharmaci
 4. Your role — *(multiple choice, optional)* — Owner / Pharmacist / Pharmacy technician / Dispensary manager / Other
 5. How does your team record near misses now? — *(multiple choice, optional)* — Paper logbook or book by the bench / A spreadsheet / In our dispensary software / We don't really record them / Other
 6. What frustrates you most about near misses today? — *(multiple choice, optional)* — Staff are too busy to log them / The monthly review takes too long / We never know if our fixes actually worked / The same mistakes keep coming back / Nothing turns the logbook into real change / Other
-7. Would you like an early look, or a quick chat? — *(multiple choice, optional)* — Yes / No
+7. Would you like to be one of the first to try it when it opens? — *(multiple choice, optional)* — Yes / No
 
 > Questions 5 and 6 double as market research: they tell you which pain to lead with when you introduce the product.
 
@@ -38,7 +38,7 @@ A green-light target to decide on before starting: e.g. *"If 15–20 NZ pharmaci
 > We'll only use your details to tell you when NearMissPro launches and, if you've said yes, to invite you to an early look. We won't share your details with anyone, and you can ask us to remove you at any time by emailing hello@nearmisspro.co.nz.
 
 **Thank-you message (after submit):**
-> Thanks — you're on the list. As a waitlist pharmacy you'll get free early access when we open it up, and a say in how it's built. We'll be in touch as NearMissPro gets closer. If a colleague at another pharmacy feels this pain too, feel free to pass the link along.
+> Thanks — you're on the list. You'll be one of the first to know the moment NearMissPro is ready to try, and everyone gets the first 3 months free. If a colleague at another pharmacy feels this pain too, feel free to pass the link along.
 
 ---
 

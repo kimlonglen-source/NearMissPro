@@ -18,7 +18,7 @@ That's the real gap. It was never catching near misses — we're good at that. I
 
 I'm a NZ pharmacist, and this bugged me enough to start building something about it: NearMissPro. Log a near miss in seconds, and it surfaces the patterns for you — then tells you next month whether the change you made actually worked. No blame, no names. Just fewer repeats, and fewer chances for one to reach a patient.
 
-It's not live yet — I'm shaping it around real NZ pharmacies, and I'd genuinely value your take. Free early access for waitlist pharmacies while I build it (link in the comments).
+It's not live yet — I'm building it for real NZ pharmacies. Everyone gets the first 3 months free, and waitlist pharmacies get to try it first (link in the comments).
 
 So, honestly: in your pharmacy, does a near miss ever lead to an actual change — or does it just get fixed and forgotten?
 
