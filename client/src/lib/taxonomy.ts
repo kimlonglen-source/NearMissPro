@@ -217,6 +217,7 @@ export function triggersFor(subLabel: string): {
 export function isNonDrugError(subLabel: string): boolean {
   const l = subLabel.toLowerCase();
   return (
+    l.includes('typo') ||
     l.includes('wrong patient') ||
     l.includes('nhi') ||
     l.includes('hpi') ||
