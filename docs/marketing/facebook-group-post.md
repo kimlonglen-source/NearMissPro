@@ -7,29 +7,29 @@ Waitlist link: https://tally.so/r/D4YgQl
 
 ---
 
-Kia ora team,
+Kia ora everyone,
 
-Here's something I reckon every NZ pharmacy knows too well: the same near miss, turning up again and again.
+A question for the group: when your team catches a near miss, what actually happens to it?
 
-The same look-alike box. The same strength mix-up. The same busy-Friday slip. We catch it, breathe out, fix it — and a few weeks later, there it is again.
+Most of the time, we fix it, feel the relief, and get back to the queue. It goes in the logbook (if there's a spare minute), and that's the last anyone thinks of it — until the same one turns up again.
 
-We're great at catching them. We're just not set up to stop them coming back. The logbook fills up, but nothing in it tells you which problems are repeating, or whether the change you made last month actually worked.
+That always bugged me. We put real effort into *catching* near misses, but almost none into *learning* from them. So the same slips keep coming back, and one day one might not get caught.
 
-So I've been building something to close that gap — NearMissPro. I'm a NZ pharmacist, and I wanted a tool that:
+I'm a NZ pharmacist, so I've been building a simple tool to fix that — NearMissPro:
 
-• Logs a near miss in seconds — no essay, no names, anonymous to the team
-• Spots the repeats for you
-• Each month, shows you plainly whether last month's fix actually reduced them
+• Log a near miss in seconds — no essay, no names, anonymous to the team
+• It quietly tracks which ones are repeating
+• Each month it tells you whether the change you made actually reduced them
 
-It's all about prevention — turning a caught near miss into one that doesn't happen again, before it ever reaches a patient.
+The whole point is prevention — stopping the next one before it reaches a patient. No blame, no finger-pointing.
 
-It's not live yet, but it's close — short screen recording below.
+Not live yet, but close — quick screen recording below.
 
-Cost, upfront and honest: everyone gets the first 3 months free, then $30 + GST/month per pharmacy (or $300/year), cancel anytime. That's about a dollar a day — and if it saves your reviewing pharmacist even half an hour a month, it's already paid for itself.
+Cost, upfront: everyone gets the first 3 months free, then $30 + GST/month per pharmacy (or $300/year), cancel anytime. About a dollar a day — and if it saves your reviewing pharmacist even half an hour a month, it's paid for itself.
 
-If you'd like a look when it's ready, pop your details here and I'll flick you a message: https://tally.so/r/D4YgQl
+Want a look when it's ready? Leave your details here and I'll let you know: https://tally.so/r/D4YgQl
 
-Genuinely curious though — what's the one near miss that keeps coming back in your pharmacy?
+And I'd love to hear: does a near miss ever actually change anything in your pharmacy — or does it just get fixed and forgotten?
 
 ---
 
