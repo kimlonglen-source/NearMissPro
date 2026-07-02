@@ -125,7 +125,7 @@ export function DashboardPage() {
   const outcomeBadge = (outcome: string | null) => {
     if (!outcome) return <span className="bg-[#FAEEDA] text-[#633806] text-xs font-semibold px-2.5 py-1 rounded-full">Needs review</span>;
     const map: Record<string, string> = { accepted: 'bg-[#E1F5EE] text-[#085041]', modified: 'bg-[#EEEDFE] text-[#3C3489]', no_action: 'bg-gray-100 text-gray-600', voided: 'bg-[#FCEBEB] text-[#791F1F]' };
-    const labels: Record<string, string> = { accepted: '\u2713 Accepted', modified: '\u2713 Modified', no_action: '\u2713 No change', voided: 'Voided' };
+    const labels: Record<string, string> = { accepted: '\u2713 Action agreed', modified: '\u2713 Action agreed', no_action: '\u2713 No change', voided: 'Voided' };
     return <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${map[outcome] || ''}`}>{labels[outcome] || outcome}</span>;
   };
 
@@ -300,7 +300,9 @@ export function DashboardPage() {
                       so the manager can read a queue of 20 incidents quickly. */}
                   <SummarySentence inc={inc} />
                   {inc.notes && <p className="text-gray-500 text-xs italic">{inc.notes}</p>}
-                  {inc.occurred_at && (
+                  {/* Only worth a line when the entry was backdated — the
+                      narrative sentence above already carries the date. */}
+                  {inc.occurred_at && inc.occurred_at !== inc.submitted_at && (
                     <p className="text-xs text-gray-400">
                       Happened {new Date(inc.occurred_at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       {' · '}

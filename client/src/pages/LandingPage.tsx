@@ -348,7 +348,7 @@ function ReviewStage() {
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <p className="text-sm font-semibold text-gray-900">Wrong strength: Warfarin 1mg → 3mg</p>
           {accepted && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E1F5EE] text-[#085041] flex-shrink-0 animate-[fadeIn_0.3s_ease]">✓ Accepted</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E1F5EE] text-[#085041] flex-shrink-0 animate-[fadeIn_0.3s_ease]">✓ Action agreed</span>
           )}
         </div>
         <p className="text-[11px] text-gray-500 mb-2.5">12 May · Final pharmacist check · Message not passed on</p>
