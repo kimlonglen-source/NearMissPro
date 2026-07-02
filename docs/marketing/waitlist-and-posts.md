@@ -11,10 +11,10 @@ A green-light target to decide on before starting: e.g. *"If 15–20 NZ pharmaci
 
 **Form title:** Be first to try NearMissPro
 
-**Intro blurb (pain-led):**
-> Near misses are the one thing every pharmacy catches — but nobody has time to log. So the same mistakes keep coming back, and the monthly review never really proves whether last month's fix worked.
+**Intro blurb (pain-led, prevention-focused):**
+> Every near miss your team catches is a warning — the same slip will come back, and one day it might not get caught. The goal was never to catch more near misses. It's to prevent them.
 >
-> NearMissPro fixes both pains: log a near miss in seconds, and see plainly whether what you changed is actually reducing them — the continuous-improvement record the Pharmacy Council looks for. No blame, no names.
+> NearMissPro helps you do exactly that: log a near miss in seconds, see the pattern, make one small change — then check next month whether it actually reduced them. Fewer repeat near misses. Fewer chances for one to reach a patient. No blame, no names.
 >
 > It's in development now, built by a NZ pharmacist. Join the waitlist for early access and to help shape it around how your pharmacy really works.
 
@@ -41,7 +41,7 @@ A green-light target to decide on before starting: e.g. *"If 15–20 NZ pharmaci
 
 ## 2. Call-to-action for the end of LinkedIn posts
 
-> I'm building something to make this easier for NZ pharmacies — a simple, no-blame way to log near misses and actually learn from them. It's not live yet, but if you'd like an early look, you can join the waitlist here: [your form link]
+> I'm building something to help NZ pharmacies prevent dispensing errors — a simple, no-blame way to log near misses, spot the patterns, and stop the same mistakes before one reaches a patient. It's not live yet, but if you'd like an early look, you can join the waitlist here: [your form link]
 
 ---
 
@@ -77,7 +77,7 @@ But a near miss isn't luck — it's a warning shot. The same look-alike packagin
 
 The pharmacies that stay safe aren't the ones with fewer near misses. They're the ones that notice the pattern — and change something before the near miss becomes a dispensing error that reaches a patient.
 
-That's the idea behind something I'm building: NearMissPro — a simple way for NZ community pharmacies to log near misses in seconds, spot the recurring ones, and run the monthly quality-improvement review the Pharmacy Council looks for. No blame, no names — just the pattern, and what you're doing about it.
+That's the idea behind something I'm building: NearMissPro — a simple way for NZ community pharmacies to log near misses in seconds, spot the recurring ones, and change the system so they stop coming back — before one reaches a patient. No blame, no names — just the pattern, and what you're doing about it.
 
 It's not live yet — I'm building it with real NZ pharmacies in mind, and I'd love to get it right. If you run or work in a community pharmacy and this rings true, drop a comment or DM me, or join the waitlist: [your form link]
 

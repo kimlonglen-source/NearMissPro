@@ -45,7 +45,7 @@ You moved the methadone register. You added a second check on the look-alikes. D
 
 That's the piece I care most about: every review compared to the one before it. Each problem from last time is followed up and marked — gone, happening less, or still happening. So you can finally see whether what you changed reduced the next near miss.
 
-That's the difference between a logbook and genuine continuous improvement — the thing the Pharmacy Council actually looks for.
+That's the difference between a logbook and actually preventing the next error.
 
 Does your review ever tell you if last month's fix worked? 👇
 
@@ -63,7 +63,7 @@ The goal isn't to catch more. It's to need to catch fewer.
 
 That's the whole idea behind what I'm building: log a near miss in seconds, let the patterns surface on their own, make one small system change, and measure whether it worked next month. Capture, act, measure, repeat.
 
-Fewer repeat near misses. A clean improvement record for the Pharmacy Council. And a bit less of that quiet dread that one might slip through.
+Fewer repeat near misses. Fewer chances for one to reach a patient. And a bit less of that quiet dread that one might slip through.
 
 Prevention, not paperwork.
 
