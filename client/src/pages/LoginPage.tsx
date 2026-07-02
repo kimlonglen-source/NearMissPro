@@ -8,6 +8,7 @@ import { Mail } from 'lucide-react';
 export function LoginPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   // When the server responds needsVerification=true (new device), we
@@ -21,7 +22,7 @@ export function LoginPage() {
   const { login } = useAuth();
 
   const completeLogin = async (n: string, p: string) => {
-    const res = await api.staffLogin(n, p);
+    const res = await api.staffLogin(n, p, rememberMe);
     if (res.token && res.pharmacyName && res.pharmacyId) {
       api.setToken(res.token);
       login('staff', res.pharmacyName, res.pharmacyId);
@@ -35,7 +36,7 @@ export function LoginPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const res = await api.staffLogin(name, password);
+      const res = await api.staffLogin(name, password, rememberMe);
       if (res.needsVerification) {
         setAwaitingApproval(true);
         setPollTimedOut(false);
@@ -135,6 +136,11 @@ export function LoginPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} className="input-field" required />
               </div>
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} className="rounded" />
+                Keep me signed in on this computer
+              </label>
+              <p className="text-[11px] text-gray-400 -mt-2">Tick this on your dispensary computer. Leave it off on a shared or personal device.</p>
               <button type="submit" disabled={loading || !name || !password} className="btn-teal w-full">{loading ? 'Logging in...' : 'Login'}</button>
             </form>
             <div className="mt-4 text-center">

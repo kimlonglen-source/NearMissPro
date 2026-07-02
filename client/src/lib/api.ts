@@ -106,11 +106,11 @@ class Api {
   // tells the client to wait (needsVerification: true). The
   // deviceId either comes from localStorage (returning device) or
   // is generated fresh by the browser for first-time devices.
-  staffLogin(name: string, password: string) {
+  staffLogin(name: string, password: string, rememberMe?: boolean) {
     const deviceId = getOrCreateDeviceId();
     return this.req<{ token?: string; role?: string; pharmacyName?: string; pharmacyId?: string; needsVerification?: boolean; deviceId?: string }>('/auth/staff/login', {
       method: 'POST',
-      body: JSON.stringify({ name, password, deviceId }),
+      body: JSON.stringify({ name, password, deviceId, rememberMe }),
     }).then(r => {
       // Persist whichever deviceId the server confirmed/echoed so
       // the next login from this browser uses the same one.

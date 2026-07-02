@@ -39,10 +39,14 @@ function describeDevice(userAgent: string | undefined): string {
 // with access to that inbox to click the approval link.
 router.post('/staff/login', async (req: Request, res: Response) => {
   try {
-    const { name, password, deviceId } = z.object({
+    const { name, password, deviceId, rememberMe } = z.object({
       name: z.string().min(1),
       password: z.string().min(1),
       deviceId: z.string().min(20).max(200).optional(),
+      // "Keep me signed in on this computer" — extends the session from
+      // 7 to 30 days. Safe on the fixed, physically-secured dispensary
+      // computer; there's no patient data in the app either way.
+      rememberMe: z.boolean().optional(),
     }).parse(req.body);
 
     const { data: pharmacy } = await supabase
@@ -209,7 +213,7 @@ If you DON'T recognise this attempt, do nothing — the request expires in 60 mi
     // dispensary counter, so the security trade is fine.
     const token = jwt.sign(
       { pharmacyId: pharmacy.id, pharmacyName: pharmacy.name, role: 'staff' },
-      env.jwtSecret, { expiresIn: '7d' } as jwt.SignOptions
+      env.jwtSecret, { expiresIn: rememberMe ? '30d' : '7d' } as jwt.SignOptions
     );
 
     // Trial-ending nudge — fires only if status === 'trial' AND
