@@ -12,7 +12,7 @@ A green-light target to decide on before starting: e.g. *"If 15–20 NZ pharmaci
 **Form title:** Be first to try NearMissPro
 
 **Intro blurb (pain-led, prevention-focused):**
-> Every near miss your team catches is a warning — the same slip will come back, and one day it might not get caught. The goal was never to catch more near misses. It's to prevent them.
+> Every near miss your team catches is a warning — the same slip will come back, and one day it might not get caught. The aim isn't only to catch near misses. It's to stop them happening again — so one never reaches a patient.
 >
 > NearMissPro helps you do exactly that: log a near miss in seconds, see the pattern, make one small change — then check next month whether it actually reduced them. Fewer repeat near misses. Fewer chances for one to reach a patient. No blame, no names.
 >
