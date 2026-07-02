@@ -25,7 +25,7 @@ It's all about prevention — turning a caught near miss into one that doesn't h
 
 It's not live yet, but it's close — short screen recording below.
 
-Cost, upfront and honest: everyone gets the first 3 months free, then $30 + GST/month per pharmacy (or $300/year), cancel anytime. That's about a dollar a day — and if it saves your checker even half an hour a month, it's already paid for itself.
+Cost, upfront and honest: everyone gets the first 3 months free, then $30 + GST/month per pharmacy (or $300/year), cancel anytime. That's about a dollar a day — and if it saves your reviewing pharmacist even half an hour a month, it's already paid for itself.
 
 If you'd like a look when it's ready, pop your details here and I'll flick you a message: https://tally.so/r/D4YgQl
 
@@ -43,10 +43,10 @@ Genuinely curious though — what's the one near miss that keeps coming back in 
 - ~$30/month ≈ about $1 a day per pharmacy.
 - Logging: seconds / a few taps, instead of writing a paragraph.
 - Review: the month pulled into a review write-up in minutes, not hours.
-- Break-even: if it saves the checking pharmacist ~30 min/month, it's paid for itself.
+- Break-even: if it saves the reviewing pharmacist ~30 min/month, it's paid for itself.
 
 ## Reply to the mod
 > Thanks so much — really appreciate it! Happy to be upfront on cost: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. I'll make that clear in the post so nobody's surprised. Ngā mihi, Kim
 
 ## Canned reply if price comes up in comments
-> Fair question. Everyone gets the first 3 months free, then it's $30 + GST/month per pharmacy (about a dollar a day). The way I see it: if it saves your checker even 30 minutes a month — logging in seconds instead of writing paragraphs, and the review write-up in minutes instead of piecing the logbook together by hand — it's already paid for itself. Cancel anytime, no lock-in.
+> Fair question. Everyone gets the first 3 months free, then it's $30 + GST/month per pharmacy (about a dollar a day). The way I see it: if it saves your reviewing pharmacist even 30 minutes a month — logging in seconds instead of writing paragraphs, and the review write-up in minutes instead of piecing the logbook together by hand — it's already paid for itself. Cancel anytime, no lock-in.
