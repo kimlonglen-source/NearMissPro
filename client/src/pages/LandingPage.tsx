@@ -41,7 +41,7 @@ function Hero() {
             <Sparkles size={12} /> Built for NZ community pharmacy
           </div>
           <h1 className="text-4xl md:text-6xl font-bold leading-[1.05] mb-6 tracking-tight">
-            Log in seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">Review in minutes.</span> Prevent the next error.
+            Log near misses in seconds. <span className="bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] bg-clip-text text-transparent">Review in minutes.</span> Prevent the next error.
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
             Staff record a dispensing near miss in under a minute — anonymous, so they actually do it. Come review time it's grouped for you, each with an NZ-best-practice suggestion and the report already written. And every review shows whether last month's fixes worked — the continuous-improvement record the Pharmacy Council looks for. Built for NZ community pharmacy.
