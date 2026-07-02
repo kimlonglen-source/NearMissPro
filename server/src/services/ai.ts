@@ -1,6 +1,7 @@
 import { env } from '../config/env.js';
 import { supabase } from '../config/supabase.js';
 import { normalizeDrugName } from '../lib/normalize.js';
+import { previousPeriodBounds } from '../lib/previousPeriod.js';
 import { highRiskCategoryFor } from '../lib/highRiskDrugs.js';
 import { inlineFixFor } from '../lib/factorSuggestions.js';
 
@@ -541,11 +542,11 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   // "Last period improvements" section with the actually meaningful
   // narrative ("Atorvastatin wrong-strength: 5 → 1, action working")
   // instead of generic placeholder text.
-  const startMs = new Date(periodStart).getTime();
-  const endMs = new Date(endBound).getTime();
-  const periodMs = endMs - startMs;
-  const prevEndIso = new Date(startMs - 1).toISOString();
-  const prevStartIso = new Date(startMs - periodMs - 1).toISOString();
+  // Previous period: previous whole calendar month for a full-month
+  // report, else the same-length window before. Shared with the
+  // period-comparison endpoint so the agenda and the report's
+  // follow-up section compare against the exact same dates.
+  const { prevStartIso, prevEndIso } = previousPeriodBounds(periodStart, periodEnd);
   const { data: prevIncidents } = await supabase.from('incidents')
     .select('drug_name, error_types, recommendations(manager_outcome)')
     .eq('pharmacy_id', pharmacyId).eq('status', 'active')

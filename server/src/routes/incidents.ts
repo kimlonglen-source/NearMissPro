@@ -6,6 +6,7 @@ import { scanFields } from '../lib/phi.js';
 import { normalizeDrugName } from '../lib/normalize.js';
 import { FACTOR_SUGGESTIONS } from '../lib/factorSuggestions.js';
 import { lockedPeriodCoveringDate } from '../lib/lockedPeriod.js';
+import { previousPeriodBounds } from '../lib/previousPeriod.js';
 
 const router = Router();
 router.use(authenticate);
@@ -264,9 +265,11 @@ router.get('/stats/period-comparison', requireRole('manager', 'founder'), async 
 
     const fromIso = /^\d{4}-\d{2}-\d{2}$/.test(fromStr) ? `${fromStr}T00:00:00.000Z` : fromStr;
     const toIso = /^\d{4}-\d{2}-\d{2}$/.test(toStr) ? `${toStr}T23:59:59.999Z` : toStr;
-    const periodMs = new Date(toIso).getTime() - new Date(fromIso).getTime();
-    const prevToIso = new Date(new Date(fromIso).getTime() - 1).toISOString();
-    const prevFromIso = new Date(new Date(fromIso).getTime() - periodMs - 1).toISOString();
+    // Previous period: the previous whole calendar month when this is a
+    // full month, else the same-length window before. See previousPeriod.ts.
+    const { prevStartIso: prevFromIso, prevEndIso: prevToIso } = previousPeriodBounds(
+      fromIso.slice(0, 10), toIso.slice(0, 10),
+    );
 
     type Row = { drug_name: string | null; error_types: string[] | null; recommendations: { manager_outcome: string | null }[] };
     const fetchRange = async (a: string, b: string) => {
@@ -377,9 +380,11 @@ router.get('/stats/factor-analysis', requireRole('manager', 'founder'), async (r
 
     const fromIso = /^\d{4}-\d{2}-\d{2}$/.test(fromStr) ? `${fromStr}T00:00:00.000Z` : fromStr;
     const toIso = /^\d{4}-\d{2}-\d{2}$/.test(toStr) ? `${toStr}T23:59:59.999Z` : toStr;
-    const periodMs = new Date(toIso).getTime() - new Date(fromIso).getTime();
-    const prevToIso = new Date(new Date(fromIso).getTime() - 1).toISOString();
-    const prevFromIso = new Date(new Date(fromIso).getTime() - periodMs - 1).toISOString();
+    // Previous period: the previous whole calendar month when this is a
+    // full month, else the same-length window before. See previousPeriod.ts.
+    const { prevStartIso: prevFromIso, prevEndIso: prevToIso } = previousPeriodBounds(
+      fromIso.slice(0, 10), toIso.slice(0, 10),
+    );
 
     const fetchFactors = async (a: string, b: string): Promise<{ counts: Record<string, number>; total: number }> => {
       const { data, error } = await supabase.from('incidents').select('factors')
