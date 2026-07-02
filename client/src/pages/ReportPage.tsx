@@ -48,17 +48,6 @@ function groupIncidents(incidents: Incident[]): Incident[][] {
   return order.map(k => byKey.get(k)!);
 }
 
-// High-risk chip — pulled out so both the single and grouped card
-// branches render it identically.
-function isHighRiskInfoChip(isHighRisk: boolean, info: { category: string } | null) {
-  if (!isHighRisk || !info) return null;
-  return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F] mb-1.5">
-      ⚠ High-risk · {info.category}
-    </span>
-  );
-}
-
 export function ReportPage() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -351,25 +340,19 @@ export function ReportPage() {
             counts), and the prevention-action prompt it carried is
             already agenda item 3. */}
 
-        {/* Near misses this period — two tiers so the section stays
-            short. FULL CARDS only for what the meeting should dwell on:
-            repeat patterns (2+ of the same drug+error) and anything
-            involving a high-risk medicine. Everything else — one-off,
-            routine near misses — renders as a compact one-line list at
-            the end. The full detail for those still lives in the app. */}
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Near misses this period</h2>
+        {/* Near misses this period — every item shows two things in the
+            same fixed shape: WHAT HAPPENED and WHAT WE'RE DOING. That's
+            the whole point of the meeting: staff hear each event and
+            hear the change. Repeats of the same (drug, error) pattern
+            collapse into one entry with dated occurrence lines, so
+            nobody reads the same story four times. Kept compact:
+            divider lines between entries instead of boxed cards. */}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0F6E56] border-b border-[#0F6E56] pb-1 mb-4 mt-6">Near misses this period — and what we're doing about each</h2>
         {activeIncidents.length === 0 ? (
           <p className="text-sm text-gray-400 mb-6">No active incidents in this period.</p>
-        ) : (() => {
-          const allGroups = groupIncidents(activeIncidents);
-          const isFeatured = (group: Incident[]) =>
-            group.length > 1 || group.some(i => checkHighRisk(i.drug_name) || checkHighRisk(i.dispensed_drug));
-          const featured = allGroups.filter(isFeatured);
-          const routine = allGroups.filter(g => !isFeatured(g)).flat();
-          return (
-          <>
-          <div className="space-y-3 mb-6">
-            {featured.map(group => {
+        ) : (
+          <div className="divide-y divide-gray-200 mb-6">
+            {groupIncidents(activeIncidents).map(group => {
               const first = group[0];
               const rec = first.recommendations?.[0];
               const outcome = rec?.manager_outcome;
@@ -379,110 +362,70 @@ export function ReportPage() {
               const usePatternAction = !!pattern && !!pattern.latestAction;
               const isGroup = group.length > 1;
 
+              // The one action line every entry gets. Priority: the
+              // manager's logged pattern action > the manager's own
+              // wording > the accepted AI suggestion > explicit "no
+              // change" > "not yet reviewed".
+              const actionText = usePatternAction ? pattern!.latestAction!.note
+                : outcome === 'modified' && rec?.manager_text ? rec.manager_text
+                : outcome === 'accepted' && rec ? rec.ai_text
+                : null;
+
               return (
-                <div key={first.id} className="border border-gray-200 rounded-xl p-4">
+                <div key={first.id} className="py-3">
+                  <div className="flex items-start gap-2">
+                    <p className={`flex-1 text-sm leading-snug ${isHighRisk ? 'font-bold text-[#791F1F]' : 'font-semibold text-gray-900'}`}>
+                      {summarizeIncident(first)}
+                    </p>
+                    {isGroup && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#FDF8EB] text-[#633806] border border-[#BA7517]/40 whitespace-nowrap">
+                        × {group.length}
+                      </span>
+                    )}
+                    {isHighRisk && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FCEBEB] text-[#791F1F] whitespace-nowrap">
+                        ⚠ High-risk
+                      </span>
+                    )}
+                  </div>
+
                   {isGroup ? (
-                    <span className="float-right text-xs font-bold px-2 py-0.5 rounded-full bg-[#FDF8EB] text-[#633806] border border-[#BA7517]/40">
-                      × {group.length} this period
-                    </span>
-                  ) : outcome && (
-                    <span className={`float-right text-xs font-semibold px-2 py-0.5 rounded-full ${outcome === 'accepted' ? 'bg-[#E1F5EE] text-[#085041]' : outcome === 'modified' ? 'bg-[#EEEDFE] text-[#3C3489]' : 'bg-gray-100 text-gray-600'}`}>
-                      {outcome === 'accepted' ? '✓ Accepted' : outcome === 'modified' ? '✓ Modified' : '✓ No action'}
-                    </span>
-                  )}
-
-                  {isHighRiskInfoChip(isHighRisk, highRiskInfo)}
-
-                  <p className={`text-sm leading-snug mb-1.5 pr-24 ${isHighRisk ? 'font-bold text-[#791F1F]' : 'font-semibold text-gray-900'}`}>
-                    {summarizeIncident(first)}
-                  </p>
-
-                  {isGroup ? (
-                    <ul className="text-xs text-gray-600 leading-snug mb-3 space-y-1">
-                      {group.map(inc => {
-                        const o = inc.recommendations?.[0]?.manager_outcome;
-                        return (
-                          <li key={inc.id} className="flex items-baseline gap-1.5">
-                            <span className="text-gray-400">•</span>
-                            <span className="flex-1">
-                              {narrateIncidentContext(inc)}
-                              {inc.notes && <span className="italic text-gray-500"> "{inc.notes}"</span>}
-                            </span>
-                            {o && (
-                              <span className="text-[10px] font-semibold text-gray-500 whitespace-nowrap">
-                                {o === 'accepted' ? '✓ Accepted' : o === 'modified' ? '✓ Modified' : '✓ No action'}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
+                    <ul className="text-xs text-gray-600 leading-snug mt-1 space-y-0.5">
+                      {group.map(inc => (
+                        <li key={inc.id}>
+                          • {narrateIncidentContext(inc)}
+                          {inc.notes && <span className="italic text-gray-500"> "{inc.notes}"</span>}
+                        </li>
+                      ))}
                     </ul>
                   ) : (
-                    <>
-                      <p className="text-xs text-gray-600 leading-snug mb-3">
-                        {narrateIncidentContext(first)}
-                      </p>
-                      {first.notes && (
-                        <p className="text-xs text-gray-500 italic mb-3 pl-2 border-l-2 border-gray-200">"{first.notes}"</p>
-                      )}
-                    </>
+                    <p className="text-xs text-gray-600 leading-snug mt-1">
+                      {narrateIncidentContext(first)}
+                      {first.notes && <span className="italic text-gray-500"> "{first.notes}"</span>}
+                    </p>
                   )}
 
-                  {rec && (
-                    <div className="bg-gray-50 rounded-lg p-3 mt-2">
-                      <div className="text-xs font-semibold text-gray-600 mb-1">
-                        {usePatternAction
-                          ? `Pattern action — the same fix covers all ${pattern!.count}`
-                          : isGroup ? 'Action agreed (applies to the whole pattern)'
-                          : outcome === 'modified' ? 'Action agreed (rewritten by pharmacist-in-charge)'
-                          : outcome === 'accepted' ? 'Action agreed'
-                          : outcome === 'no_action' ? 'No system change required'
-                          : 'Recommendation'}
-                      </div>
-                      {usePatternAction ? (
-                        <p className="text-sm text-gray-800">{pattern!.latestAction!.note}</p>
-                      ) : outcome === 'modified' && rec.manager_text ? (
-                        <p className="text-sm text-gray-800">{rec.manager_text}</p>
-                      ) : (
-                        <p className="text-sm text-gray-800">{rec.ai_text}</p>
-                      )}
-                    </div>
-                  )}
+                  <p className="text-sm leading-snug mt-1.5">
+                    {actionText ? (
+                      <>
+                        <span className="font-semibold text-[#085041]">What we're doing: </span>
+                        <span className="text-gray-800">{actionText}</span>
+                        {isGroup && <span className="text-xs text-gray-500"> (covers all {group.length})</span>}
+                      </>
+                    ) : outcome === 'no_action' ? (
+                      <>
+                        <span className="font-semibold text-gray-600">Decision: </span>
+                        <span className="text-gray-700">no change needed — reviewed by the pharmacist-in-charge.</span>
+                      </>
+                    ) : (
+                      <span className="text-gray-400 italic">Not yet reviewed.</span>
+                    )}
+                  </p>
                 </div>
               );
             })}
           </div>
-
-          {routine.length > 0 && (
-            <div className="mb-6">
-              <p className="text-xs font-semibold text-gray-500 mb-2">
-                Other near misses this period — one-offs, no repeat pattern. Full details are in the app.
-              </p>
-              <ul className="space-y-1.5">
-                {routine.map(inc => {
-                  const o = inc.recommendations?.[0]?.manager_outcome;
-                  return (
-                    <li key={inc.id} className="text-xs leading-snug flex items-baseline gap-1.5">
-                      <span className="text-gray-400">•</span>
-                      <span className="flex-1">
-                        <span className="font-medium text-gray-800">{summarizeIncident(inc)}</span>{' '}
-                        <span className="text-gray-500">{narrateIncidentContext(inc)}</span>
-                        {inc.notes && <span className="italic text-gray-500"> "{inc.notes}"</span>}
-                      </span>
-                      {o && (
-                        <span className="text-[10px] font-semibold text-gray-500 whitespace-nowrap">
-                          {o === 'accepted' ? '✓ Accepted' : o === 'modified' ? '✓ Modified' : '✓ No action'}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-          </>
-          );
-        })()}
+        )}
 
         {/* What we'll do — agenda. Numbered list, no boxes around each
             row — those made the page feel like a form. */}
