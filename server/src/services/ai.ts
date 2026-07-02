@@ -572,12 +572,16 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     const wasActioned = prevPatterns.get(key)?.actioned || false;
     if (prev > 0 && cur === 0) {
       wins.push(`${drug} ${et}: ${prev} → 0${wasActioned ? ' (action worked)' : ''}`);
-    } else if (cur < prev && wasActioned) {
+    } else if (prev > 0 && cur < prev && wasActioned) {
       recurring.push(`${drug} ${et}: ${prev} → ${cur} (action helping)`);
-    } else if (cur > prev && wasActioned) {
-      concerns.push(`${drug} ${et}: ${prev} → ${cur} (action so far not enough — revisit)`);
-    } else if (prev === 0 && cur >= 2) {
-      concerns.push(`${drug} ${et}: new pattern this period (${cur} incidents)`);
+    } else if (prev > 0 && cur >= prev) {
+      // "Still happening" — same definition as the report's follow-up
+      // section (section 2), so the agenda's count always matches the
+      // number the reader can verify on the page. NEW patterns are
+      // deliberately NOT counted here — they're not "still happening
+      // despite a change", and the review agenda item already calls
+      // out the top new pattern by name.
+      concerns.push(`${drug} ${et}: ${prev} → ${cur}${wasActioned ? ' (action so far not enough)' : ''}`);
     }
   }
   let comparisonNarrative = '';
@@ -712,7 +716,7 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
   //   the fix failed, so the team agrees what to try next. Months
   //   where everything is sorted get a 3-step agenda instead. ──
   if (incidentCount > 0 && concerns.length > 0) {
-    let decideItem = `${concerns.length} problem${concerns.length > 1 ? 's are' : ' is'} still happening despite last month's change (see section 2). As a team, agree what to try next — name who'll do it and the date it'll be done by.`;
+    let decideItem = `${concerns.length} problem${concerns.length > 1 ? 's' : ''} from last review ${concerns.length > 1 ? 'are' : 'is'} still happening (see section 2). As a team, agree what to try next — name who'll do it and the date it'll be done by.`;
     if (topFactors.length > 0 && topFactors[0][1] >= 2) {
       decideItem += ` The biggest factor this period was "${topFactors[0][0]}" — a good place to focus.`;
     }
