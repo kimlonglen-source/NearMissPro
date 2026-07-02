@@ -429,7 +429,7 @@ function TwoPains() {
             </div>
             <h3 className="font-bold text-lg mb-2">Recording — for staff</h3>
             <p className="text-sm text-gray-500 mb-3"><span className="font-semibold text-gray-700">The pain:</span> stopping mid-dispense to hand-write in the logbook. So dispensing near misses go unreported.</p>
-            <p className="text-sm text-gray-600 leading-relaxed"><span className="font-semibold text-[#0F6E56]">The fix:</span> a 60-second form with drug autocomplete. Anonymous, so staff aren't afraid to log. Quick enough that they actually do it.</p>
+            <p className="text-sm text-gray-600 leading-relaxed"><span className="font-semibold text-[#0F6E56]">The fix:</span> a 60-second form with drug autocomplete, right on your dispensary computer (or a phone or tablet if you prefer). Anonymous, so staff aren't afraid to log. Quick enough that they actually do it.</p>
           </div>
           <div className="bg-white rounded-2xl p-7 border border-gray-200">
             <div className="w-11 h-11 rounded-xl bg-[#E1F5EE] flex items-center justify-center mb-4 text-[#0F6E56]">
