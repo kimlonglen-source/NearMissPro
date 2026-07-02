@@ -367,7 +367,7 @@ export function ReportPage() {
               // wording > the accepted AI suggestion > explicit "no
               // change" > "not yet reviewed".
               const actionText = usePatternAction ? pattern!.latestAction!.note
-                : outcome === 'modified' && rec?.manager_text ? rec.manager_text
+                : outcome === 'modified' ? (rec?.manager_text || rec?.ai_text || null)
                 : outcome === 'accepted' && rec ? rec.ai_text
                 : null;
 
