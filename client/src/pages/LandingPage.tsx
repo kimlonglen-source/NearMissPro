@@ -579,7 +579,7 @@ function VsPaper() {
     { paper: 'Monthly meeting report written from scratch every time', us: 'Auto-generated meeting script — summary, agenda, sign-off included' },
     { paper: 'No sense of whether things are getting better or worse', us: 'Every report compares to your last one, plus your near-miss rate per scripts dispensed' },
     { paper: '"Did our actions work?" — almost impossible to answer', us: 'Each problem from last review followed up — gone, less often, or still happening' },
-    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log — every void, edit, and decision saved. Designed to support your CQI audit work.' },
+    { paper: 'Audit trail is the book itself — can be lost or altered', us: 'Immutable timestamped log — every void, edit, and decision saved. Designed to support your quality-improvement work.' },
   ];
   return (
     <section className="px-5 py-20 bg-gradient-to-b from-gray-50 to-white">
@@ -653,7 +653,7 @@ function Pricing() {
                 'All staff included — no per-user fees',
                 'Unlimited near misses + reports',
                 'Full audit log — every void, edit, and decision saved',
-                'Designed to support your CQI audit work',
+                'Supports your quality-improvement work',
                 'AI-assisted recommendations',
                 'Email support direct from the founder',
               ].map(i => (
@@ -691,7 +691,7 @@ function Faq() {
     {
       heading: 'Your data & NZ law',
       items: [
-        { q: 'How does NearMissPro fit NZ pharmacy law and standards?', a: 'It\'s designed around the frameworks that apply to a community pharmacy: the Privacy Act 2020 (collect the minimum, store it securely, let you access and delete it, follow the notifiable-breach rules); the Health Information Privacy Code 2020 (we avoid collecting identifiable patient health information at all); Pharmacy Council standards for Safe Effective Pharmacy Practice (it supports the continuous quality improvement expected of every pharmacy); and the Health and Safety at Work Act 2015 (near-miss records support your workplace safety record-keeping). It\'s a tool that assists this work — not a substitute for your professional and legal obligations, and not certified by any regulator. If in doubt, confirm your obligations with the Pharmacy Council or your indemnity provider.' },
+        { q: 'How does NearMissPro fit NZ pharmacy law and standards?', a: 'It\'s designed around the frameworks that apply to a community pharmacy: the Privacy Act 2020 (collect the minimum, store it securely, let you access and delete it, follow the notifiable-breach rules); the Health Information Privacy Code 2020 (we avoid collecting identifiable patient health information at all); Pharmacy Council standards for Safe Effective Pharmacy Practice (it supports the continuous quality improvement, or CQI, expected of every pharmacy); and the Health and Safety at Work Act 2015 (near-miss records support your workplace safety record-keeping). It\'s a tool that assists this work — not a substitute for your professional and legal obligations, and not certified by any regulator. If in doubt, confirm your obligations with the Pharmacy Council or your indemnity provider.' },
         { q: 'Is it a problem that the data is offshore, not in NZ?', a: 'No. The Privacy Act 2020 allows New Zealand data to be held overseas where it\'s protected by comparable privacy law — Australia qualifies. And what\'s stored is anonymous near-miss records, not patient health data. Sydney is the closest region to NZ, which keeps it fast.' },
         { q: 'Does the Health Information Privacy Code apply?', a: 'The Health Information Privacy Code 2020 governs identifiable patient health information — which NearMissPro is built not to collect. So its health-information rules don\'t bite. Your pharmacy stays the agency responsible for anything a staff member types in by mistake, and we\'ll help you redact or delete it.' },
         { q: 'Is an electronic near-miss log OK instead of the paper book?', a: 'Yes. The Pharmacy Council\'s standards let pharmacies keep records electronically as long as they\'re secure, accurate and can be retrieved when needed — the near-miss log is a CQI record, not a statutory register, so there\'s no requirement to keep it on paper. An electronic log with a timestamped audit trail is easier to defend at review than a handwritten book.' },
