@@ -64,8 +64,8 @@ Does your pharmacy ever get time to check if a change worked, or does the day ju
 ## Canned reply — "how is this different from [other app]? / who's behind it?"
 (Stay gracious — never rubbish a competitor in a small community.)
 
-> Good question! I'm honestly not too familiar with [other app], so I can't compare them properly. What I can tell you about this one: it's built by me — a NZ pharmacist — and it does one thing only, the near-miss cycle, kept fast and simple.
+> Good question! I haven't really looked at the other one, so I can't compare them fairly. This one's built by me, a NZ pharmacist, and it does just one thing — the near-miss cycle, kept fast and simple.
 >
-> The focus is really three things: speed to record (log a near miss in a few taps, no essay), AI that suggests a fix based on NZ best practice (advisory only — you always decide), and a report that writes itself so the monthly meeting just closes the loop — did last month's change actually work, or not.
+> Three things really: quick to log (a few taps, no essay), it suggests a fix based on NZ best practice (advisory only — you decide), and it writes the monthly report for you, so the meeting just closes the loop: did last month's change work, or not.
 >
-> That's the whole thing — no big workflow system to learn. Happy to answer anything else!
+> Happy to answer anything else!
