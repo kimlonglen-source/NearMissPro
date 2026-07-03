@@ -69,3 +69,31 @@ Does your pharmacy ever get time to check if a change worked, or does the day ju
 > Three things really: quick to log (a few taps, no essay), it suggests a fix based on NZ best practice (advisory only — you decide), and it writes the monthly report for you, so the meeting just closes the loop: did last month's change work, or not.
 >
 > Happy to answer anything else!
+
+---
+
+## Canned reply — security / data model due-diligence question
+(Answer honestly, match the actual build, be upfront that it's pre-launch and
+under independent review. Never overclaim on security.)
+
+> Really glad you asked — this is exactly the right question to ask before any real data goes in, and I take it seriously. Quick heads-up: it's pre-launch, and before any pharmacy loads real data I'm having the security and privacy set-up independently reviewed. Here's where it stands:
+>
+> Hosting & location: Data's in Supabase (managed PostgreSQL), hosted in Australia (Sydney) — not offshore to the US.
+>
+> Tenant separation: Yes — every request is scoped to the logged-in pharmacy, so one pharmacy can't see another's data. I'm having the database-level access rules independently verified too, as part of the review.
+>
+> Encryption: In transit (HTTPS) and at rest (Supabase's at-rest encryption). Passwords are hashed, never stored in plain text.
+>
+> 2FA: Admin access uses app-based 2FA (TOTP). Pharmacy logins use device verification — a new device has to be approved by email first, so a leaked password alone won't get anyone in. Per-user 2FA for staff is on the list.
+>
+> AI & third parties: AI is optional — you can switch it off entirely. When it's on, only the drug name, the type of near miss, and the contributing factors are sent to the provider (Anthropic). No patient identifiers and no staff identity — near misses are anonymous by design, and there are no patient-name/NHI fields at all. The provider doesn't use API data to train its models, and it isn't retained for training.
+>
+> Audit, backups, export & deletion: Yes to all — a per-pharmacy audit log, daily backups, you can export all your data any time, and if you leave, it's deleted on request.
+>
+> It's built around the NZ frameworks that apply — the Privacy Act 2020 and the Health Information Privacy Code — though it's a tool to support your obligations, not a substitute for them, and it's not certified by any regulator. Happy to go deeper on any of these, or share the independent review once it's done.
+
+### Notes on accuracy (keep it honest)
+- Tenant isolation is enforced in the app on every request; RLS at the DB layer is being verified in the independent review — don't claim more than that.
+- Founder/admin = TOTP 2FA. Staff = device verification (email-approved). Per-user staff 2FA = roadmap, not built.
+- Backups depend on the Supabase plan — keep saying "daily backups via Supabase" only if that's your plan.
+- Don't claim certifications you don't have.
