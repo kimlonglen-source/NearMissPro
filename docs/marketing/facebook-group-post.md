@@ -84,7 +84,7 @@ independent review. Never overclaim on security. No certification claims.)
 >
 > Logging in from outside the pharmacy: this was a big one for me. A new device has to be approved by email before it can get in, so no one can just log in from home with the password. The admin login also uses two-factor (an authenticator code).
 >
-> Encryption: everything's encrypted, both while it's moving and while it's stored. Passwords are scrambled so even I never see them.
+> Encryption: it's encrypted both ways — when it travels between your computer and the servers, and while it's stored. Passwords are scrambled so even I never see them.
 >
 > AI: it's optional — you can turn it off completely. When it's on, it only ever sees the drug name, the type of near miss, and the contributing factors — never patient details, and never who logged it. The AI provider doesn't keep that data or use it to train anything.
 >
