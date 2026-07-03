@@ -24,7 +24,7 @@ The whole point is prevention — stopping the same slip before it reaches a pat
 
 It's not live yet, but it's close. Short screen recording below so you can see how it works.
 
-On cost, for full transparency: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. That's about a dollar a day: your checking pharmacist logs in seconds instead of writing paragraphs, and your reviewing pharmacist gets the monthly write-up done in minutes instead of an evening. Save even half an hour a month between them and it's paid for itself.
+On cost, for full transparency: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. That's about a dollar a day — and in practice it saves a lot more time than that: your checking pharmacist logs in seconds all day instead of writing paragraphs, and your reviewing pharmacist gets the monthly write-up done in minutes instead of a whole evening. Even at half an hour a month, it's already paid for itself.
 
 Join the waitlist and I'll let you know the moment it's ready: https://tally.so/r/D4YgQl
 
