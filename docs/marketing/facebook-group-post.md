@@ -121,3 +121,17 @@ checked in the independent review); open to NZ-only if a pharmacy needs it.
 > On the hosting itself: Sydney is simply the nearest data centre my provider offers (there's no NZ region yet), and Australia has privacy laws comparable to ours — it's been the standard choice for NZ software, including in health. It's allowed under the Privacy Act with the right safeguards, which I'm having independently checked.
 >
 > And if a NZ hosting option opens up, or a pharmacy needs its data kept onshore, I'm happy to look at it.
+
+---
+
+## Canned reply — "you could just build a form / needs to be as fast as paper"
+(Concede the speed point hard — it's valid and it's the north star. Reframe: the
+form is the easy 10%, the value is the analysis + review loop. Never defensive.)
+
+> Cheers — and you've nailed the most important point: if it's not as fast as the book, no one on the frontline will use it, and it's dead in the water. That's exactly the bar I'm building to — logging has to be a few taps and done, no slower than pen and paper. The connection/speed thing is on my radar too; it needs to be quick even on a flat-out day.
+>
+> You're also right that the form itself is dead simple — ChatGPT or a Google Form could knock one up. But honestly, the form was never the hard part, or the point. The value is what happens after you've logged them: it spots which near misses keep repeating, writes your monthly review for you, and tells you whether the change you made last month actually worked. A pile of entries in a CSV doesn't do that — someone still has to sit down and make sense of it, which is the bit no one has time for.
+>
+> So the goal's both: log it fast (your point, and non-negotiable), and let it do the analysis and the review so you don't have to.
+>
+> Genuinely appreciate the frontline take though — that's exactly the input I need. What would "fast enough" look like for you?
