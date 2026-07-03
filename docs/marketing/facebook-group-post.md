@@ -78,7 +78,7 @@ independent review. Never overclaim on security. No certification claims.)
 
 > Really glad you asked — and honestly you've listed exactly the right things to check, so let me go through them in turn.
 >
-> Where it's hosted & keeping pharmacies separate: the data's on secure servers in Australia (Sydney), not overseas. Each pharmacy's data is completely walled off — one pharmacy can never see another's.
+> Where it's hosted & keeping pharmacies separate: the data's on secure servers in Australia (Sydney) — the nearest region my provider offers, and a jurisdiction with privacy laws comparable to ours (not the US or Europe). Each pharmacy's data is completely walled off — one pharmacy can never see another's.
 >
 > Encrypted at rest: yes — encrypted both while it's stored and when it travels between your computer and the servers. Passwords are scrambled so even I never see them.
 >
@@ -91,6 +91,12 @@ independent review. Never overclaim on security. No certification claims.)
 > And underneath all of it: it's built not to hold patient details in the first place. No patient name or NHI fields anywhere, near misses are anonymous, and if someone types a patient detail into the notes by accident, it flags it on the spot.
 >
 > It's pre-launch, and I'm getting the whole set-up independently reviewed before any pharmacy puts real data in. Happy to go deeper on any of these.
+
+### Justification for Sydney hosting (if challenged that it's "overseas")
+Australia IS overseas from NZ — never claim otherwise. Justify: nearest region the
+provider offers (no NZ region); Australia has comparable privacy law; chosen over
+US/Europe; allowed under the Privacy Act 2020 with disclosure + safeguards (being
+checked in the independent review); open to NZ-only if a pharmacy needs it.
 
 ### Notes on accuracy (keep it honest)
 - Tenant isolation is enforced in the app on every request; RLS at the DB layer is being verified in the independent review — don't claim more than that.
