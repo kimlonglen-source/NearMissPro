@@ -135,3 +135,18 @@ form is the easy 10%, the value is the analysis + review loop. Never defensive.)
 > So the goal's both: log it fast (your point, and non-negotiable), and let it do the analysis and the review so you don't have to.
 >
 > Genuinely appreciate the frontline take though — that's exactly the input I need. What would "fast enough" look like for you?
+
+---
+
+## Canned reply — "just use a form + paste the data into ChatGPT"
+(Concede you can. Lead with the privacy risk of pasting pharmacy data into
+consumer ChatGPT, then the "it has to actually happen every month" point.
+Honest, never defensive.)
+
+> Totally fair — and you're right, a form plus ChatGPT would get you a summary. Two honest reasons I built this instead of just doing that:
+>
+> First, the privacy side. Pasting your near-miss data into the normal ChatGPT sends it off to a US service that can use it to train its models — and if a patient name ever slipped into the notes, it's now sitting on a third party's system with no controls. That's pretty much the exact thing pharmacies are being warned about right now. This is built the other way round: no patient fields at all, only the non-identifying bits ever go to the AI (through a channel that doesn't train on your data), and you can switch the AI off completely and still get recommendations.
+>
+> Second, it actually has to happen every month. The DIY version is: keep the form going, export the file, remember to do it, write a decent prompt, paste it in, then dig out last month's data and prompt it again to compare, then format it for the meeting. ChatGPT doesn't remember last month, so the "did our fix work?" bit is on you each time. In a busy pharmacy that gets skipped by about month three. This does it in one click, keeps the history, and does the comparison for you.
+>
+> So yeah — you can absolutely rig it up yourself. I just wanted something that does it safely, the same way every month, without anyone having to remember to.
