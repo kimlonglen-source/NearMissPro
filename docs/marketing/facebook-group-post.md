@@ -27,11 +27,13 @@ Mostly though, I'd genuinely love to hear from you: how does your pharmacy handl
 
 ---
 
-## THE FIRST COMMENT (post this yourself, right after — link + a question)
+## THE FIRST COMMENT (post this yourself, right after — useful tip + soft mention + question)
 
-Happy to answer anything here. Quick detail: it's called NearMissPro (still in development) — log a near miss in a few taps, it flags the ones that keep repeating, and pulls your month into a review in minutes. Everyone gets the first 3 months free, then $30 + GST/month, cancel anytime. Have a look when it's ready: https://tally.so/r/D4YgQl
+One thing that made a real difference for us: at the monthly check, don't just count near misses — group them. If the same drug or look-alike box turns up two or three times, that pattern is where the next real error is hiding. Fix the pattern (move the stock, add a warning label, separate the boxes) and you prevent a whole run of them, instead of logging each one over and over.
 
-Curious though — is your logbook working fine, or does a near miss just get fixed and forgotten?
+That's the itch I'm scratching with NearMissPro — it surfaces those repeats for you. Early look if useful: https://tally.so/r/D4YgQl
+
+What's the one pattern that keeps coming back in your pharmacy?
 
 ---
 
