@@ -29,16 +29,19 @@ Mostly though, I'd genuinely love to hear from you: how does your pharmacy handl
 
 ## THE FIRST COMMENT (post this yourself, right after — useful tip + soft mention + question)
 
-Something we learned the hard way: the moment staff feel a near miss might come back on them, they quietly stop reporting — and you lose the very information that keeps patients safe. Making it anonymous and no-blame noticeably lifted how much our team actually logged. You can't fix what you never hear about.
+The step almost everyone skips: after you make a change — moved a drug, added a second check — nobody circles back to see if it actually worked. Next month there's a new fire, and you never really find out if last month's fix did anything. Even a rough before-and-after count tells you whether to keep the change or try something else.
 
-That's a big reason NearMissPro keeps every entry anonymous to the team. Early look if it's useful: https://tally.so/r/D4YgQl
+That follow-up loop is the whole reason I started building NearMissPro — it shows you whether last month's change actually reduced them. Early look if useful: https://tally.so/r/D4YgQl
 
-How do you keep near-miss reporting blame-free in your pharmacy — or is that the hard part?
+Do you ever get to check whether a change actually worked, or does time just run out?
 
 ---
 
-### Alternative first comment (the "patterns" tip)
-One thing that made a real difference for us: at the monthly check, don't just count near misses — group them. If the same drug or look-alike box turns up two or three times, that pattern is where the next real error is hiding. Fix the pattern (move the stock, add a warning label, separate the boxes) and you prevent a whole run of them. That's the itch I'm scratching with NearMissPro — it surfaces those repeats for you. Early look if useful: https://tally.so/r/D4YgQl — what's the one pattern that keeps coming back in your pharmacy?
+### Alternative first comments (rotate / pick per group)
+
+**No-blame reporting:** Something we learned the hard way: the moment staff feel a near miss might come back on them, they quietly stop reporting — and you lose the very information that keeps patients safe. Making it anonymous and no-blame noticeably lifted how much our team logged. That's a big reason NearMissPro keeps every entry anonymous to the team. Early look if useful: https://tally.so/r/D4YgQl — how do you keep reporting blame-free in your pharmacy?
+
+**Spot the patterns:** At the monthly check, don't just count near misses — group them. If the same drug or look-alike box turns up two or three times, that pattern is where the next real error is hiding. Fix the pattern (move the stock, add a warning label, separate the boxes) and you prevent a whole run of them. That's the itch I'm scratching with NearMissPro — it surfaces those repeats for you. Early look if useful: https://tally.so/r/D4YgQl — what's the one pattern that keeps coming back in yours?
 
 ---
 
