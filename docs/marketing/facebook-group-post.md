@@ -27,9 +27,17 @@ Mostly though, I'd genuinely love to hear from you: how does your pharmacy handl
 
 ---
 
-## THE FIRST COMMENT (post this yourself, right after — link + price live here)
+## THE FIRST COMMENT (post this yourself, right after — link + detail + a question)
 
-Happy to share more for anyone keen — it's called NearMissPro, still in development. To be upfront: everyone gets the first 3 months free, then it's a small subscription ($30 + GST/month per pharmacy, cancel anytime). If you'd like a look when it's ready, the waitlist is here: https://tally.so/r/D4YgQl
+Happy to answer anything here — genuinely after honest feedback, even the critical kind.
+
+A bit more for anyone curious: it's called NearMissPro, still in development. You log a near miss in a few taps (anonymous to the team), it flags the ones that keep repeating, suggests a simple fix based on NZ best practice — advisory only, the pharmacist always decides — and pulls your month into a review write-up in minutes.
+
+Upfront on cost: everyone gets the first 3 months free, then a small subscription ($30 + GST/month per pharmacy, cancel anytime).
+
+If you'd like a look when it's ready: https://tally.so/r/D4YgQl
+
+Genuinely curious though — what would actually make something like this useful in your pharmacy? Or is your current logbook working fine?
 
 ---
 
