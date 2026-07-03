@@ -109,3 +109,15 @@ checked in the independent review); open to NZ-only if a pharmacy needs it.
 ## Canned reply — "why Sydney / isn't that overseas?" (short)
 
 > Fair question — and yes, Sydney is technically overseas. Short version: it's the nearest region my hosting provider offers (there's no NZ option), and I picked Australia over the US or Europe on purpose. It has privacy laws comparable to ours, so your data stays well-protected and right next door. It's a common, accepted setup for NZ health and software products, allowed under the Privacy Act with the right safeguards — and I'm having the cross-border side checked in the independent review. If NZ hosting becomes available, I'll move to it.
+
+---
+
+## Canned reply — reassurance for anyone concerned about Sydney hosting
+
+> If anyone's uneasy about the data being in Sydney, totally fair — here's the reassurance.
+>
+> The biggest one first: there are no patient details in there to worry about. No names, no NHI — near misses are anonymous by design. So it isn't patient records sitting offshore; it's anonymous safety data.
+>
+> On the hosting itself: Sydney is simply the nearest data centre my provider offers (there's no NZ region yet), and Australia has privacy laws comparable to ours — it's been the standard choice for NZ software, including in health. It's allowed under the Privacy Act with the right safeguards, which I'm having independently checked.
+>
+> And if a NZ hosting option opens up, or a pharmacy needs its data kept onshore, I'm happy to look at it.
