@@ -1,54 +1,48 @@
 # Facebook post — NZ community pharmacy group
 
-Mod approved and asked for cost transparency — pricing + value included.
-Offer: everyone gets 3 months free, then $30 + GST/month. Waitlist perk = early access / first to know.
-Attach the screen recording (post the video, not just a link).
+De-spammed for reach: conversational (not an ad), NO link and NO price in the
+post body — those go in the FIRST COMMENT. Post the screen recording as native
+video. Facebook buries promo-looking posts and link posts in groups, even
+mod-approved ones.
+
 Waitlist link: https://tally.so/r/D4YgQl
 
 ---
 
+## THE POST (paste this, attach the video, no link in the body)
+
 Kia ora everyone,
 
-Quick one from a fellow NZ pharmacist.
+A question I've been chewing on as a pharmacist: when we catch a near miss, what actually happens to it?
 
-We catch near misses every day — the wrong strength, the look-alike box, the typo spotted at the final check. We fix it, feel the relief, and move on. The trouble is, the same ones keep coming back — and one day, one might not get caught.
+Most of the time we fix it, feel the relief, and get back to the queue. It might make it into the logbook — but that's usually the end of it, until the same one turns up again. Same look-alike box, same busy Friday.
 
-What always frustrated me is that the logbook never actually helped us *prevent* the next one. It records what happened, but it doesn't tell you what's repeating, or whether the change you made last month made any difference.
+It always bugged me that all that catching never really added up to anything. The logbook records what happened, but it never told us what was repeating, or whether the change we made last month made any difference.
 
-So I've been building a simple tool to fix that — NearMissPro:
+So I've started building something to help — a simple way to log a near miss in seconds, see the patterns that keep coming back, and actually tell whether a change worked. The aim is prevention: stopping the same slip before it reaches a patient. No blame, no names.
 
-• Log a near miss in seconds — a few taps, no paragraph, no names, anonymous to the team
-• It spots the patterns for you, so the repeat problems stand out
-• It suggests simple, practical fixes grounded in NZ best practice — advisory only, the pharmacist stays in complete control of what to act on
-• At review time, it pulls the whole month into a write-up in minutes — no more piecing the logbook together
-• And it shows whether last month's change actually reduced them
+It's early days. There's a short clip below showing how it works.
 
-The whole point is prevention — turning a caught near miss into one that doesn't happen again, before it ever reaches a patient. No blame, no finger-pointing.
-
-It's not live yet, but it's close — there's a short screen recording below so you can see how it works.
-
-On cost, upfront: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. That's about a dollar a day, and it earns its keep in time alone: seconds to log instead of writing it up, and a monthly review that takes minutes instead of a whole evening. Even if it only saved your team half an hour a month it would pay for itself — and in practice it saves a good deal more.
-
-If you'd like a look when it's ready, join the waitlist and I'll let you know: https://tally.so/r/D4YgQl
-
-And I'm genuinely curious — how does your pharmacy handle near misses at the moment? Does anything actually turn the logbook into change?
+Mostly though, I'd genuinely love to hear from you: how does your pharmacy handle near misses at the moment? Does anything turn that logbook into real change — or does it just get fixed and forgotten?
 
 ---
 
+## THE FIRST COMMENT (post this yourself, right after — link + price live here)
+
+Happy to share more for anyone keen — it's called NearMissPro, still in development. To be upfront: everyone gets the first 3 months free, then it's a small subscription ($30 + GST/month per pharmacy, cancel anytime). If you'd like a look when it's ready, the waitlist is here: https://tally.so/r/D4YgQl
+
+---
+
+## Why this reaches further
+- No external link in the post body — links are the #1 reach-killer in FB groups.
+- Conversational and question-led, not a feature list with a price (that reads as an ad).
+- Post the screen recording as NATIVE video (upload it), don't link to it.
+- Put the link + price in your own first comment.
+- Reply to early comments quickly — engagement in the first hour drives reach.
+- Don't edit the post straight after posting; edits can re-trigger review / hurt reach.
+
+## Canned reply if someone asks about cost/AI
+> Everyone gets the first 3 months free, then $30 + GST/month per pharmacy (about a dollar a day), cancel anytime. It also suggests simple fixes based on NZ best practice — but that's advisory only, the pharmacist stays in complete control. It earns its keep in time alone: seconds to log instead of writing it up, and the monthly review done in minutes instead of a whole evening.
+
 ## Planned pricing (keep consistent everywhere)
-- Everyone gets the first 3 months free (trial).
-- Then $30 NZD/month per pharmacy, or $300/year (saving $60). Excl GST.
-- Auto-renews, cancel anytime, no lock-in.
-- Waitlist perk = early access / first to know when it launches.
-
-## Value framing (price vs time)
-- ~$30/month ≈ about $1 a day per pharmacy.
-- Logging: seconds instead of writing a paragraph — small saving, but every time.
-- Review: the monthly write-up in minutes instead of a whole evening — the big saving.
-- Floor: even half an hour a month saved pays for it; in practice it's a good deal more.
-
-## Reply to the mod
-> Thanks so much — really appreciate it! Happy to be upfront on cost: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. I'll make that clear in the post so nobody's surprised. Ngā mihi, Kim
-
-## Canned reply if price comes up in comments
-> Fair question. Everyone gets the first 3 months free, then it's $30 + GST/month per pharmacy (about a dollar a day). It earns its keep in time alone — seconds to log instead of writing it up, and the monthly review done in minutes instead of a whole evening. Even half an hour a month saved would cover it, and in practice it's a good deal more. Cancel anytime, no lock-in.
+- Everyone gets the first 3 months free, then $30 NZD/month per pharmacy (or $300/year). Excl GST. Cancel anytime.
