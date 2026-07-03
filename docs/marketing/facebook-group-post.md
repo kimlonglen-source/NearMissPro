@@ -74,26 +74,26 @@ Does your pharmacy ever get time to check if a change worked, or does the day ju
 
 ## Canned reply — security / data model due-diligence question (plain English)
 (Answer honestly, match the actual build, be upfront that it's pre-launch and under
-independent review. Never overclaim on security.)
+independent review. Never overclaim on security. No certification claims.)
 
 > Really glad you asked — this is exactly what to check before any real data goes in, and I take it seriously. It's still in development, and I'm getting the whole security set-up independently reviewed before any pharmacy puts real data in. Here's where it's at, in plain English:
 >
-> Where the data lives: on secure servers in Australia (Sydney), not overseas.
+> Patient details: the simplest safeguard is that it doesn't collect them. There are no patient name or NHI fields anywhere, and near misses are anonymous — it doesn't even record which staff member logged one. If someone accidentally types a patient detail into the notes, it flags it on the spot.
 >
-> Kept separate: each pharmacy's data is completely walled off — one pharmacy can never see another's. I'm getting that independently double-checked too.
+> Where the data lives: on secure servers in Australia (Sydney), not overseas. Each pharmacy's data is completely walled off — one pharmacy can never see another's.
+>
+> Logging in from outside the pharmacy: this was a big one for me. A new device has to be approved by email before it can get in, so no one can just log in from home with the password. The admin login also uses two-factor (an authenticator code).
 >
 > Encryption: everything's encrypted, both while it's moving and while it's stored. Passwords are scrambled so even I never see them.
 >
-> 2FA: the admin login uses two-factor (an authenticator code). For pharmacy logins, any new device has to be approved by email first — so a stolen password on its own won't get anyone in. Per-person two-factor for staff is on the to-do list.
->
-> AI: it's optional — you can turn it off completely. When it's on, it only ever sees the drug name, the type of near miss, and the contributing factors. It never sees patient details or who logged it (there are no patient name or NHI fields at all). The AI provider doesn't keep that data or use it to train anything.
+> AI: it's optional — you can turn it off completely. When it's on, it only ever sees the drug name, the type of near miss, and the contributing factors — never patient details, and never who logged it. The AI provider doesn't keep that data or use it to train anything.
 >
 > Records, backups, leaving: there's a full activity log for your pharmacy, daily backups, you can download all your data any time, and if you ever leave, it's deleted on request.
 >
-> It's built around NZ's privacy rules (the Privacy Act 2020 and the Health Information Privacy Code) — it helps you meet your obligations rather than replacing them, and it's not certified by any regulator. Happy to go deeper on any of it.
+> Happy to go deeper on any of it.
 
 ### Notes on accuracy (keep it honest)
 - Tenant isolation is enforced in the app on every request; RLS at the DB layer is being verified in the independent review — don't claim more than that.
-- Founder/admin = TOTP 2FA. Staff = device verification (email-approved). Per-user staff 2FA = roadmap, not built.
+- Founder/admin = TOTP 2FA. Staff = device approval (new device must be approved by email) — this is the deliberate choice, not a gap; don't promise per-staff 2FA.
 - Backups depend on the Supabase plan — keep saying "daily backups via Supabase" only if that's your plan.
 - Don't claim certifications you don't have.
