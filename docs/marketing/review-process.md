@@ -19,6 +19,6 @@ A few people asked how it actually works, so here's the whole thing, start to fi
    - This month's near misses — each one with the action you decided
    - Sign-off — a line to confirm the review happened
 
-4. At the meeting — you read it out, look at the patterns that keep coming back, and agree any bigger changes as a team, with a name and a date on them.
+4. At the meeting — read the report out, look at what keeps coming back, and agree the bigger changes together. Give each one a name and a date.
 
-So the individual decisions are already made before you sit down — the meeting is for the bigger system changes and signing it off.
+Because the individual near misses are already dealt with, the meeting stays short — it's just for the bigger changes and signing off.
