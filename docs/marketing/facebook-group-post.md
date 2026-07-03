@@ -84,7 +84,7 @@ independent review. Never overclaim on security. No certification claims.)
 >
 > 2FA: the admin login uses two-factor (an authenticator code). For pharmacy logins, any new device has to be approved by email first — so no one can log in from home with just the password. That "logging in from outside the pharmacy" worry was a big one for me.
 >
-> AI — is anything sent to a third party, kept, or used to train models: AI is optional, so you can turn it off completely. When it's on, it only ever sees the drug name, the type of near miss, and the contributing factors — never patient details, and never who logged it. The AI provider doesn't keep that data or use it to train anything.
+> AI — is anything sent to a third party, kept, or used to train models: You can turn the external AI off completely — and you still get recommendations, they're just generated from built-in NZ best-practice logic with nothing leaving the system. When the AI is on, it only ever sees the drug name, the type of near miss, and the contributing factors — never patient details, and never who logged it. The provider doesn't keep that data or use it to train anything.
 >
 > Audit logs, backups, export & deletion if you leave: yes to all — a full activity log for your pharmacy, daily backups, you can download all your data any time, and if you ever leave, it's deleted on request.
 >
