@@ -29,11 +29,11 @@ Mostly though, I'd genuinely love to hear from you: how does your pharmacy handl
 
 ## THE FIRST COMMENT (post this yourself, right after — useful tip + soft mention + question)
 
-One thing I reckon most of us don't do: after a near miss you make a change — move a drug, add an extra check — but then never really check if it made any difference. A month goes by, you're onto other things, and it just gets forgotten. Even counting before and after would tell you if it helped.
+Something I reckon most of us don't get around to: after a near miss you'll make a change — shift a drug on the shelf, add an extra check — but then no one goes back to see if it actually helped. A month goes by, you're flat out with everything else, and it's forgotten. Even a quick count before and after would show you whether it worked.
 
-That's basically why I started building NearMissPro — so you can see whether last month's change actually cut them down. Have a look if you want: https://tally.so/r/D4YgQl
+That's pretty much why I started building NearMissPro — so you can tell whether last month's change actually brought the near misses down. Have a look if you like: https://tally.so/r/D4YgQl
 
-Do you ever get to check if a change worked, or does it just get too busy?
+Does your pharmacy ever get time to check if a change worked, or does the day just take over?
 
 ---
 
