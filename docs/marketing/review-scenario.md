@@ -1,26 +1,27 @@
 # Scenario — the monthly review & staff meeting
 
-Shows how quick the review is, and how NearMissPro turns the month into a
-digestible picture that drives an effective meeting. Numbers are illustrative.
-Usable as a LinkedIn post, a Facebook follow-up, or a one-pager to show a pharmacy.
+First-person story showing how quick the review is and how NearMissPro turns
+the month into a digestible picture that drives an effective meeting.
+Numbers are illustrative. Usable as a LinkedIn post, a Facebook follow-up, or a
+one-pager to show a pharmacy.
 
 ---
 
-Picture the end of the month.
+It's the last Friday of the month — team meeting after close.
 
-The old way: the checking pharmacist stays back after close, flips through the logbook, tries to remember what happened, and tallies it up on a scrap of paper. An hour or two later there's a rough list. At the staff meeting, everyone half-listens to "we had a few near misses, watch the look-alikes," nothing much changes, and next month it's the same again.
+It used to be that I'd spend the night before going through the near-miss book, trying to make sense of a month of scribbles. By the meeting I'd have a vague "we had a few, keep an eye on the look-alikes" — and honestly, nothing much changed.
 
-With NearMissPro: a couple of minutes before the meeting, you hit "generate report." It reads the month back to you in plain English — something like:
+Now I just open NearMissPro and hit generate. Two minutes later I've got the whole month in plain English:
 
-"18 near misses this month, down from 24 last month. Most happened at the labelling step. Atorvastatin came up 4 times — same look-alike box as last month. Good news: the shelf gap we added in May is holding, metoprolol mix-ups dropped from 5 to 1."
+"18 near misses, down from 24. Most at labelling. Atorvastatin came up 4 times — same look-alike box as last month. The shelf change we made in May worked: metoprolol mix-ups dropped from 5 to 1."
 
-At the meeting, that takes about five minutes to read out. Everyone can see the whole picture at a glance:
-- One problem still repeating → atorvastatin, 4 times, same cause
-- One win to note → metoprolol, our fix worked
-- One thing to decide → separate the atorvastatin strengths on the shelf
+I read that out at the meeting. Five minutes, and everyone's on the same page:
+- What's still biting us — atorvastatin, four times, same box
+- What's working — metoprolol, our fix held
+- What we'll do — split the atorvastatin strengths, [name] to sort it, check again next month
 
-Put a name to that action and a date to check it next month. Done.
+That's it. Not a lecture, not a guilt trip. One problem, one win, one decision.
 
-That's the difference: the write-up goes from an evening to a couple of minutes, and the meeting goes from a vague "be careful out there" to one clear decision the team actually agrees on.
+The write-up went from an evening to two minutes — but the real change is the meeting itself. It went from "be careful out there" to something the team actually does something about.
 
-(The numbers are just an example.)
+(Numbers are just an example.)
