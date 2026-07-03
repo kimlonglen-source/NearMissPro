@@ -19,6 +19,7 @@ So I've been building a simple tool to fix that — NearMissPro:
 
 • Log a near miss in seconds — a few taps, no paragraph, no names, anonymous to the team
 • It spots the patterns for you, so the repeat problems stand out
+• It suggests simple, practical fixes grounded in NZ best practice — advisory only, the pharmacist stays in complete control of what to act on
 • At review time, it pulls the whole month into a write-up in minutes — no more piecing the logbook together
 • And it shows whether last month's change actually reduced them
 
