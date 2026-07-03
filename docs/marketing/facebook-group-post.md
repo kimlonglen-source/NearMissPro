@@ -29,7 +29,7 @@ Mostly though, I'd genuinely love to hear from you: how does your pharmacy handl
 
 ## THE FIRST COMMENT (post this yourself, right after — useful tip + soft mention + question)
 
-The step almost everyone skips: you make a change after a near miss — move a drug, add a second check — then never circle back to see if it worked. Next month brings a new fire, and last month's fix just quietly fades. Even a rough before-and-after count would tell you whether to keep it or try something else.
+The step almost everyone skips: you make a change after a near miss — move a drug, add a second check — then never circle back to see if it worked. Next month you're onto the next thing, and last month's fix just quietly fades. Even a rough before-and-after count would tell you whether to keep it or try something else.
 
 That follow-up loop is the whole reason I started building NearMissPro — it shows you whether last month's change actually reduced them. Early look if useful: https://tally.so/r/D4YgQl
 
