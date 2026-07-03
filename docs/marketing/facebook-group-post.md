@@ -76,21 +76,21 @@ Does your pharmacy ever get time to check if a change worked, or does the day ju
 (Answer honestly, match the actual build, be upfront that it's pre-launch and under
 independent review. Never overclaim on security. No certification claims.)
 
-> Really glad you asked — this is exactly what to check before any real data goes in, and I take it seriously. It's still in development, and I'm getting the whole security set-up independently reviewed before any pharmacy puts real data in. Here's where it's at, in plain English:
+> Really glad you asked — and honestly you've listed exactly the right things to check, so let me go through them in turn.
 >
-> Patient details: the simplest safeguard is that it doesn't collect them. There are no patient name or NHI fields anywhere, and near misses are anonymous — it doesn't even record which staff member logged one. If someone accidentally types a patient detail into the notes, it flags it on the spot.
+> Where it's hosted & keeping pharmacies separate: the data's on secure servers in Australia (Sydney), not overseas. Each pharmacy's data is completely walled off — one pharmacy can never see another's.
 >
-> Where the data lives: on secure servers in Australia (Sydney), not overseas. Each pharmacy's data is completely walled off — one pharmacy can never see another's.
+> Encrypted at rest: yes — encrypted both while it's stored and when it travels between your computer and the servers. Passwords are scrambled so even I never see them.
 >
-> Logging in from outside the pharmacy: this was a big one for me. A new device has to be approved by email before it can get in, so no one can just log in from home with the password. The admin login also uses two-factor (an authenticator code).
+> 2FA: the admin login uses two-factor (an authenticator code). For pharmacy logins, any new device has to be approved by email first — so no one can log in from home with just the password. That "logging in from outside the pharmacy" worry was a big one for me.
 >
-> Encryption: it's encrypted both ways — when it travels between your computer and the servers, and while it's stored. Passwords are scrambled so even I never see them.
+> AI — is anything sent to a third party, kept, or used to train models: AI is optional, so you can turn it off completely. When it's on, it only ever sees the drug name, the type of near miss, and the contributing factors — never patient details, and never who logged it. The AI provider doesn't keep that data or use it to train anything.
 >
-> AI: it's optional — you can turn it off completely. When it's on, it only ever sees the drug name, the type of near miss, and the contributing factors — never patient details, and never who logged it. The AI provider doesn't keep that data or use it to train anything.
+> Audit logs, backups, export & deletion if you leave: yes to all — a full activity log for your pharmacy, daily backups, you can download all your data any time, and if you ever leave, it's deleted on request.
 >
-> Records, backups, leaving: there's a full activity log for your pharmacy, daily backups, you can download all your data any time, and if you ever leave, it's deleted on request.
+> And underneath all of it: it's built not to hold patient details in the first place. No patient name or NHI fields anywhere, near misses are anonymous, and if someone types a patient detail into the notes by accident, it flags it on the spot.
 >
-> Happy to go deeper on any of it.
+> It's pre-launch, and I'm getting the whole set-up independently reviewed before any pharmacy puts real data in. Happy to go deeper on any of these.
 
 ### Notes on accuracy (keep it honest)
 - Tenant isolation is enforced in the app on every request; RLS at the DB layer is being verified in the independent review — don't claim more than that.
