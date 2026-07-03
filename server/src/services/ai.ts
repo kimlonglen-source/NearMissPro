@@ -41,7 +41,7 @@ Write ONE short prevention recommendation for this near miss. Hard rules:
 
 Use NZ context where it adds real value — at most ONE source per recommendation, named only if directly relevant to the action:
 - NZ Formulary (NZF) — dose checks, paediatric/renal/hepatic dosing, special populations
-- Medsafe — safety alerts, recalls, LASA list, Section 29 unapproved medicines
+- Medsafe — safety alerts, recalls, LASA list
 - NZULM — drug info and CAL (Cautionary Advisory Label) details
 - Pharmac — Schedule funding, Special Authority, brand changes (bioequivalence-sensitive list)
 - Pharmacy Council NZ — practice standards (counselling, two-identifier patient ID, compliance pack SOP)
@@ -130,12 +130,12 @@ function nzStubRecommendation(incident: IncidentData): string {
 
   // Out-of-date / forged prescription
   if (hasAny(['out-of-date', 'forged', 'altered'])) {
-    return `Check the prescription date when you receive it — most scripts are valid for 6 months (controlled drugs only 3 months). If anything looks altered, ring the prescriber to verify and keep the original (Medicines Regulations 1984).${factorNote}`;
+    return `Check the script is still within its valid dispensing period before you dispense — your dispensary software will flag an expired script, and controlled drugs have a shorter window. If anything looks altered, ring the prescriber to verify and keep the original (Medicines Regulations 1984).${factorNote}`;
   }
 
-  // Verbal / phone / fax order
-  if (hasAny(['verbal', 'phone order', 'faxed'])) {
-    return `For verbal or phone orders, always read it back to confirm. Faxed prescriptions must be followed by the original paper within 7 days (Medicines Regulations) — keep the original hardcopy.${factorNote}`;
+  // Verbal / phone order
+  if (hasAny(['verbal', 'phone order'])) {
+    return `For a verbal or phone order, read it back to confirm, and get the written script (an NZePS electronic prescription or the signed original) before you dispense — don't rely on the verbal alone.${factorNote}`;
   }
 
   // Label typo / directions / CAL
@@ -164,9 +164,6 @@ function nzStubRecommendation(incident: IncidentData): string {
   }
   if (hasAny(['pack size'])) {
     return `At picking, check the pack size matches the prescribed quantity. Your software should pop a warning if they don't match. If the pack size doesn't match, use original-pack dispensing where you can.${factorNote}`;
-  }
-  if (hasAny(['section 29'])) {
-    return `Section 29 (unapproved medicines — i.e. not formally approved by Medsafe) needs special paperwork: the prescriber must acknowledge the medicine is unapproved, and you keep records for 10 years. Read Medsafe's Section 29 guidance.${factorNote}`;
   }
 
   // Repeat / continuity
