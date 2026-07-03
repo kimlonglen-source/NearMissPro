@@ -11,7 +11,7 @@ A few people asked how it actually works, so here's the whole thing, start to fi
 
 1. Through the month — anyone on the team logs a near miss as it happens. A few taps, no names, takes seconds.
 
-2. Before the meeting, the manager reviews them — you go through the month's near misses and decide what to do about each one. For every near miss it suggests a simple fix based on NZ best practice, and you either accept it, put it in your own words, or mark "no change needed." It's quick, because it's all in one place instead of scattered through a book — and the AI only suggests; you make every call.
+2. Before the meeting, the manager goes through the month's near misses and decides what to do about each. For each one it suggests a simple fix (based on NZ best practice) — you accept it, reword it, or say "no change needed." The AI only suggests; you decide.
 
 3. Then you hit generate — about two minutes, and it turns the month into a plain-English report:
    - The month at a glance — how many, up or down on last month, where they're clustering
