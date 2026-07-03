@@ -22,3 +22,5 @@ What the report looks like — it's laid out like a meeting, top to bottom:
 - A sign-off line at the bottom
 
 At the meeting: you just read straight down the report on the screen (or print it). Everyone can follow it, because it's plain words — not a page of numbers.
+
+Then the bit that's on you, not the app: someone actually makes the change — moves the shelf, adds the warning label, tweaks the process. The app can't do that part. But it does close the loop: next month's report tells you whether the change worked, so you're not guessing.
