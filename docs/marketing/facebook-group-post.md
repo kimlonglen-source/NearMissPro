@@ -72,25 +72,25 @@ Does your pharmacy ever get time to check if a change worked, or does the day ju
 
 ---
 
-## Canned reply — security / data model due-diligence question
-(Answer honestly, match the actual build, be upfront that it's pre-launch and
-under independent review. Never overclaim on security.)
+## Canned reply — security / data model due-diligence question (plain English)
+(Answer honestly, match the actual build, be upfront that it's pre-launch and under
+independent review. Never overclaim on security.)
 
-> Really glad you asked — this is exactly the right question to ask before any real data goes in, and I take it seriously. Quick heads-up: it's pre-launch, and before any pharmacy loads real data I'm having the security and privacy set-up independently reviewed. Here's where it stands:
+> Really glad you asked — this is exactly what to check before any real data goes in, and I take it seriously. It's still in development, and I'm getting the whole security set-up independently reviewed before any pharmacy puts real data in. Here's where it's at, in plain English:
 >
-> Hosting & location: Data's in Supabase (managed PostgreSQL), hosted in Australia (Sydney) — not offshore to the US.
+> Where the data lives: on secure servers in Australia (Sydney), not overseas.
 >
-> Tenant separation: Yes — every request is scoped to the logged-in pharmacy, so one pharmacy can't see another's data. I'm having the database-level access rules independently verified too, as part of the review.
+> Kept separate: each pharmacy's data is completely walled off — one pharmacy can never see another's. I'm getting that independently double-checked too.
 >
-> Encryption: In transit (HTTPS) and at rest (Supabase's at-rest encryption). Passwords are hashed, never stored in plain text.
+> Encryption: everything's encrypted, both while it's moving and while it's stored. Passwords are scrambled so even I never see them.
 >
-> 2FA: Admin access uses app-based 2FA (TOTP). Pharmacy logins use device verification — a new device has to be approved by email first, so a leaked password alone won't get anyone in. Per-user 2FA for staff is on the list.
+> 2FA: the admin login uses two-factor (an authenticator code). For pharmacy logins, any new device has to be approved by email first — so a stolen password on its own won't get anyone in. Per-person two-factor for staff is on the to-do list.
 >
-> AI & third parties: AI is optional — you can switch it off entirely. When it's on, only the drug name, the type of near miss, and the contributing factors are sent to the provider (Anthropic). No patient identifiers and no staff identity — near misses are anonymous by design, and there are no patient-name/NHI fields at all. The provider doesn't use API data to train its models, and it isn't retained for training.
+> AI: it's optional — you can turn it off completely. When it's on, it only ever sees the drug name, the type of near miss, and the contributing factors. It never sees patient details or who logged it (there are no patient name or NHI fields at all). The AI provider doesn't keep that data or use it to train anything.
 >
-> Audit, backups, export & deletion: Yes to all — a per-pharmacy audit log, daily backups, you can export all your data any time, and if you leave, it's deleted on request.
+> Records, backups, leaving: there's a full activity log for your pharmacy, daily backups, you can download all your data any time, and if you ever leave, it's deleted on request.
 >
-> It's built around the NZ frameworks that apply — the Privacy Act 2020 and the Health Information Privacy Code — though it's a tool to support your obligations, not a substitute for them, and it's not certified by any regulator. Happy to go deeper on any of these, or share the independent review once it's done.
+> It's built around NZ's privacy rules (the Privacy Act 2020 and the Health Information Privacy Code) — it helps you meet your obligations rather than replacing them, and it's not certified by any regulator. Happy to go deeper on any of it.
 
 ### Notes on accuracy (keep it honest)
 - Tenant isolation is enforced in the app on every request; RLS at the DB layer is being verified in the independent review — don't claim more than that.
