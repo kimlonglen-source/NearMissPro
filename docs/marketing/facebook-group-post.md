@@ -1,8 +1,8 @@
 # Facebook post — NZ community pharmacy group
 
-Mod approved and asked for cost transparency — pricing + value framing included.
+Mod approved and asked for cost transparency — pricing + value included.
 Offer: everyone gets 3 months free, then $30 + GST/month. Waitlist perk = early access / first to know.
-Attach the screen recording (post video, not just a link).
+Attach the screen recording (post the video, not just a link).
 Waitlist link: https://tally.so/r/D4YgQl
 
 ---
@@ -11,24 +11,26 @@ Kia ora everyone,
 
 Quick one from a fellow NZ pharmacist.
 
-We all catch near misses every day — the wrong strength, the look-alike box, the typo spotted at the final check. We fix it, feel the relief, and move on. But the same ones keep coming back, and one day one might not get caught.
+We catch near misses every day — the wrong strength, the look-alike box, the typo spotted at the final check. We fix it, feel the relief, and move on. The trouble is, the same ones keep coming back — and one day, one might not get caught.
 
-What always frustrated me is that the near-miss logbook never actually helped *prevent* the next one. So I've been building a simple tool to fix that — NearMissPro:
+What always frustrated me is that the logbook never actually helped us *prevent* the next one. It records what happened, but it doesn't tell you what's repeating, or whether the change you made last month made any difference.
 
-• Log a near miss in seconds — no paragraph, no names, anonymous to the team
-• It surfaces the patterns for you
-• Your reviewing pharmacist gets the monthly write-up done for them in minutes — instead of an evening piecing the logbook together
-• And it shows whether the change you made last month actually reduced them
+So I've been building a simple tool to fix that — NearMissPro:
 
-The whole point is prevention — stopping the same slip before it reaches a patient. No blame, no finger-pointing.
+• Log a near miss in seconds — a few taps, no paragraph, no names, anonymous to the team
+• It spots the patterns for you, so the repeat problems stand out
+• At review time, it pulls the whole month into a write-up in minutes — no more piecing the logbook together
+• And it shows whether last month's change actually reduced them
 
-It's not live yet, but it's close. Short screen recording below so you can see how it works.
+The whole point is prevention — turning a caught near miss into one that doesn't happen again, before it ever reaches a patient. No blame, no finger-pointing.
 
-On cost, for full transparency: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. That's about a dollar a day — and in practice it saves a lot more time than that: your checking pharmacist logs in seconds all day instead of writing paragraphs, and your reviewing pharmacist gets the monthly write-up done in minutes instead of a whole evening. Even at half an hour a month, it's already paid for itself.
+It's not live yet, but it's close — there's a short screen recording below so you can see how it works.
 
-Join the waitlist and I'll let you know the moment it's ready: https://tally.so/r/D4YgQl
+On cost, upfront: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. That's about a dollar a day, and it earns its keep in time alone: seconds to log instead of writing it up, and a monthly review that takes minutes instead of a whole evening. Even if it only saved your team half an hour a month it would pay for itself — and in practice it saves a good deal more.
 
-How does your pharmacy handle near misses at the moment? Keen to hear in the comments.
+If you'd like a look when it's ready, join the waitlist and I'll let you know: https://tally.so/r/D4YgQl
+
+And I'm genuinely curious — how does your pharmacy handle near misses at the moment? Does anything actually turn the logbook into change?
 
 ---
 
@@ -40,12 +42,12 @@ How does your pharmacy handle near misses at the moment? Keen to hear in the com
 
 ## Value framing (price vs time)
 - ~$30/month ≈ about $1 a day per pharmacy.
-- Checking pharmacist: logs in seconds every time, instead of writing a paragraph — small saving, but all day.
-- Reviewing pharmacist: the monthly write-up done for them in minutes instead of an evening piecing the logbook together — the big saving.
-- Break-even: save ~30 min/month between them and it's paid for itself.
+- Logging: seconds instead of writing a paragraph — small saving, but every time.
+- Review: the monthly write-up in minutes instead of a whole evening — the big saving.
+- Floor: even half an hour a month saved pays for it; in practice it's a good deal more.
 
 ## Reply to the mod
 > Thanks so much — really appreciate it! Happy to be upfront on cost: everyone gets the first 3 months free, then it's a simple subscription — $30 + GST/month per pharmacy (or $300/year), cancel anytime, no lock-in. I'll make that clear in the post so nobody's surprised. Ngā mihi, Kim
 
 ## Canned reply if price comes up in comments
-> Fair question. Everyone gets the first 3 months free, then it's $30 + GST/month per pharmacy (about a dollar a day). The way I see it: your checking pharmacist logs in seconds instead of writing paragraphs all day, and your reviewing pharmacist gets the monthly write-up done in minutes instead of an evening piecing the logbook together. Save half an hour a month between them and it's paid for itself. Cancel anytime, no lock-in.
+> Fair question. Everyone gets the first 3 months free, then it's $30 + GST/month per pharmacy (about a dollar a day). It earns its keep in time alone — seconds to log instead of writing it up, and the monthly review done in minutes instead of a whole evening. Even half an hour a month saved would cover it, and in practice it's a good deal more. Cancel anytime, no lock-in.
