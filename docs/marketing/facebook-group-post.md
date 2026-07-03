@@ -103,3 +103,9 @@ checked in the independent review); open to NZ-only if a pharmacy needs it.
 - Founder/admin = TOTP 2FA. Staff = device approval (new device must be approved by email) — this is the deliberate choice, not a gap; don't promise per-staff 2FA.
 - Backups depend on the Supabase plan — keep saying "daily backups via Supabase" only if that's your plan.
 - Don't claim certifications you don't have.
+
+---
+
+## Canned reply — "why Sydney / isn't that overseas?" (short)
+
+> Fair question — and yes, Sydney is technically overseas. Short version: it's the nearest region my hosting provider offers (there's no NZ option), and I picked Australia over the US or Europe on purpose. It has privacy laws comparable to ours, so your data stays well-protected and right next door. It's a common, accepted setup for NZ health and software products, allowed under the Privacy Act with the right safeguards — and I'm having the cross-border side checked in the independent review. If NZ hosting becomes available, I'll move to it.
