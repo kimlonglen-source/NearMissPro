@@ -1,24 +1,24 @@
 # The review process + what's generated (explainer)
 
-Plain-English walk-through: how logging feeds the monthly review, and what the
-generated report contains. Good as a Facebook post, or a reply when someone
-asks "how does it actually work?"
+Plain-English, logical walk-through: how logging feeds the monthly review and
+what the generated report contains. Good as a Facebook post, or a reply when
+someone asks "how does it actually work?"
 
 ---
 
-A few people asked what actually happens at review time, so here's the whole thing, start to finish:
+A few people asked how it actually works, so here's the whole thing, start to finish:
 
-Through the month: anyone on the team logs a near miss in a few taps as it happens — no names, takes seconds. It just quietly builds up in the background.
+Through the month, anyone on the team logs a near miss as it happens — a few taps, no names, takes seconds. Nothing else to do; it just builds up quietly in the background.
 
-At the end of the month, before your team meeting, you pop in how many scripts you dispensed and hit generate. That's it — no adding it all up by hand.
+Before your monthly team meeting, you open it up and hit "generate." In about two minutes it turns that month of logs into a simple report — no adding it up by hand.
 
-What comes out is a plain-English report you can read straight off the screen at the meeting:
+The report is in plain English, so you read it straight off the screen at the meeting. It covers four things:
 
-- A short summary of the month — how many near misses, up or down on last month, and where they're clustering (which step, which drugs)
-- A follow-up on last month's problems — each one marked gone, happening less, or still happening, so you can actually see if the change you made worked
-- Each near miss from the month, with the action beside it — what you're doing about it
-- A sign-off line at the bottom, so there's a record the review happened
+1. The month at a glance — how many near misses, whether that's up or down on last month, and where they're happening most (which step, which drugs)
+2. Did last month's changes work? — it takes each problem from your last review and tells you if it's gone, happening less, or still happening
+3. This month's near misses — each one listed with what you're doing about it
+4. Sign-off — a line to confirm the review happened, for your records
 
-Basically it turns a month of little logs into a ready-to-run meeting: you read it out, agree what to do, put a name and a date on it, done.
+So instead of spending an evening making sense of the logbook, you've got a ready-made meeting: read it out, agree what to do, put a name and a date on it, done.
 
-Happy to answer anything about it.
+Happy to answer any questions.
