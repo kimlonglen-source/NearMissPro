@@ -186,6 +186,11 @@ export function SettingsPage() {
   const [sizeMsg, setSizeMsg] = useState('');
   const [sizeLoading, setSizeLoading] = useState(false);
 
+  // AI recommendations on/off
+  const [aiEnabled, setAiEnabled] = useState(true);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMsg, setAiMsg] = useState('');
+
   // Pharmacy-wide custom chips — managed here so the manager can tidy
   // typos or outdated entries without touching the record form.
   type CustomSection = 'stage' | 'error_type' | 'where_caught' | 'factor';
@@ -218,8 +223,22 @@ export function SettingsPage() {
     api.getMe().then(me => {
       setSize((me.pharmacySize as PharmacySize | null) || null);
       setPharmacyEmail(me.pharmacyEmail || '');
+      setAiEnabled(me.aiEnabled !== false);
     }).catch(() => {});
   }, []);
+
+  const handleToggleAi = async (next: boolean) => {
+    setAiLoading(true); setAiMsg('');
+    try {
+      const res = await api.setAiEnabled(next);
+      setAiEnabled(res.aiEnabled);
+      setAiMsg(res.aiEnabled ? 'AI recommendations are on' : 'AI is off — recommendations now come from NearMissPro\'s built-in NZ best-practice guidance, and nothing is sent to any AI provider.');
+    } catch {
+      setAiMsg('Failed to save');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleSaveEmail = async () => {
     setEmailErr(''); setEmailMsg('');
@@ -376,6 +395,26 @@ export function SettingsPage() {
                 );
               })}
             </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold">AI recommendations</h3>
+                <p className="text-sm text-gray-500 mt-1">When on, each near miss gets an AI-suggested fix. Only the drug name, the type of near miss, and the contributing factors are sent — never patient details or who logged it. Turn it off and you still get recommendations, generated from NearMissPro's built-in NZ best-practice guidance, with nothing sent to any AI provider.</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={aiEnabled}
+                disabled={aiLoading}
+                onClick={() => handleToggleAi(!aiEnabled)}
+                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${aiEnabled ? 'bg-[#0F6E56]' : 'bg-gray-300'} disabled:opacity-50`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${aiEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+            <p className="text-sm font-medium text-gray-700">{aiEnabled ? 'AI recommendations: On' : 'AI recommendations: Off'}</p>
+            {aiMsg && <div className="p-3 bg-teal-50 text-teal-800 rounded-lg text-sm">{aiMsg}</div>}
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">

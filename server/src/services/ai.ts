@@ -225,8 +225,24 @@ function pharmacySizeContext(size: string | null): string {
   return '';
 }
 
+// Per-pharmacy AI switch. When a pharmacy turns AI off in Settings, we
+// skip every external AI call for them and fall back to the built-in
+// NZ-grounded recommendations/summary — nothing about their near misses
+// leaves the system. Defaults to ON if the column is missing or the
+// lookup fails, so an infrastructure hiccup never silently strips a
+// feature the pharmacy expects. This is the switch behind the public
+// promise "turn AI off and you still get recommendations".
+export async function isAiEnabledForPharmacy(pharmacyId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase.from('pharmacies').select('ai_enabled').eq('id', pharmacyId).single();
+    return data?.ai_enabled !== false;
+  } catch { return true; }
+}
+
 export async function generateRecommendation(incident: IncidentData): Promise<string> {
-  if (!env.anthropicApiKey) {
+  // No API key, OR this pharmacy has turned AI off in Settings → use the
+  // built-in NZ-grounded stub. Nothing about the near miss leaves the system.
+  if (!env.anthropicApiKey || !(await isAiEnabledForPharmacy(incident.pharmacy_id))) {
     const recommendation = nzStubRecommendation(incident);
     await saveRecommendation(incident.id, incident.pharmacy_id, recommendation);
     return recommendation;
@@ -769,7 +785,9 @@ export async function generatePeriodSummary(pharmacyId: string, periodStart: str
     previousSummary: lastReport ? undefined : undefined,
   };
 
-  if (!env.anthropicApiKey || incidentCount === 0) return stub;
+  // No API key, no incidents, OR this pharmacy has AI switched off → return
+  // the built-in NZ-grounded summary. The report still generates fully.
+  if (!env.anthropicApiKey || incidentCount === 0 || !(await isAiEnabledForPharmacy(pharmacyId))) return stub;
 
   const summarySize = await getPharmacySize(pharmacyId);
   const summarySizeNote = pharmacySizeContext(summarySize);

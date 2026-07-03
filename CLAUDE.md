@@ -92,7 +92,8 @@ In order, in Supabase SQL Editor:
 2. `supabase/migrate_workflow_stage.sql` (Layer 1/2/3 taxonomy)
 3. `supabase/migrate_pharmacy_size.sql` (adds `pharmacy_size` column)
 4. `supabase/migrate_rename_pack_to_compliance_pack.sql` (relabels old "pack" rows to "compliance pack")
-5. Any other `migrate_*.sql` files in `supabase/`
+5. `supabase/migrate_ai_toggle.sql` (adds `ai_enabled` — per-pharmacy AI on/off in Settings → Pharmacy; defaults on)
+6. Any other `migrate_*.sql` files in `supabase/`
 
 ## Compliance anchors
 

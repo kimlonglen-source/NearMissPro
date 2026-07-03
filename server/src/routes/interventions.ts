@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { env } from '../config/env.js';
 import { authenticate } from '../middleware/auth.js';
+import { isAiEnabledForPharmacy } from '../services/ai.js';
 
 const router = Router();
 router.use(authenticate);
@@ -128,10 +129,10 @@ router.post('/suggest', async (req: Request, res: Response) => {
       .order('created_at', { ascending: true });
     const priorNotes = (prior || []).map(r => r.note).filter(Boolean);
 
-    if (!env.anthropicApiKey) {
-      // No Anthropic key — return an error-type-aware stub so the UI
-      // still gives a relevant suggestion (the old stub always said
-      // 'look-alike' regardless of the actual problem).
+    if (!env.anthropicApiKey || !(await isAiEnabledForPharmacy(req.auth!.pharmacyId))) {
+      // No Anthropic key, or this pharmacy turned AI off — return an
+      // error-type-aware stub so the UI still gives a relevant suggestion,
+      // with nothing sent to any AI provider.
       res.json({ suggestion: stubSuggestion(d.drug, d.errorType) });
       return;
     }

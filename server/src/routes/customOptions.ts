@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { env } from '../config/env.js';
 import { authenticate } from '../middleware/auth.js';
+import { isAiEnabledForPharmacy } from '../services/ai.js';
 
 const router = Router();
 router.use(authenticate);
@@ -106,7 +107,7 @@ const checkSchema = z.object({
 router.post('/check', async (req: Request, res: Response) => {
   try {
     const d = checkSchema.parse(req.body);
-    if (!env.anthropicApiKey) { res.json({ ok: true }); return; }
+    if (!env.anthropicApiKey || !(await isAiEnabledForPharmacy(req.auth!.pharmacyId))) { res.json({ ok: true }); return; }
 
     const sectionDesc: Record<typeof d.section, string> = {
       stage: 'a step in the pharmacy dispensing workflow',

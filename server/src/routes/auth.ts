@@ -466,16 +466,18 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
   let pharmacyEmail: string | null = null;
   let trialEndsAt: string | null = null;
   let subscriptionStatus: string | null = null;
+  let aiEnabled = true;
   if (req.auth!.pharmacyId) {
     const { data } = await supabase.from('pharmacies')
-      .select('pharmacy_size, manager_email, trial_ends_at, subscription_status')
+      .select('pharmacy_size, manager_email, trial_ends_at, subscription_status, ai_enabled')
       .eq('id', req.auth!.pharmacyId).single();
     pharmacySize = (data?.pharmacy_size as string | null) || null;
     pharmacyEmail = (data?.manager_email as string | null) || null;
     trialEndsAt = (data?.trial_ends_at as string | null) || null;
     subscriptionStatus = (data?.subscription_status as string | null) || null;
+    aiEnabled = (data as { ai_enabled?: boolean } | null)?.ai_enabled !== false;
   }
-  res.json({ ...req.auth, pharmacySize, pharmacyEmail, trialEndsAt, subscriptionStatus });
+  res.json({ ...req.auth, pharmacySize, pharmacyEmail, trialEndsAt, subscriptionStatus, aiEnabled });
 });
 
 // ── Update pharmacy-level settings (manager only) ───────────
@@ -489,6 +491,7 @@ router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder
     const body = z.object({
       pharmacySize: z.enum(['sole', 'pharmacist_plus_tech', 'multi']).nullable().optional(),
       pharmacyEmail: z.string().trim().email().max(200).optional(),
+      aiEnabled: z.boolean().optional(),
     }).parse(req.body);
 
     // Read the existing pharmacy first so we can tell what's actually
@@ -503,9 +506,10 @@ router.patch('/pharmacy/settings', authenticate, requireRole('manager', 'founder
     const updates: Record<string, unknown> = {};
     if (body.pharmacySize !== undefined) updates.pharmacy_size = body.pharmacySize;
     if (body.pharmacyEmail !== undefined) updates.manager_email = body.pharmacyEmail;
+    if (body.aiEnabled !== undefined) updates.ai_enabled = body.aiEnabled;
     if (Object.keys(updates).length === 0) { res.json({ ok: true }); return; }
     const { data, error } = await supabase.from('pharmacies').update(updates)
-      .eq('id', req.auth!.pharmacyId).select('pharmacy_size, manager_email').single();
+      .eq('id', req.auth!.pharmacyId).select('pharmacy_size, manager_email, ai_enabled').single();
     if (error) throw error;
 
     // Notify the OLD email if it's being changed — gives the previous
@@ -563,6 +567,7 @@ From now on, password-reset links and any other product emails will come here.
       ok: true,
       pharmacySize: data?.pharmacy_size || null,
       pharmacyEmail: data?.manager_email || null,
+      aiEnabled: (data as { ai_enabled?: boolean } | null)?.ai_enabled !== false,
     });
   } catch (err) {
     if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid input' }); return; }

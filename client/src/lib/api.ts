@@ -137,9 +137,12 @@ class Api {
   founderLogin(email: string, password: string, mfaCode?: string) {
     return this.req<{ token?: string; role?: string; requiresMfa?: boolean; email?: string }>('/auth/founder/login', { method: 'POST', body: JSON.stringify({ email, password, mfaCode }) });
   }
-  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; pharmacyEmail?: string | null; trialEndsAt?: string | null; subscriptionStatus?: string | null }>('/auth/me'); }
+  getMe() { return this.req<{ pharmacyId: string; pharmacyName: string; role: string; pharmacySize?: string | null; pharmacyEmail?: string | null; trialEndsAt?: string | null; subscriptionStatus?: string | null; aiEnabled?: boolean }>('/auth/me'); }
   setPharmacySize(pharmacySize: 'sole' | 'pharmacist_plus_tech' | 'multi' | null) {
     return this.req<{ ok: boolean; pharmacySize: string | null }>('/auth/pharmacy/settings', { method: 'PATCH', body: JSON.stringify({ pharmacySize }) });
+  }
+  setAiEnabled(aiEnabled: boolean) {
+    return this.req<{ ok: boolean; aiEnabled: boolean }>('/auth/pharmacy/settings', { method: 'PATCH', body: JSON.stringify({ aiEnabled }) });
   }
   updatePharmacyEmail(pharmacyEmail: string) {
     return this.req<{ ok: boolean; pharmacyEmail: string | null }>('/auth/pharmacy/settings', {
