@@ -6,7 +6,7 @@ Thought-leadership, no link (value post). Attach quote-forget.png. Reply to comm
 
 A few near misses from a typical month in any pharmacy:
 
-- The amlodipine box picked instead of amiodarone — caught at the final check.
+- Amlodipine dispensed instead of amiodarone — those look-alike names again — caught at the final check.
 - Atorvastatin 40mg bagged instead of 10mg — spotted before handout.
 - Two patients, same surname — the wrong one's script almost handed over.
 - A methotrexate label reading "daily" instead of "weekly" — caught, thankfully.
@@ -17,7 +17,7 @@ Now here's what usually happens come review time.
 
 Someone flicks back through the near-miss book. "Yeah, we had a few. Watch the look-alikes, everyone." A nod around the room. Meeting over.
 
-And next month? The amlodipine box gets picked again. Because nothing actually changed — we treated four warnings as four separate "phews," instead of one pattern quietly telling us exactly where the next real error is coming from.
+And next month? The same amlodipine/amiodarone slip happens again. Because nothing actually changed — we treated four warnings as four separate "phews," instead of one pattern quietly telling us exactly where the next real error is coming from.
 
 That's the gap that's always bothered me. We're brilliant at catching near misses in the moment. We're just not set up to learn from them by the time the month is out.
 
