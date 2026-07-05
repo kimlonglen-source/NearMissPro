@@ -7,7 +7,7 @@ Attach the 5 app screenshots IN THIS ORDER:
 4. Review page
 5. The finished report
 
-Link in the FIRST COMMENT, not the post. Reply to every comment.
+Tally link is in the post body (Kim's choice). Reply to every comment.
 Before screenshotting the report, replace the seed reviewer name
 "seed-three-reports" with a real one (or crop it).
 
@@ -29,7 +29,9 @@ This is NearMissPro — what I've been building for NZ community pharmacies. Fiv
 
 That's the whole loop: log it, review it, learn from it. No blame, no names, no patient details.
 
-It's in development, and early access is free while I build it (link in the comments). But honestly — I'd love your eyes on it: would this actually work at your bench?
+It's in development, and early access is free while I build it. If you'd like a look when it's ready, join the waitlist here: https://tally.so/r/D4YgQl
+
+But honestly — I'd love your eyes on it: would this actually work at your bench?
 
 #PatientSafety #Pharmacy #CommunityPharmacy #NZPharmacy #MedicationSafety #QualityImprovement
 
