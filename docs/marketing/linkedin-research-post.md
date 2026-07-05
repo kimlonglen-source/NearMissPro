@@ -1,6 +1,6 @@
 # LinkedIn post — the research on near misses + why NearMissPro helps
 
-Evidence-led, honest, cited. Post the studies + waitlist link in the FIRST COMMENT
+Evidence-led, honest, cited. Attach quote-research-selection.png. Post the studies + waitlist link in the FIRST COMMENT
 (keeps links out of the post body for reach). Reply to comments.
 
 Figures used (all defensible):
