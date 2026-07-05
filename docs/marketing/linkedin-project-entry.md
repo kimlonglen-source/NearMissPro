@@ -35,3 +35,15 @@ Status: in development, with free early access opening to NZ pharmacies.
 - Project URL: https://tally.so/r/D4YgQl
 - Dates: start = when you began building; end = leave blank (ongoing)
 - Reminder: before screenshotting the report, replace the seed reviewer name "seed-three-reports" with a real one (or crop it).
+
+## Per-image titles + descriptions (flow order)
+
+1. Near miss only — Every entry starts here. If the medicine reached the patient, that's a dispensing error and follows a different process; NearMissPro is only for the ones caught in time.
+
+2. Log it in seconds — A few taps: where it happened, what went wrong, where it was caught, and what was going on at the time. No paragraph to write, and it's anonymous — your manager sees what happened, not who reported it.
+
+3. Start a review — At review time, pick the date range (usually the past month) and load the near misses to work through.
+
+4. Review and decide — Go through each near miss and agree the action: accept the suggested fix, put it in your own words, or no change. High-risk medicines are flagged, and the patterns and busiest times surface on their own.
+
+5. The meeting-ready report — One click turns the whole month into a plain-English report you can read straight off the screen: an agenda to run the meeting, what's changing, whether last month's fixes actually worked, and a sign-off table.
