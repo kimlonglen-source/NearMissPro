@@ -13,25 +13,25 @@ Figures used (all defensible):
 
 ## THE POST
 
-What the research actually says about near misses — and why New Zealand is flying a bit blind.
+What does the research actually say about dispensing near misses? I went looking — because in NZ, we don't really have a number of our own.
 
-Dispensing near misses (the wrong drug or strength, caught before it reaches the patient) are more common than most of us realise:
+Here's what the UK and Australian studies show:
 
-- UK studies put them at roughly 1 in every 200 to 500 items dispensed.
-- They happen far more often than errors that actually reach a patient — one UK study found six times more often.
-- And in every country studied — the UK, Australia — the number one cause is the same: selecting the wrong drug, strength or form.
+- Near misses (the wrong drug or strength, caught before handout) are more common than the errors that actually reach a patient. That's the safety net working — the checks are doing their job.
+- The number one cause, study after study, is the same: picking the wrong drug or strength.
+- And the rate varies hugely between pharmacies — because it depends on how carefully they're recorded.
 
-So the near miss isn't random bad luck. It's a predictable pattern, and it's much the same pattern everywhere.
+What I couldn't find was a NZ figure. No one seems to have measured it here. So we're going on everyone else's data.
 
-Here's the catch in NZ: we have no number of our own. Near misses aren't systematically counted here. Ask most pharmacies how many they had last month and, honestly, they can't tell you — not because they don't care, but because nothing counts them.
+Which is the real problem. The research tells us near misses are common and predictable — same top cause everywhere. But ask most pharmacies how many they had last month, or which ones kept repeating, and the honest answer is: it's in the book somewhere, but no one's had the time to pull it out.
 
-And you can't improve what you don't measure.
+The information isn't missing. It's just buried in a month of entries, and interpreting it by hand is the bit no one gets to.
 
-That's the gap I built NearMissPro to fill. Log a near miss in seconds, and it does the part that otherwise never happens: it surfaces the ones that keep repeating (usually selection — exactly what the research predicts), and each month it shows whether the change you made actually reduced them. No blame, no names, no patient details.
+That's the gap I built NearMissPro to close: log a near miss in seconds, and it surfaces the ones that keep repeating (usually selection — exactly what the research predicts) and shows whether last month's change actually reduced them. No blame, no names, no patient details.
 
-The research says near misses are common and predictable. The only thing missing is a simple way for each pharmacy to see its own.
+The research already knows near misses are common. The only thing missing is a simple way for each pharmacy to see — and learn from — its own.
 
-How many near misses did your pharmacy have last month — and could you find out?
+If the same near miss happened three times in your pharmacy last month, would you know?
 
 (Studies in the comments.)
 
