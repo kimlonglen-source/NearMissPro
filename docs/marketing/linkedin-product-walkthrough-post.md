@@ -1,34 +1,35 @@
-# LinkedIn carousel post — product walkthrough (5 real screenshots)
+# LinkedIn post (personal profile) — product walkthrough, 5 screenshots
 
-Attach the 5 app screenshots IN THIS ORDER (product flow):
-1. "Caught before the patient?" gate
-2. Logging form ("Where did this happen?")
-3. Start a review (date picker)
-4. Review page (decide each near miss)
+Attach the 5 app screenshots IN THIS ORDER:
+1. Home screen ("Record a near miss")
+2. The gate ("caught before the patient?")
+3. Logging form ("Where did this happen?")
+4. Review page
 5. The finished report
 
-Link + first comment: https://tally.so/r/D4YgQl (link in FIRST COMMENT, not the post).
-Reply to every comment.
+Link in the FIRST COMMENT, not the post. Reply to every comment.
+Before screenshotting the report, replace the seed reviewer name
+"seed-three-reports" with a real one (or crop it).
 
 ---
 
-For a few weeks I've been posting about dispensing near misses — why we're great at catching them, but rarely learn from them.
+I've spent a few weeks here talking about dispensing near misses. Time to show you the thing itself.
 
-A few of you asked what I've actually been building. So here it is, screen by screen. This is NearMissPro.
+This is NearMissPro — what I've been building for NZ community pharmacies. Five screens, start to finish:
 
-1. Near miss only. The first thing it asks: was it caught before the patient got it? If the patient received it, that's a dispensing error — a different process. This is for the ones you caught in time.
+1. The home screen. Two buttons, nothing to learn. Staff record a near miss in under 60 seconds; managers head to the dashboard. That's the whole app.
 
-2. Log it in a few taps. Where it happened, what went wrong, where it was caught, what was going on at the time. No paragraph to write — and it's anonymous. Your manager sees what happened, not who logged it.
+2. Near miss only. The first question it asks: was it caught before the patient got it? If it reached the patient, that's a dispensing error — a different process. This is for the ones you caught in time.
 
-3. At review time, pick your dates — usually the last month.
+3. Logging it. A few taps — where it happened, what went wrong, where it was caught, what was going on. No paragraph to write, and it's anonymous: your manager sees what happened, not who logged it.
 
-4. Go through each near miss and decide the action: accept the suggested fix, put it in your own words, or no change. It flags the high-risk ones (insulin, anticoagulants, opioids) and surfaces the patterns. The AI only suggests — you decide.
+4. The review. Go through each near miss, agree the action, and the patterns and high-risk medicines surface on their own. The AI suggests a fix — you decide.
 
-5. Hit generate, and the whole month becomes a plain-English report, ready to read straight off the screen at your team meeting. It even shows whether last month's changes actually worked. Sign off, and you're done.
+5. The report. One click, and the month becomes a plain-English, meeting-ready report — including whether last month's changes actually worked. Read it out, sign off, done.
 
-That's the whole loop: log it, review it, learn from it — no blame, no names, no patient details.
+That's the whole loop: log it, review it, learn from it. No blame, no names, no patient details.
 
-It's still in development, and early access is free while I build it (link in the comments). But mostly I'd love your honest take: does this look like it'd actually work at your bench?
+It's in development, and early access is free while I build it (link in the comments). But honestly — I'd love your eyes on it: would this actually work at your bench?
 
 #PatientSafety #Pharmacy #CommunityPharmacy #NZPharmacy #MedicationSafety #QualityImprovement
 
