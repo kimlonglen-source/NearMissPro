@@ -21,8 +21,7 @@ export const STAGES: Stage[] = [
       { label: 'Wrong drug entered', common: true },
       { label: 'Wrong strength entered', common: true },
       { label: 'Wrong directions', common: true },
-      { label: 'Wrong quantity entered', common: false },
-      { label: 'Wrong number of days supply', common: false },
+      { label: 'Wrong quantity or days supply entered', common: false },
       { label: 'Wrong frequency', common: false },
       { label: 'Wrong route', common: false },
       { label: 'Repeat dispensed too early', common: false },
@@ -89,7 +88,6 @@ export const STAGES: Stage[] = [
       { label: 'Bag missing an item', common: true },
       { label: 'Bag mixed up between patients', common: true },
       { label: 'Bag contains extra item', common: false },
-      { label: 'New-medicine counselling missed', common: false },
       { label: 'Inhaler or device technique not shown', common: false },
       { label: 'Driving or alcohol warning missed', common: false },
       { label: 'ID not checked for CD pickup', common: false },
@@ -189,6 +187,7 @@ export function triggersFor(subLabel: string): {
   strength: boolean;
   quantity: boolean;
   formulation: boolean;
+  interaction: boolean;
 } {
   const l = subLabel.toLowerCase();
   return {
@@ -207,6 +206,10 @@ export function triggersFor(subLabel: string): {
       !l.includes('overridden') &&
       !l.includes('wrong day '),
     formulation: l.includes('formulation'),
+    // Drug-drug problems where a SECOND medicine matters — the one it
+    // interacts with, or the duplicate the patient is already on. Lets the
+    // form capture both drugs so the report says which two were involved.
+    interaction: l.includes('interaction') || l.includes('same drug'),
   };
 }
 

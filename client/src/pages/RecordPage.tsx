@@ -215,13 +215,14 @@ export function RecordPage() {
 
   // Layer 3 triggers — union across all selected sub-errors.
   const triggers = useMemo(() => {
-    const acc = { drug: false, strength: false, quantity: false, formulation: false };
+    const acc = { drug: false, strength: false, quantity: false, formulation: false, interaction: false };
     for (const sub of draft.errorTypes) {
       const t = triggersFor(sub);
       acc.drug ||= t.drug;
       acc.strength ||= t.strength;
       acc.quantity ||= t.quantity;
       acc.formulation ||= t.formulation;
+      acc.interaction ||= t.interaction;
     }
     return acc;
   }, [draft.errorTypes]);
@@ -631,7 +632,7 @@ export function RecordPage() {
   const summaryTags: { label: string; color: string }[] = [];
   if (draft.errorStep) summaryTags.push({ label: draft.errorStep, color: 'chip-teal' });
   draft.errorTypes.forEach(e => summaryTags.push({ label: e, color: subColor(e, true) }));
-  if (draft.drugName && draft.dispensedDrug) summaryTags.push({ label: `${draft.drugName} → ${draft.dispensedDrug}`, color: 'chip-coral' });
+  if (draft.drugName && draft.dispensedDrug) summaryTags.push({ label: `${draft.drugName} ${triggers.interaction ? '+' : '→'} ${draft.dispensedDrug}`, color: 'chip-coral' });
   if (draft.prescribedStrength && draft.dispensedStrength) summaryTags.push({ label: `${draft.prescribedStrength} → ${draft.dispensedStrength}`, color: 'chip-amber' });
   if (draft.correctFormulation && draft.dispensedFormulation) summaryTags.push({ label: `${draft.correctFormulation} → ${draft.dispensedFormulation}`, color: 'chip-purple' });
   if (draft.prescribedQuantity && draft.dispensedQuantity) summaryTags.push({ label: `qty ${draft.prescribedQuantity} → ${draft.dispensedQuantity}`, color: 'chip-amber' });
@@ -821,7 +822,7 @@ export function RecordPage() {
                   when a trigger fired, so cases like "Wrong directions"
                   and "Wrong pack size" never asked for the drug, which
                   meant headlines on the report dropped the medicine. */}
-              {(drugRequired || triggers.drug || triggers.strength || triggers.quantity || triggers.formulation) && (
+              {(drugRequired || triggers.drug || triggers.strength || triggers.quantity || triggers.formulation || triggers.interaction) && (
                 <div className="space-y-3 pt-2 border-t border-gray-100">
                   {highRisk && (
                     <div className="rounded-xl border-2 border-[#C84B4B] bg-[#FCEBEB] p-3">
@@ -863,6 +864,31 @@ export function RecordPage() {
                       {!phi.drugName.hit && draft.drugName && !drugNotRecognised && (
                         <p className="text-[11px] text-[#085041] mt-1.5">
                           ✓ Recognised
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {/* Interaction / duplicate: the FIRST drug is captured above.
+                      This second field records the medicine it interacts with,
+                      or the duplicate the patient is already on — so the report
+                      names both drugs involved. */}
+                  {triggers.interaction && (
+                    <div className="rounded-xl p-3 border-[1.5px] border-blue-200 bg-blue-50">
+                      <p className="text-xs font-semibold text-blue-700 mb-2">
+                        Interacts with / patient already on
+                      </p>
+                      <input
+                        type="text"
+                        value={draft.dispensedDrug}
+                        onChange={e => update({ dispensedDrug: e.target.value })}
+                        list="drug-suggestions"
+                        placeholder="e.g. Warfarin"
+                        className="input-field text-sm py-2 w-full"
+                        autoComplete="off"
+                      />
+                      {phi.dispensedDrug.hit && (
+                        <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
+                          <AlertTriangle size={12} /> Looks like patient info — use a drug name only.
                         </p>
                       )}
                     </div>
