@@ -206,10 +206,11 @@ export function triggersFor(subLabel: string): {
       !l.includes('overridden') &&
       !l.includes('wrong day '),
     formulation: l.includes('formulation'),
-    // Drug-drug problems where a SECOND medicine matters — the one it
-    // interacts with, or the duplicate the patient is already on. Lets the
-    // form capture both drugs so the report says which two were involved.
-    interaction: l.includes('interaction') || l.includes('same drug'),
+    // A genuine interaction between TWO DIFFERENT drugs — the form captures
+    // the second one so the report names both. Deliberately NOT fired for
+    // "patient already on the same drug" (duplicate therapy is one drug, so a
+    // second-drug box there just confuses).
+    interaction: l.includes('interaction'),
   };
 }
 

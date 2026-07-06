@@ -868,14 +868,13 @@ export function RecordPage() {
                       )}
                     </div>
                   )}
-                  {/* Interaction / duplicate: the FIRST drug is captured above.
-                      This second field records the medicine it interacts with,
-                      or the duplicate the patient is already on — so the report
-                      names both drugs involved. */}
+                  {/* Interaction only: the drug being dispensed is captured
+                      above; this second field records the OTHER drug it
+                      interacts with, so the report names both medicines. */}
                   {triggers.interaction && (
                     <div className="rounded-xl p-3 border-[1.5px] border-blue-200 bg-blue-50">
                       <p className="text-xs font-semibold text-blue-700 mb-2">
-                        Interacts with / patient already on
+                        Interacts with
                       </p>
                       <input
                         type="text"
