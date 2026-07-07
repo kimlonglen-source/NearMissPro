@@ -738,6 +738,9 @@ export function RecordPage() {
           <SectionHeader num={1} title="Where did this happen?" subtitle="Pick the step where the near miss happened" done={hasStage} open={openSection === 1} onClick={() => toggleSection(1)} />
           {openSection === 1 && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
+              <p className="text-xs text-gray-500">
+                Tap the step in dispensing where the near miss happened — just one.
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 {STAGES.map(s => (
                   <button
@@ -792,6 +795,9 @@ export function RecordPage() {
           <SectionHeader num={2} title="What went wrong?" subtitle={hasStage ? 'Pick one or more that apply' : 'Choose a step first'} done={hasSub} open={openSection === 2} onClick={() => { if (hasStage) toggleSection(2); }} />
           {openSection === 2 && hasStage && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3" ref={l2Ref}>
+              <p className="text-xs text-gray-500">
+                Tap what went wrong — pick more than one if it applies. Chips with a ▸ open up so you can be more specific.
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {visibleSubs.map(s => {
                   const umbrella = umbrellas.find(u => u.label === s.label);
@@ -1032,7 +1038,10 @@ export function RecordPage() {
           {/* ═══ Section 3: Where was it caught? ═══ */}
           <SectionHeader num={3} title="Where was it caught?" subtitle={hasStage ? 'Pre-selected based on the step' : ''} done={hasCaught} open={openSection === 3} onClick={() => { if (hasStage) toggleSection(3); }} />
           {openSection === 3 && hasStage && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4" ref={caughtRef}>
+            <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2" ref={caughtRef}>
+              <p className="text-xs text-gray-500">
+                We've pre-picked the usual spot for this step — tap a different one if it was caught somewhere else.
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {WHERE_CAUGHT.map(w => (
                   <button
@@ -1083,6 +1092,9 @@ export function RecordPage() {
           <SectionHeader num={4} title="What was happening at the time?" subtitle="Any factors that may have contributed" done={hasFactor} open={openSection === 4} onClick={() => { if (hasCaught) toggleSection(4); }} />
           {openSection === 4 && hasCaught && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3" ref={factorsRef}>
+              <p className="text-xs text-gray-500">
+                Tap anything that may have played a part — or leave blank if nothing stands out. Then submit below.
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {visibleFactors.map(f => (
                   <button
