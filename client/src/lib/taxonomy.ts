@@ -113,16 +113,7 @@ export const STAGES: Stage[] = [
   {
     label: 'Bagging / handed to patient',
     subErrors: [
-      {
-        label: 'Bag given to wrong patient',
-        common: true,
-        refineTitle: 'What happened with the bag?',
-        refinements: [
-          'Wrong patient given the bag',
-          'Wrong bag collected from pickup shelf',
-          'Bag mixed up between patients',
-        ],
-      },
+      { label: 'Wrong patient given the bag', common: true },
       {
         label: 'Counselling gap',
         common: true,
