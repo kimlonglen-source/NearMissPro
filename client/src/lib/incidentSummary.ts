@@ -45,6 +45,16 @@ export function summarizeIncident(inc: IncidentForSummary): string {
   const prescQty = inc.prescribed_quantity;
   const dispQty = inc.dispensed_quantity;
 
+  // Interaction — the second drug is the one it interacts with, NOT a drug
+  // dispensed in error. Must come before the wrong-drug swap below, which
+  // would otherwise read it as "X dispensed, Y prescribed".
+  const isInteraction = types.some(t => t.toLowerCase().includes('interaction'));
+  if (isInteraction) {
+    if (drug && dispDrug) return `${errorType}: ${drug} with ${dispDrug}.`;
+    if (drug) return `${errorType} — ${drug}.`;
+    return `${errorType}.`;
+  }
+
   // Wrong drug — different drug dispensed (this case needs both drug names
   // to make sense, so it's the strictest of the four).
   if (dispDrug && drug && dispDrug.toLowerCase() !== drug.toLowerCase()) {
