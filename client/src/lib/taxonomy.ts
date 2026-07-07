@@ -148,8 +148,7 @@ export const FACTORS = [
   'Similar patient name',
   'Script not checked against original',
   'Understaffed',
-  'System slow or down',
-  'Dispensary software issue',
+  'Dispensary system slow or down',
   'Handwriting hard to read',
   'Unusual dose or strength',
   'New staff member',
@@ -164,7 +163,7 @@ export const FACTORS_DEFAULT_VISIBLE = 7;
 
 export const FORMULATIONS = [
   'Tablet', 'Capsule', 'Liquid', 'Cream', 'Ointment',
-  'Patch', 'Injection', 'Drops', 'Ear drops', 'Inhaler',
+  'Patch', 'Injection', 'Drops', 'Inhaler',
   'Nebules', 'Spray', 'Sachet', 'Suppository', 'Compliance pack / DAA',
 ];
 
@@ -191,15 +190,17 @@ export function triggersFor(subLabel: string): {
 } {
   const l = subLabel.toLowerCase();
   return {
+    // The two-box "prescribed drug → drug given in error" only makes sense
+    // when a DIFFERENT drug was involved. Not for "wrong brand" (same drug,
+    // different brand) — that gets the single drug box below instead.
     drug:
       l.includes('wrong drug') ||
       l.includes('look-alike') ||
       l.includes('sound-alike') ||
-      l.includes('drug on label') ||
-      l.includes('drug entered') ||
-      l.includes('drug in pack') ||
-      l.includes('brand'),
-    strength: l.includes('strength'),
+      l.includes('drug entered'),
+    // "Mixed strengths in same container" has no single wrong strength to
+    // compare, so it skips the strength box and just names the drug.
+    strength: l.includes('strength') && !l.includes('mixed'),
     quantity:
       (l.includes('quantity') || l.includes('volume') || l.includes('days supply')) &&
       !l.includes('allergy') &&
@@ -218,6 +219,9 @@ export function triggersFor(subLabel: string): {
 // not about a specific medicine. For everything else, the drug name
 // should be captured so reports group properly and an inspector can
 // trace "what drug was involved" without opening every incident.
+// Note: "bag missing an item" / "bag contains extra item" DO ask for the
+// drug (you can name the item), but a bag MIX-UP (wrong bag, wrong patient,
+// two bags swapped) is pure logistics \u2014 no single drug to name.
 export function isNonDrugError(subLabel: string): boolean {
   const l = subLabel.toLowerCase();
   return (
@@ -227,7 +231,6 @@ export function isNonDrugError(subLabel: string): boolean {
     l.includes('hpi') ||
     l.includes('subsidy') ||
     l.includes('bag mixed') ||
-    l.includes('bag missing') ||
     l.includes('bag collected') ||
     l.includes('pso') ||               // "…(PSO) treated as patient script" — paren broke the old 'pso treated'
     l.includes('wrong day') ||         // "Wrong day or time slot" (compliance pack)
