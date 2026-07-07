@@ -683,6 +683,9 @@ export function RecordPage() {
   // ── Derived for sidebar summary ─────────────────────────────
   const hasStage = !!draft.errorStep;
   const hasSub = draft.errorTypes.length > 0;
+  // Section 2 only counts as "done" once the required drug name is filled —
+  // otherwise the green tick made a half-finished section look complete.
+  const section2Done = hasSub && (!drugRequired || !!draft.drugName.trim());
   const hasCaught = !!draft.whereCaught;
   const hasFactor = draft.factors.length > 0;
 
@@ -811,7 +814,7 @@ export function RecordPage() {
           )}
 
           {/* ═══ Section 2: What went wrong? ═══ */}
-          <SectionHeader num={2} title="What went wrong?" subtitle={hasStage ? 'Pick one or more that apply' : 'Choose a step first'} done={hasSub} open={openSection === 2} onClick={() => { if (hasStage) toggleSection(2); }} />
+          <SectionHeader num={2} title="What went wrong?" subtitle={hasStage ? 'Pick one or more that apply' : 'Choose a step first'} done={section2Done} open={openSection === 2} onClick={() => { if (hasStage) toggleSection(2); }} />
           {openSection === 2 && hasStage && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3" ref={l2Ref}>
               <p className="text-xs text-gray-500">
