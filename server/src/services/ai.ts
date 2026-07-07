@@ -100,12 +100,12 @@ function nzStubRecommendation(incident: IncidentData): string {
   }
 
   // Allergy / interaction / duplicate therapy — clinical decision support
-  if (hasAny(['allergy', 'interaction', 'duplicate therapy'])) {
+  if (hasAny(['allergy', 'interaction', 'duplicate therapy', 'same drug'])) {
     return `When the dispensary software flags an allergy, interaction, or duplicate medicine, the staff member should have to type a reason — not just tap-to-dismiss. The pharmacist-in-charge should review the override log weekly (Pharmacy Council NZ standard 1.8).${factorNote}`;
   }
 
   // Renal / hepatic / paediatric / geriatric / pregnancy dose
-  if (hasAny(['renal', 'hepatic', 'paediatric', 'geriatric', 'pregnancy', 'breastfeeding'])) {
+  if (hasAny(['renal', 'hepatic', 'kidney', 'liver', 'paediatric', 'geriatric', 'pregnancy', 'breastfeeding'])) {
     return `Look up ${drugLabel} in the NZ Formulary for the special-population dose (kidney, liver, paediatric, etc.). Set up a software alert for these high-risk patient groups, and add a pharmacist review step before dispensing.${factorNote}`;
   }
 

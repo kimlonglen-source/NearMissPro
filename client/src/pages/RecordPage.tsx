@@ -6,6 +6,7 @@ import {
   STAGES, WHERE_CAUGHT, CAUGHT_DEFAULT_BY_STAGE, FACTORS,
   FACTORS_DEFAULT_VISIBLE, FORMULATIONS, triggersFor, isNonDrugError,
 } from '../lib/taxonomy';
+import type { SubError } from '../lib/taxonomy';
 import { NZ_DRUG_LIST, isKnownNzDrug, readDrugHistory, recordDrugInHistory } from '../lib/nzDrugList';
 import { checkHighRisk } from '../lib/highRiskDrugs';
 import { looksLikeGibberish } from '../lib/gibberish';
@@ -357,39 +358,38 @@ export function RecordPage() {
     if (!has && draft.errorStep) pushRecent(draft.errorStep, sub);
   };
 
-  // "Wrong directions" is an umbrella: bare "Wrong directions" (general) plus
-  // its specific parts. The whole group is these labels.
-  const directionsSub = useMemo(() => stage?.subErrors.find(s => s.refinements), [stage]);
-  const directionsGroup = useMemo(
-    () => (directionsSub ? ['Wrong directions', ...(directionsSub.refinements || [])] : []),
-    [directionsSub],
-  );
-  const directionsSelected = draft.errorTypes.some(e => directionsGroup.includes(e));
+  // Umbrella chips: a sub-error with `refinements` expands into specific parts
+  // (e.g. "Wrong directions" → dose/frequency/route). The group is the bare
+  // umbrella label (= general/unspecified) plus its refinement labels.
+  const umbrellas = useMemo(() => (stage?.subErrors.filter(s => s.refinements) || []), [stage]);
+  const groupOf = (u: SubError) => [u.label, ...(u.refinements || [])];
+  const isUmbrellaSelected = (u: SubError) => draft.errorTypes.some(e => groupOf(u).includes(e));
 
   // Tap the umbrella chip: deselect the whole group if anything's on, else
-  // select the bare "Wrong directions" (general, unspecified).
-  const toggleDirections = () => {
+  // select the bare umbrella label (general, unspecified).
+  const toggleUmbrella = (u: SubError) => {
     tap();
-    if (directionsSelected) {
-      update({ errorTypes: draft.errorTypes.filter(e => !directionsGroup.includes(e)) });
+    const g = groupOf(u);
+    if (draft.errorTypes.some(e => g.includes(e))) {
+      update({ errorTypes: draft.errorTypes.filter(e => !g.includes(e)) });
     } else {
-      update({ errorTypes: [...draft.errorTypes, 'Wrong directions'] });
-      if (draft.errorStep) pushRecent(draft.errorStep, 'Wrong directions');
+      update({ errorTypes: [...draft.errorTypes, u.label] });
+      if (draft.errorStep) pushRecent(draft.errorStep, u.label);
     }
   };
 
-  // Pick a specific part. Adding one drops the bare "Wrong directions" so we
-  // don't double-count; removing the last specific falls back to the general.
-  const refineDirection = (part: string) => {
+  // Pick a specific part. Adding one drops the bare umbrella label so we don't
+  // double-count; removing the last specific falls back to the general.
+  const refineUmbrella = (u: SubError, part: string) => {
     tap();
     const has = draft.errorTypes.includes(part);
     let next: string[];
     if (has) {
       next = draft.errorTypes.filter(e => e !== part);
-      const anySpecificLeft = (directionsSub?.refinements || []).some(r => next.includes(r));
-      if (!anySpecificLeft && !next.includes('Wrong directions')) next.push('Wrong directions');
+      const anySpecificLeft = (u.refinements || []).some(r => next.includes(r));
+      if (!anySpecificLeft && !next.includes(u.label)) next.push(u.label);
     } else {
-      next = [...draft.errorTypes.filter(e => e !== 'Wrong directions'), part];
+      next = [...draft.errorTypes.filter(e => e !== u.label), part];
       if (draft.errorStep) pushRecent(draft.errorStep, part);
     }
     update({ errorTypes: next });
@@ -794,17 +794,17 @@ export function RecordPage() {
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3" ref={l2Ref}>
               <div className="flex flex-wrap gap-1.5">
                 {visibleSubs.map(s => {
-                  const isDirections = !!directionsSub && s.label === directionsSub.label;
-                  const selected = isDirections ? directionsSelected : draft.errorTypes.includes(s.label);
+                  const umbrella = umbrellas.find(u => u.label === s.label);
+                  const selected = umbrella ? isUmbrellaSelected(umbrella) : draft.errorTypes.includes(s.label);
                   return (
                     <button
                       key={s.label}
-                      onClick={() => (isDirections ? toggleDirections() : toggleSub(s.label))}
+                      onClick={() => (umbrella ? toggleUmbrella(umbrella) : toggleSub(s.label))}
                       className={`chip text-base font-semibold py-3 px-4 ${subColor(s.label, selected)} ${s.recent && !selected ? 'border-[#1D9E75]' : ''}`}
                     >
                       {s.recent && <span className="text-[10px] text-[#1D9E75] mr-1">recent</span>}
                       {s.label}
-                      {isDirections && <span className="ml-1 opacity-60">{selected ? '▾' : '▸'}</span>}
+                      {umbrella && <span className="ml-1 opacity-60">{selected ? '▾' : '▸'}</span>}
                     </button>
                   );
                 })}
@@ -862,19 +862,19 @@ export function RecordPage() {
                 />
               </div>
 
-              {/* "Wrong directions" refine row — the sig's specific parts.
-                  Appears once the umbrella chip is selected; picking a part
-                  swaps the general "Wrong directions" for the specific one. */}
-              {directionsSub && directionsSelected && (
-                <div className="rounded-xl p-3 border-[1.5px] border-gray-200 bg-gray-50">
+              {/* Umbrella refine rows — one per selected umbrella chip.
+                  Picking a part swaps the general umbrella label for the
+                  specific one; leaving it stays general. */}
+              {umbrellas.filter(u => isUmbrellaSelected(u)).map(u => (
+                <div key={u.label} className="rounded-xl p-3 border-[1.5px] border-gray-200 bg-gray-50">
                   <p className="text-xs font-semibold text-gray-600 mb-2">
-                    Which part of the directions? <span className="font-normal text-gray-400">(optional)</span>
+                    {u.refineTitle || 'Which one?'} <span className="font-normal text-gray-400">(optional)</span>
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {(directionsSub.refinements || []).map(part => (
+                    {(u.refinements || []).map(part => (
                       <button
                         key={part}
-                        onClick={() => refineDirection(part)}
+                        onClick={() => refineUmbrella(u, part)}
                         className={`chip text-sm font-semibold py-2 px-3 ${subColor(part, draft.errorTypes.includes(part))}`}
                       >
                         {part}
@@ -882,7 +882,7 @@ export function RecordPage() {
                     ))}
                   </div>
                 </div>
-              )}
+              ))}
 
               {/* Layer 3 — drug + intended → given fields.
                   Shown whenever a drug is involved (drugRequired) OR a

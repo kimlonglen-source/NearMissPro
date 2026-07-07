@@ -5,11 +5,13 @@
 export interface SubError {
   label: string;
   common: boolean; // true = default-visible, false = revealed via "More…"
-  // Optional specific parts this chip expands into. Used by "Wrong directions"
-  // so the sig's parts (dose, frequency, route, timing) live under one umbrella
-  // instead of competing as separate chips. Each string is a plain "Wrong …"
-  // label stored directly in errorTypes.
+  // Optional specific parts this chip expands into. Used by umbrella chips
+  // (e.g. "Wrong directions", "Clinical check missed") so closely-related
+  // sub-cases live under one chip instead of competing as separate chips.
+  // Each string is a plain label stored directly in errorTypes.
   refinements?: string[];
+  // Prompt shown above the refine row when this umbrella is selected.
+  refineTitle?: string;
 }
 
 export interface Stage {
@@ -28,16 +30,24 @@ export const STAGES: Stage[] = [
       {
         label: 'Wrong directions',
         common: true,
+        refineTitle: 'Which part of the directions?',
         refinements: ['Wrong dose', 'Wrong frequency', 'Wrong route', 'Wrong timing or instruction'],
       },
       { label: 'Wrong quantity or days supply entered', common: false },
       { label: 'Repeat dispensed too early', common: false },
       { label: 'Patient overdue for repeat', common: false },
-      { label: 'Allergy warning ignored', common: false },
-      { label: 'Drug interaction missed', common: false },
-      { label: 'Patient already on the same drug', common: false },
-      { label: 'Dose not adjusted for age, kidney or liver', common: false },
-      { label: 'Pregnancy or breastfeeding safety not checked', common: false },
+      {
+        label: 'Clinical check missed',
+        common: false,
+        refineTitle: 'Which check was missed?',
+        refinements: [
+          'Allergy warning ignored',
+          'Drug interaction missed',
+          'Patient already on the same drug',
+          'Dose not adjusted for age, kidney or liver',
+          'Pregnancy or breastfeeding safety not checked',
+        ],
+      },
       { label: 'Pharmac Special Authority not checked', common: false },
       { label: 'Patient NHI or prescriber HPI wrong', common: false },
       { label: 'Wrong subsidy code', common: false },
@@ -52,15 +62,22 @@ export const STAGES: Stage[] = [
   {
     label: 'Drug picked from shelf',
     subErrors: [
-      { label: 'Wrong drug \u2014 look-alike packaging', common: true },
+      {
+        label: 'Wrong drug picked',
+        common: true,
+        refineTitle: 'What caused the mix-up?',
+        refinements: ['Wrong drug \u2014 look-alike packaging', 'Wrong drug \u2014 sound-alike name'],
+      },
       { label: 'Wrong strength picked', common: true },
       { label: 'Wrong formulation picked', common: true },
       { label: 'Wrong brand supplied', common: true },
-      { label: 'Wrong drug \u2014 sound-alike name', common: false },
-      { label: 'Expired stock', common: false },
-      { label: 'Damaged tablets', common: false },
       { label: 'Wrong pack size', common: false },
-      { label: 'Recalled stock dispensed', common: false },
+      {
+        label: 'Stock quality problem',
+        common: false,
+        refineTitle: 'What was wrong with the stock?',
+        refinements: ['Expired stock', 'Damaged tablets', 'Recalled stock dispensed'],
+      },
     ],
   },
   {
@@ -71,9 +88,16 @@ export const STAGES: Stage[] = [
       { label: 'Mixed strengths in same container', common: true },
       { label: 'Tablet-splitting error', common: true },
       { label: 'Cross-contamination between drugs', common: false },
-      { label: 'Compounding calculation wrong', common: false },
-      { label: 'Wrong base or diluent (compounding)', common: false },
-      { label: 'Wrong concentration (compounding)', common: false },
+      {
+        label: 'Compounding error',
+        common: false,
+        refineTitle: 'Where did the compounding go wrong?',
+        refinements: [
+          'Compounding calculation wrong',
+          'Wrong base or diluent (compounding)',
+          'Wrong concentration (compounding)',
+        ],
+      },
     ],
   },
   {
@@ -89,14 +113,28 @@ export const STAGES: Stage[] = [
   {
     label: 'Bagging / handed to patient',
     subErrors: [
-      { label: 'Wrong patient given the bag', common: true },
-      { label: 'Wrong bag collected from pickup shelf', common: true },
-      { label: 'Counselling missed or wrong', common: true },
+      {
+        label: 'Bag given to wrong patient',
+        common: true,
+        refineTitle: 'What happened with the bag?',
+        refinements: [
+          'Wrong patient given the bag',
+          'Wrong bag collected from pickup shelf',
+          'Bag mixed up between patients',
+        ],
+      },
+      {
+        label: 'Counselling gap',
+        common: true,
+        refineTitle: 'What was missed?',
+        refinements: [
+          'Counselling missed or wrong',
+          'Inhaler or device technique not shown',
+          'Driving or alcohol warning missed',
+        ],
+      },
       { label: 'Bag missing an item', common: true },
-      { label: 'Bag mixed up between patients', common: true },
       { label: 'Bag contains extra item', common: false },
-      { label: 'Inhaler or device technique not shown', common: false },
-      { label: 'Driving or alcohol warning missed', common: false },
       { label: 'ID not checked for CD pickup', common: false },
     ],
   },
