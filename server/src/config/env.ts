@@ -32,13 +32,16 @@ export const env = {
   emailFrom: process.env.EMAIL_FROM || 'hello@nearmisspro.co.nz',
 } as const;
 
-// Production safety gate. The dev fallbacks above (default JWT secret,
-// founder123 password, accept-any-MFA) are intentional conveniences for
-// localhost. On a deployed instance they'd leave founder login and token
-// signing wide open — so refuse to start if they're still at their
-// defaults when NODE_ENV=production. Fail loud at boot, never silently
-// run insecure.
-if (env.nodeEnv === 'production') {
+// Safety gate. The dev fallbacks above (default JWT secret, founder123
+// password, accept-any-MFA) are intentional conveniences for localhost.
+// On a deployed instance they'd leave founder login and token signing
+// wide open — so refuse to start if they're still at their defaults
+// whenever the app is NOT clearly running on localhost. This deliberately
+// does NOT rely on NODE_ENV alone: forgetting to set NODE_ENV=production
+// on a real host must not silently re-enable the defaults. Fail loud at
+// boot, never silently run insecure.
+const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.test(env.clientUrl);
+if (env.nodeEnv === 'production' || !isLocalhost) {
   const problems: string[] = [];
   if (!process.env.JWT_SECRET || env.jwtSecret.startsWith('dev-secret')) {
     problems.push('JWT_SECRET is missing or still the dev default');

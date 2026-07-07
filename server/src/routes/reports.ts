@@ -277,7 +277,9 @@ router.post('/:id/email', async (req: Request, res: Response) => {
     const { data: pharmacy } = await supabase.from('pharmacies').select('manager_email, name')
       .eq('id', req.auth!.pharmacyId).single();
 
-    console.log(`[EMAIL] To: ${pharmacy?.manager_email} | Subject: NearMiss Pro Report — ${report.period_start} to ${report.period_end} | Body: Report for ${pharmacy?.name} is attached. PDF URL: ${report.pdf_url || 'pending'}`);
+    // Don't log the recipient email address (customer PII in stdout). Log
+    // only the pharmacy id + period so the action is still traceable.
+    console.log(`[EMAIL] report for pharmacy ${req.auth!.pharmacyId} — period ${report.period_start} to ${report.period_end}`);
     res.json({ success: true });
   } catch { res.status(500).json({ error: 'Failed' }); }
 });

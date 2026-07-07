@@ -25,7 +25,10 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
   }
   try {
     const token = header.slice(7);
-    req.auth = jwt.verify(token, env.jwtSecret) as AuthPayload;
+    // Pin the algorithm — tokens are signed with HS256, so only accept HS256.
+    // Without this, a token claiming a different algorithm would still be run
+    // through verification, which is a known class of JWT bypass.
+    req.auth = jwt.verify(token, env.jwtSecret, { algorithms: ['HS256'] }) as AuthPayload;
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired session' });

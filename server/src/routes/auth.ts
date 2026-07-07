@@ -16,6 +16,23 @@ const escapeLike = (s: string) => s.replace(/[%_\\]/g, '\\$&');
 
 const router = Router();
 
+// Founder-login brute-force guard. The founder account is the master key
+// (it can see every pharmacy), so give it its own lockout on top of the
+// per-IP rate limiter. In-memory is fine — the server runs as a single
+// process; a restart clears it, which is an acceptable trade-off.
+const FOUNDER_MAX_FAILS = 5;
+const FOUNDER_LOCK_MS = 15 * 60_000;
+let founderFails = 0;
+let founderLockUntil = 0;
+
+// Constant-time string comparison so a wrong founder password can't be
+// recovered by measuring response timing.
+function safeEqual(a: string, b: string): boolean {
+  const ha = crypto.createHash('sha256').update(a).digest();
+  const hb = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(ha, hb);
+}
+
 // Parse a User-Agent string into a short human label for the
 // device-verification email. Best-effort — covers the common cases
 // (Chrome / Safari / Edge / Firefox on macOS / Windows / iOS /
@@ -407,16 +424,26 @@ router.post('/founder/login', async (req: Request, res: Response) => {
       email: z.string().email(), password: z.string().min(8), mfaCode: z.string().length(6).optional(),
     }).parse(req.body);
 
-    if (email.toLowerCase() !== env.founderEmail.toLowerCase()) {
-      res.status(401).json({ error: 'Invalid credentials' }); return;
+    if (Date.now() < founderLockUntil) {
+      res.status(423).json({ error: 'Too many attempts. Try again in a few minutes.' }); return;
     }
+
+    const emailOk = email.toLowerCase() === env.founderEmail.toLowerCase();
 
     // Password: env var if set, fallback to dev value when unset.
     // The fallback exists so localhost development doesn't require
     // a .env entry. Any hosted instance MUST have FOUNDER_PASSWORD
     // set — otherwise the login is trivially bypassed.
     const expectedPassword = env.founderPassword || 'founder123';
-    if (password !== expectedPassword) {
+    // Constant-time comparison; always run it (even on a wrong email) so the
+    // response time doesn't reveal whether the email matched.
+    const passwordOk = safeEqual(password, expectedPassword);
+    // A failed attempt (wrong email, password, or — below — MFA) counts
+    // toward the lockout; only a fully successful login resets it.
+    const noteFail = () => { if (++founderFails >= FOUNDER_MAX_FAILS) { founderLockUntil = Date.now() + FOUNDER_LOCK_MS; founderFails = 0; } };
+
+    if (!emailOk || !passwordOk) {
+      noteFail();
       res.status(401).json({ error: 'Invalid credentials' }); return;
     }
 
@@ -432,14 +459,17 @@ router.post('/founder/login', async (req: Request, res: Response) => {
       // the time-window tolerance.
       const { authenticator } = await import('otplib');
       if (!authenticator.check(mfaCode, env.founderTotpSecret)) {
+        noteFail();
         res.status(401).json({ error: 'Invalid MFA code' }); return;
       }
     } else {
       // Dev fallback — accept any 6-digit code.
       if (!/^\d{6}$/.test(mfaCode)) {
+        noteFail();
         res.status(401).json({ error: 'Invalid MFA code' }); return;
       }
     }
+    founderFails = 0;
 
     // 8-hour session for founder
     const token = jwt.sign(
@@ -727,7 +757,8 @@ router.post('/pharmacies', authenticate, requireRole('founder'), async (req: Req
     }
 
     await supabase.from('audit_log').insert({ pharmacy_id: pharmacy.id, action: 'pharmacy_created', performed_by: 'founder', details: { name: data.name } });
-    console.log(`[EMAIL] To: ${data.pharmacyEmail} | Subject: Welcome to NearMiss Pro | Body: Your pharmacy "${data.name}" is set up. Login at ${env.clientUrl}`);
+    // Don't log the recipient email address (customer PII in stdout).
+    console.log(`[EMAIL] welcome email queued for pharmacy "${data.name}"`);
 
     res.status(201).json(pharmacy);
   } catch (err) {
