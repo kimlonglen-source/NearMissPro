@@ -357,6 +357,44 @@ export function RecordPage() {
     if (!has && draft.errorStep) pushRecent(draft.errorStep, sub);
   };
 
+  // "Wrong directions" is an umbrella: bare "Wrong directions" (general) plus
+  // its specific parts. The whole group is these labels.
+  const directionsSub = useMemo(() => stage?.subErrors.find(s => s.refinements), [stage]);
+  const directionsGroup = useMemo(
+    () => (directionsSub ? ['Wrong directions', ...(directionsSub.refinements || [])] : []),
+    [directionsSub],
+  );
+  const directionsSelected = draft.errorTypes.some(e => directionsGroup.includes(e));
+
+  // Tap the umbrella chip: deselect the whole group if anything's on, else
+  // select the bare "Wrong directions" (general, unspecified).
+  const toggleDirections = () => {
+    tap();
+    if (directionsSelected) {
+      update({ errorTypes: draft.errorTypes.filter(e => !directionsGroup.includes(e)) });
+    } else {
+      update({ errorTypes: [...draft.errorTypes, 'Wrong directions'] });
+      if (draft.errorStep) pushRecent(draft.errorStep, 'Wrong directions');
+    }
+  };
+
+  // Pick a specific part. Adding one drops the bare "Wrong directions" so we
+  // don't double-count; removing the last specific falls back to the general.
+  const refineDirection = (part: string) => {
+    tap();
+    const has = draft.errorTypes.includes(part);
+    let next: string[];
+    if (has) {
+      next = draft.errorTypes.filter(e => e !== part);
+      const anySpecificLeft = (directionsSub?.refinements || []).some(r => next.includes(r));
+      if (!anySpecificLeft && !next.includes('Wrong directions')) next.push('Wrong directions');
+    } else {
+      next = [...draft.errorTypes.filter(e => e !== 'Wrong directions'), part];
+      if (draft.errorStep) pushRecent(draft.errorStep, part);
+    }
+    update({ errorTypes: next });
+  };
+
   const setWhereCaught = (w: string) => {
     tap();
     // Tapping the currently-selected chip deselects it (stays on Section 3).
@@ -755,16 +793,21 @@ export function RecordPage() {
           {openSection === 2 && hasStage && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3" ref={l2Ref}>
               <div className="flex flex-wrap gap-1.5">
-                {visibleSubs.map(s => (
-                  <button
-                    key={s.label}
-                    onClick={() => toggleSub(s.label)}
-                    className={`chip text-base font-semibold py-3 px-4 ${subColor(s.label, draft.errorTypes.includes(s.label))} ${s.recent && !draft.errorTypes.includes(s.label) ? 'border-[#1D9E75]' : ''}`}
-                  >
-                    {s.recent && <span className="text-[10px] text-[#1D9E75] mr-1">recent</span>}
-                    {s.label}
-                  </button>
-                ))}
+                {visibleSubs.map(s => {
+                  const isDirections = !!directionsSub && s.label === directionsSub.label;
+                  const selected = isDirections ? directionsSelected : draft.errorTypes.includes(s.label);
+                  return (
+                    <button
+                      key={s.label}
+                      onClick={() => (isDirections ? toggleDirections() : toggleSub(s.label))}
+                      className={`chip text-base font-semibold py-3 px-4 ${subColor(s.label, selected)} ${s.recent && !selected ? 'border-[#1D9E75]' : ''}`}
+                    >
+                      {s.recent && <span className="text-[10px] text-[#1D9E75] mr-1">recent</span>}
+                      {s.label}
+                      {isDirections && <span className="ml-1 opacity-60">{selected ? '▾' : '▸'}</span>}
+                    </button>
+                  );
+                })}
                 {hasHiddenSubs && (
                   <button
                     onClick={() => { tap(); update({ showMoreSub: true }); }}
@@ -815,6 +858,28 @@ export function RecordPage() {
                   }}
                 />
               </div>
+
+              {/* "Wrong directions" refine row — the sig's specific parts.
+                  Appears once the umbrella chip is selected; picking a part
+                  swaps the general "Wrong directions" for the specific one. */}
+              {directionsSub && directionsSelected && (
+                <div className="rounded-xl p-3 border-[1.5px] border-gray-200 bg-gray-50">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">
+                    Which part of the directions? <span className="font-normal text-gray-400">(optional)</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(directionsSub.refinements || []).map(part => (
+                      <button
+                        key={part}
+                        onClick={() => refineDirection(part)}
+                        className={`chip text-sm font-semibold py-2 px-3 ${subColor(part, draft.errorTypes.includes(part))}`}
+                      >
+                        {part}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Layer 3 — drug + intended → given fields.
                   Shown whenever a drug is involved (drugRequired) OR a

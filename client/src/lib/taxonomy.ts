@@ -5,6 +5,11 @@
 export interface SubError {
   label: string;
   common: boolean; // true = default-visible, false = revealed via "More…"
+  // Optional specific parts this chip expands into. Used by "Wrong directions"
+  // so the sig's parts (dose, frequency, route, timing) live under one umbrella
+  // instead of competing as separate chips. Each string is a plain "Wrong …"
+  // label stored directly in errorTypes.
+  refinements?: string[];
 }
 
 export interface Stage {
@@ -20,10 +25,12 @@ export const STAGES: Stage[] = [
       { label: 'Wrong patient', common: true },
       { label: 'Wrong drug entered', common: true },
       { label: 'Wrong strength entered', common: true },
-      { label: 'Wrong directions', common: true },
+      {
+        label: 'Wrong directions',
+        common: true,
+        refinements: ['Wrong dose', 'Wrong frequency', 'Wrong route', 'Wrong timing or instruction'],
+      },
       { label: 'Wrong quantity or days supply entered', common: false },
-      { label: 'Wrong frequency', common: false },
-      { label: 'Wrong route', common: false },
       { label: 'Repeat dispensed too early', common: false },
       { label: 'Patient overdue for repeat', common: false },
       { label: 'Allergy warning ignored', common: false },

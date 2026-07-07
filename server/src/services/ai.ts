@@ -138,8 +138,8 @@ function nzStubRecommendation(incident: IncidentData): string {
     return `For a verbal or phone order, read it back to confirm, and get the written script (an NZePS electronic prescription or the signed original) before you dispense — don't rely on the verbal alone.${factorNote}`;
   }
 
-  // Label typo / directions / CAL
-  if (hasAny(['typo', 'directions', 'sig'])) {
+  // Label typo / directions (dose, frequency, route, timing) / CAL
+  if (hasAny(['typo', 'directions', 'sig', 'frequency', 'route', 'timing', 'wrong dose'])) {
     return `At final check, read the dispensing label word-for-word against the prescription. The pharmacist-in-charge should review label templates every 3 months. If your dispensary software shortens directions, manually override per NZULM.${factorNote}`;
   }
   if (hasAny(['cal'])) {
