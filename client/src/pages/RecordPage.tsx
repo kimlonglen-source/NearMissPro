@@ -560,6 +560,7 @@ export function RecordPage() {
     if (draft.errorTypes.length === 0) return 'Tap what went wrong';
     if (!draft.whereCaught) return 'Tap where it was caught';
     if (draft.factors.length === 0) return 'Tap what was happening at the time';
+    if (drugRequired && !draft.drugName.trim()) return 'Add the drug name below';
     return editingIncidentId ? 'Save changes' : 'Submit near miss ✓';
   })();
   const canSubmit =
@@ -1245,6 +1246,8 @@ export function RecordPage() {
                 { met: hasSub, label: 'What went wrong' },
                 { met: hasCaught, label: 'Where caught' },
                 { met: hasFactor, label: 'Factor' },
+                // Only shown when the chosen error type needs a medicine named.
+                ...(drugRequired ? [{ met: !!draft.drugName.trim(), label: 'Drug name' }] : []),
               ].map(({ met, label }) => (
                 <div key={label} className="flex items-center gap-2">
                   <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${met ? 'bg-[#1D9E75]' : 'bg-gray-200'}`}>
