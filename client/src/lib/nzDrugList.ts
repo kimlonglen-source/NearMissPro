@@ -5,7 +5,8 @@
 // that's being typed for the first time.
 //
 // Aligned to Pharmac Schedule (most-dispensed funded medicines) plus common
-// OTC/private items. Not exhaustive — staff can still type any drug name
+// OTC/private items, broadened to ~450 active substances across every major
+// therapeutic area. Not exhaustive — staff can still type any drug name
 // freely; this only powers suggestions and the "not in NZ drug list" hint.
 
 export const NZ_DRUG_LIST: string[] = [
@@ -79,6 +80,140 @@ export const NZ_DRUG_LIST: string[] = [
   // Vaccines / Other common
   'Iron', 'Ferrous sulfate', 'Ferrous fumarate', 'Folic acid', 'Vitamin B12', 'Cyanocobalamin',
   'Magnesium', 'Potassium', 'Sodium chloride',
+
+  // ── Expanded coverage (NZ community pharmacy) ──────────────────────
+  // Penicillins & related antibiotics
+  'Phenoxymethylpenicillin', 'Benzylpenicillin', 'Benzathine penicillin',
+  'Ampicillin', 'Dicloxacillin',
+  'Cefuroxime', 'Cefixime', 'Ceftriaxone', 'Cefazolin',
+  'Clindamycin', 'Lincomycin', 'Vancomycin',
+  'Gentamicin', 'Tobramycin', 'Neomycin', 'Framycetin',
+  'Norfloxacin', 'Ofloxacin', 'Levofloxacin', 'Moxifloxacin',
+  'Co-trimoxazole', 'Sulfamethoxazole', 'Tinidazole', 'Ornidazole',
+  'Fusidic acid', 'Mupirocin', 'Fosfomycin',
+  'Rifampicin', 'Rifaximin', 'Isoniazid', 'Ethambutol', 'Pyrazinamide', 'Dapsone',
+  // Antifungals
+  'Fluconazole', 'Itraconazole', 'Voriconazole', 'Posaconazole',
+  'Terbinafine', 'Griseofulvin', 'Nystatin', 'Amphotericin',
+  'Clotrimazole', 'Miconazole', 'Ketoconazole', 'Econazole', 'Amorolfine',
+  // Antivirals
+  'Famciclovir', 'Oseltamivir', 'Zanamivir', 'Entecavir', 'Ribavirin',
+  'Tenofovir', 'Emtricitabine', 'Lamivudine', 'Abacavir', 'Dolutegravir', 'Efavirenz',
+  // Antimalarials / travel
+  'Chloroquine', 'Mefloquine', 'Proguanil', 'Atovaquone', 'Primaquine', 'Quinine',
+  // Cardiovascular — ACE / ARB / other antihypertensives
+  'Ramipril', 'Trandolapril', 'Fosinopril', 'Captopril', 'Benazepril',
+  'Olmesartan', 'Eprosartan',
+  'Nifedipine', 'Lercanidipine', 'Isradipine', 'Nicardipine',
+  'Nebivolol', 'Labetalol', 'Celiprolol', 'Pindolol', 'Nadolol',
+  'Hydralazine', 'Methyldopa', 'Clonidine', 'Moxonidine',
+  'Prazosin', 'Terazosin', 'Minoxidil',
+  // Cardiovascular — nitrates / antianginals / antiarrhythmics
+  'Isosorbide mononitrate', 'Isosorbide dinitrate', 'Glyceryl trinitrate',
+  'Nicorandil', 'Ivabradine', 'Ranolazine', 'Perhexiline',
+  'Mexiletine', 'Disopyramide', 'Quinidine', 'Dronedarone', 'Adenosine',
+  // Cardiovascular — diuretics / lipid / heart failure
+  'Chlortalidone', 'Metolazone', 'Amiloride', 'Triamterene', 'Eplerenone',
+  'Ezetimibe', 'Fenofibrate', 'Bezafibrate', 'Gemfibrozil',
+  'Colestyramine', 'Colestipol', 'Nicotinic acid', 'Evolocumab', 'Alirocumab',
+  'Sacubitril valsartan',
+  // Anticoagulant / haematology
+  'Edoxaban', 'Fondaparinux', 'Dalteparin', 'Tinzaparin',
+  'Tranexamic acid', 'Phytomenadione', 'Vitamin K', 'Protamine',
+  'Ferric carboxymaltose', 'Iron sucrose', 'Epoetin', 'Darbepoetin',
+  'Filgrastim', 'Pegfilgrastim',
+  // Diabetes / endocrine — additional
+  'Glimepiride', 'Tolbutamide', 'Acarbose', 'Pioglitazone', 'Repaglinide',
+  'Liraglutide', 'Dulaglutide', 'Semaglutide', 'Exenatide',
+  'Canagliflozin', 'Saxagliptin', 'Alogliptin',
+  'Insulin isophane', 'Insulin degludec', 'Insulin glulisine', 'Glucagon',
+  'Liothyronine', 'Propylthiouracil', 'Desmopressin', 'Cabergoline', 'Bromocriptine',
+  'Fludrocortisone', 'Methylprednisolone', 'Triamcinolone', 'Cortisone',
+  'Testosterone', 'Tibolone', 'Raloxifene', 'Teriparatide',
+  'Zoledronic acid', 'Ibandronate', 'Pamidronate', 'Calcitriol', 'Alfacalcidol',
+  // Respiratory — additional
+  'Umeclidinium', 'Glycopyrronium', 'Aclidinium', 'Indacaterol', 'Olodaterol',
+  'Fluticasone furoate', 'Mometasone furoate', 'Sodium cromoglicate', 'Nedocromil',
+  'Roflumilast', 'Aminophylline', 'Carbocisteine', 'Bromhexine', 'Guaifenesin',
+  'Pseudoephedrine', 'Phenylephrine', 'Xylometazoline', 'Oxymetazoline',
+  // Antihistamines — additional
+  'Chlorphenamine', 'Dexchlorpheniramine', 'Cyproheptadine', 'Ketotifen',
+  'Desloratadine', 'Levocetirizine', 'Diphenhydramine', 'Cinnarizine',
+  // GI — additional
+  'Sucralfate', 'Misoprostol', 'Mesalazine', 'Balsalazide',
+  'Prucalopride', 'Linaclotide', 'Docusate', 'Sodium picosulfate', 'Glycerol',
+  'Ispaghula', 'Sterculia', 'Simeticone',
+  'Prochlorperazine', 'Cyclizine', 'Hyoscine butylbromide', 'Hyoscine hydrobromide',
+  'Mebeverine', 'Peppermint oil', 'Ursodeoxycholic acid', 'Pancreatin',
+  'Aprepitant', 'Granisetron', 'Palonosetron',
+  // CNS — additional antidepressants / antipsychotics
+  'Moclobemide', 'Agomelatine', 'Vortioxetine', 'Trazodone', 'Clomipramine',
+  'Imipramine', 'Dosulepin', 'Mianserin', 'Fluvoxamine', 'Desvenlafaxine',
+  'Chlorpromazine', 'Trifluoperazine', 'Fluphenazine', 'Pericyazine',
+  'Zuclopenthixol', 'Flupentixol', 'Amisulpride', 'Paliperidone', 'Lurasidone',
+  'Asenapine', 'Sulpiride', 'Ziprasidone',
+  // CNS — benzodiazepines / hypnotics / stimulants
+  'Clonazepam', 'Nitrazepam', 'Alprazolam', 'Midazolam', 'Chlordiazepoxide',
+  'Zolpidem', 'Buspirone', 'Modafinil', 'Dexamfetamine', 'Lisdexamfetamine',
+  // Epilepsy — additional
+  'Oxcarbazepine', 'Eslicarbazepine', 'Vigabatrin', 'Zonisamide', 'Lacosamide',
+  'Perampanel', 'Ethosuximide', 'Phenobarbital', 'Primidone', 'Clobazam', 'Brivaracetam',
+  // Neurology — Parkinson's / MS / migraine / spasticity
+  'Entacapone', 'Selegiline', 'Rasagiline', 'Amantadine', 'Rotigotine', 'Apomorphine',
+  'Benztropine', 'Procyclidine', 'Trihexyphenidyl', 'Riluzole', 'Tetrabenazine',
+  'Baclofen', 'Tizanidine', 'Dantrolene',
+  'Zolmitriptan', 'Naratriptan', 'Eletriptan', 'Almotriptan', 'Pizotifen',
+  'Ergotamine', 'Galantamine', 'Nimodipine',
+  // Women's health / contraception / HRT
+  'Ethinylestradiol', 'Levonorgestrel', 'Norethisterone', 'Desogestrel',
+  'Gestodene', 'Drospirenone', 'Cyproterone', 'Medroxyprogesterone',
+  'Etonogestrel', 'Estradiol', 'Estriol', 'Conjugated oestrogens',
+  'Ulipristal', 'Clomifene', 'Dydrogesterone', 'Progesterone', 'Danazol',
+  // Urology — additional
+  'Alfuzosin', 'Silodosin', 'Tolterodine', 'Fesoterodine', 'Darifenacin',
+  'Trospium', 'Mirabegron', 'Vardenafil', 'Avanafil',
+  // Eye — additional
+  'Bimatoprost', 'Travoprost', 'Tafluprost', 'Betaxolol', 'Levobunolol',
+  'Brinzolamide', 'Pilocarpine', 'Acetazolamide', 'Apraclonidine',
+  'Ketorolac', 'Olopatadine', 'Fluorometholone', 'Cyclopentolate', 'Atropine',
+  'Tropicamide', 'Hypromellose', 'Carmellose', 'Polyvinyl alcohol',
+  // Ear / nose
+  'Azelastine',
+  // Skin / dermatology — additional
+  'Calcipotriol', 'Tacalcitol', 'Coal tar', 'Dithranol', 'Salicylic acid',
+  'Isotretinoin', 'Tretinoin', 'Adapalene', 'Benzoyl peroxide', 'Azelaic acid',
+  'Ivermectin', 'Permethrin', 'Malathion', 'Crotamiton', 'Podophyllotoxin',
+  'Imiquimod', 'Pimecrolimus', 'Clobetasol',
+  'Fluocinolone', 'Desonide', 'Urea', 'Silver sulfadiazine',
+  'Selenium sulfide',
+  // Gout / rheumatology / immunology — additional
+  'Febuxostat', 'Probenecid', 'Benzbromarone', 'Leflunomide', 'Penicillamine',
+  'Mycophenolate', 'Sirolimus', 'Everolimus', 'Ciclosporin',
+  'Etanercept', 'Adalimumab', 'Infliximab', 'Golimumab', 'Certolizumab',
+  'Tocilizumab', 'Rituximab', 'Abatacept', 'Tofacitinib', 'Baricitinib',
+  'Upadacitinib', 'Secukinumab', 'Ustekinumab', 'Apremilast', 'Anakinra',
+  // Oncology / hormone therapy — additional
+  'Exemestane', 'Fulvestrant', 'Bicalutamide', 'Flutamide', 'Goserelin',
+  'Leuprorelin', 'Triptorelin', 'Abiraterone', 'Enzalutamide',
+  'Imatinib', 'Nilotinib', 'Dasatinib', 'Erlotinib', 'Capecitabine',
+  'Hydroxycarbamide', 'Mercaptopurine', 'Chlorambucil', 'Melphalan',
+  'Temozolomide', 'Lenalidomide', 'Cyclophosphamide',
+  // Anaesthetics / analgesia adjuncts
+  'Lidocaine', 'Lignocaine', 'Bupivacaine', 'Prilocaine', 'Benzocaine',
+  'Tapentadol', 'Ketamine', 'Nefopam',
+  // Emergency / reversal / antidotes
+  'Adrenaline', 'Naloxone', 'Flumazenil', 'Acetylcysteine',
+  // Renal / electrolyte binders
+  'Sevelamer', 'Calcium acetate', 'Lanthanum', 'Cinacalcet',
+  'Sodium polystyrene sulfonate', 'Calcium polystyrene sulfonate',
+  // Vitamins / supplements / OTC
+  'Ascorbic acid', 'Thiamine', 'Pyridoxine', 'Riboflavin', 'Nicotinamide',
+  'Biotin', 'Vitamin E', 'Vitamin A', 'Coenzyme Q10', 'Glucosamine',
+  'Chondroitin', 'Fish oil', 'Zinc', 'Multivitamin', 'Electrolytes',
+  'Oral rehydration salts',
+  // Vaccines commonly given in NZ pharmacies
+  'Influenza vaccine', 'Pneumococcal vaccine', 'Zoster vaccine',
+  'Boostrix', 'Gardasil', 'MMR vaccine', 'COVID-19 vaccine',
 ];
 
 // Lowercase set for fast lookup. Built once at module load.
