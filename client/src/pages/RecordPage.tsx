@@ -1246,11 +1246,12 @@ export function RecordPage() {
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
               {[
                 { met: hasStage, label: 'Step where it happened' },
-                { met: hasSub, label: 'What went wrong' },
+                // "What went wrong" isn't complete until the required drug is
+                // named — same rule as the section-2 tick, so nothing greens early.
+                { met: section2Done, label: 'What went wrong' },
+                ...(drugRequired ? [{ met: !!draft.drugName.trim(), label: 'Drug name' }] : []),
                 { met: hasCaught, label: 'Where caught' },
                 { met: hasFactor, label: 'Factor' },
-                // Only shown when the chosen error type needs a medicine named.
-                ...(drugRequired ? [{ met: !!draft.drugName.trim(), label: 'Drug name' }] : []),
               ].map(({ met, label }) => (
                 <div key={label} className="flex items-center gap-2">
                   <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${met ? 'bg-[#1D9E75]' : 'bg-gray-200'}`}>
