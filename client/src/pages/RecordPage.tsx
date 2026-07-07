@@ -1352,6 +1352,9 @@ function OtherChip({ onAdd, placeholder, max = 80, check }: { onAdd: (text: stri
   // shows under the input. Editing the text clears it so the check
   // re-runs on the next click.
   const [override, setOverride] = useState<string | null>(null);
+  // Patient-info block. Unlike `override`, this can't be saved-anyway — a
+  // chip is shared with the whole team, so it must never carry patient info.
+  const [phiWarn, setPhiWarn] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -1363,6 +1366,14 @@ function OtherChip({ onAdd, placeholder, max = 80, check }: { onAdd: (text: stri
   const submit = async () => {
     const t = text.trim();
     if (!t || saving) return;
+
+    // Hard block on high-confidence patient identifiers (NHI number, DOB,
+    // phone / long digit run). These are never a real category, so we don't
+    // save them or send them to the AI check. The "name" heuristic (two
+    // capitalised words) is skipped here — legit labels like "Special
+    // Authority" would trip it.
+    const idKinds = detectPHI(t).kinds.filter(k => k !== 'name');
+    if (idKinds.length > 0) { setPhiWarn(phiHint(idKinds)); return; }
 
     setSaving(true);
     try {
@@ -1402,6 +1413,7 @@ function OtherChip({ onAdd, placeholder, max = 80, check }: { onAdd: (text: stri
   const handleChange = (v: string) => {
     setText(v.slice(0, max));
     if (override !== null) setOverride(null);
+    if (phiWarn !== null) setPhiWarn(null);
   };
 
   if (!open) {
@@ -1422,7 +1434,7 @@ function OtherChip({ onAdd, placeholder, max = 80, check }: { onAdd: (text: stri
           type="text"
           value={text}
           onChange={e => handleChange(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } if (e.key === 'Escape') { setText(''); setOverride(null); setOpen(false); } }}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } if (e.key === 'Escape') { setText(''); setOverride(null); setPhiWarn(null); setOpen(false); } }}
           placeholder={placeholder}
           maxLength={max}
           disabled={saving}
@@ -1436,14 +1448,20 @@ function OtherChip({ onAdd, placeholder, max = 80, check }: { onAdd: (text: stri
           {saving ? 'Saving…' : (override ? 'Save anyway' : 'Add')}
         </button>
         <button
-          onClick={() => { setText(''); setOverride(null); setOpen(false); }}
+          onClick={() => { setText(''); setOverride(null); setPhiWarn(null); setOpen(false); }}
           disabled={saving}
           className="text-sm text-gray-500 px-2 py-2"
         >
           Cancel
         </button>
       </div>
-      {override && (
+      {phiWarn && (
+        <p className="text-xs text-red-600 px-1 flex items-start gap-1">
+          <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
+          <span>{phiWarn} A saved chip is shared with the whole team, so it can't include patient details.</span>
+        </p>
+      )}
+      {override && !phiWarn && (
         <p className="text-xs text-amber-700 px-1 flex items-start gap-1">
           <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
           <span>"{text.trim()}" {override}. Edit it, or tap "Save anyway" to keep it.</span>

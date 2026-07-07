@@ -4,6 +4,7 @@ import { supabase } from '../config/supabase.js';
 import { env } from '../config/env.js';
 import { authenticate } from '../middleware/auth.js';
 import { isAiEnabledForPharmacy } from '../services/ai.js';
+import { detectPHI } from '../lib/phi.js';
 
 const router = Router();
 router.use(authenticate);
@@ -46,6 +47,14 @@ router.post('/', async (req: Request, res: Response) => {
     const d = createSchema.parse(req.body);
     if (req.auth!.role === 'founder') {
       res.status(403).json({ error: 'Founders cannot add pharmacy chips' });
+      return;
+    }
+    // Defence-in-depth: a chip is shared pharmacy-wide, so it must never carry
+    // patient identifiers. Block the high-confidence kinds (NHI, DOB, phone /
+    // long digit run); the "name" heuristic is skipped as it false-flags legit
+    // labels like "Special Authority". Mirrors the client-side block.
+    if (detectPHI(d.label).kinds.some(k => k !== 'name')) {
+      res.status(400).json({ error: "That looks like patient information — a shared chip can't include a name, NHI, date of birth, or phone number." });
       return;
     }
     // Cap at MAX_PER_SECTION so the form doesn't sprawl.
@@ -107,6 +116,11 @@ const checkSchema = z.object({
 router.post('/check', async (req: Request, res: Response) => {
   try {
     const d = checkSchema.parse(req.body);
+    // Never send patient identifiers to the AI. Reject before the API call.
+    if (detectPHI(d.label).kinds.some(k => k !== 'name')) {
+      res.json({ ok: false, reason: "looks like patient information — a shared chip can't include a name, NHI, date of birth, or phone number" });
+      return;
+    }
     if (!env.anthropicApiKey || !(await isAiEnabledForPharmacy(req.auth!.pharmacyId))) { res.json({ ok: true }); return; }
 
     const sectionDesc: Record<typeof d.section, string> = {
