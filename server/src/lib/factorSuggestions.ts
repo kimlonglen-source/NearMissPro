@@ -27,6 +27,7 @@ export const FACTOR_SUGGESTIONS: Record<string, string> = {
   'Unfamiliar drug': 'Pause and look up the drug in NZULM or the NZ Formulary before dispensing. This may also be a sign that the team needs more training on this drug class.',
   'Usual process skipped': 'Run an SOP refresher with a sign-off log. Add visual workflow reminders at each work station.',
   'Message not passed on': 'Use a standard handover phrase. Write down what was passed on at each handoff (Te Whatu Ora Pharmacy Procedures Manual).',
+  'No obvious reason': 'No single cause stood out. Before assuming a fix is needed, check whether these share a drug, a time of day, or a step — a hidden pattern is often the real cause. If they are genuinely one-offs, "no change this time" is an honest, valid answer.',
 };
 
 /** Get the fix text for a factor name, or a neutral fallback if not in the table. */
@@ -56,6 +57,7 @@ const FACTOR_INLINE_FIXES: Record<string, string> = {
   'Unfamiliar drug': 'pause and look up the drug in NZULM or the NZ Formulary before dispensing',
   'Usual process skipped': 'run an SOP refresher with a sign-off log and add visual workflow reminders at each station',
   'Message not passed on': 'use a standard handover phrase and write down what was passed on',
+  'No obvious reason': 'check whether these share a drug, time of day, or step — a hidden pattern is often the real cause; if they are genuine one-offs, "no change this time" is a valid answer',
 };
 
 export function inlineFixFor(factor: string): string {

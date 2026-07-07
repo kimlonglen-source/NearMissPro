@@ -29,6 +29,10 @@ function nowHM(d: Date = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+// The "nothing stood out" escape for Section 4 — lets the form proceed
+// when no contributing factor applies, without pretending one did.
+const NO_FACTOR = 'No obvious reason';
+
 // Semantic colour for a sub-error chip based on its text. Matches the old style:
 // coral = drug swap, amber = strength/dose, purple = formulation, green = other.
 function subColor(label: string, selected: boolean): string {
@@ -409,8 +413,22 @@ export function RecordPage() {
 
   const toggleFactor = (f: string) => {
     tap();
+    // Picking a real factor clears the "no obvious reason" escape — they
+    // can't both be true.
     update({
-      factors: draft.factors.includes(f) ? draft.factors.filter(x => x !== f) : [...draft.factors, f],
+      factors: draft.factors.includes(f)
+        ? draft.factors.filter(x => x !== f)
+        : [...draft.factors.filter(x => x !== NO_FACTOR), f],
+    });
+  };
+
+  // Escape hatch: a factor is required to submit, but sometimes nothing
+  // stood out. "No obvious reason" satisfies that and is mutually exclusive
+  // with the real factors.
+  const toggleNoFactor = () => {
+    tap();
+    update({
+      factors: draft.factors.includes(NO_FACTOR) ? [] : [NO_FACTOR],
     });
   };
 
@@ -1093,7 +1111,7 @@ export function RecordPage() {
           {openSection === 4 && hasCaught && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3" ref={factorsRef}>
               <p className="text-xs text-gray-500">
-                Tap anything that may have played a part — or leave blank if nothing stands out. Then submit below.
+                Tap anything that may have played a part. If nothing stood out, tap "No obvious reason" below. Then submit.
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {visibleFactors.map(f => (
@@ -1149,6 +1167,19 @@ export function RecordPage() {
                     return true;
                   }}
                 />
+              </div>
+
+              {/* Escape hatch — a factor is required to submit, so this lets
+                  someone proceed honestly when nothing stood out. Always
+                  visible (not hidden behind "More factors…"). */}
+              <div className="pt-1 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-2">Nothing stood out?</p>
+                <button
+                  onClick={toggleNoFactor}
+                  className={`chip text-base font-semibold py-3 px-4 ${draft.factors.includes(NO_FACTOR) ? 'chip-amber' : 'chip-off'}`}
+                >
+                  No obvious reason
+                </button>
               </div>
 
               {!draft.showAnythingElse ? (
