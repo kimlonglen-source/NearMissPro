@@ -834,9 +834,12 @@ export function RecordPage() {
                     />
                   );
                 })}
-                {/* Orphan: selected custom value no longer in either list */}
+                {/* Orphan: selected custom value no longer in either list.
+                    Refinement labels (e.g. "Wrong frequency") count as known —
+                    they live under the "Wrong directions" umbrella and show in
+                    the refine row, not as loose custom chips. */}
                 {draft.errorTypes
-                  .filter(et => !(stage?.subErrors.some(s => s.label === et)) && !customChips.error_type.some(c => c.label === et))
+                  .filter(et => !(stage?.subErrors.some(s => s.label === et || s.refinements?.includes(et))) && !customChips.error_type.some(c => c.label === et))
                   .map(et => (
                     <CustomChip
                       key={et}
@@ -1002,7 +1005,9 @@ export function RecordPage() {
                     />
                   )}
                   <p className="text-[11px] text-gray-400 italic">
-                    Drug name required (helps the report spot patterns). The other "intended → given" details are optional but recommended.
+                    {triggers.drug || triggers.strength || triggers.quantity || triggers.formulation
+                      ? 'Drug name required — it helps the report spot patterns. The "what was meant → what was given" boxes are optional but recommended.'
+                      : 'Drug name required — it helps the report group near misses by medicine so patterns show up.'}
                   </p>
                 </div>
               )}
