@@ -1246,9 +1246,10 @@ export function RecordPage() {
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
               {[
                 { met: hasStage, label: 'Step where it happened' },
-                // "What went wrong" isn't complete until the required drug is
-                // named — same rule as the section-2 tick, so nothing greens early.
-                { met: section2Done, label: 'What went wrong' },
+                // Ticks as soon as an error type is picked. The required drug
+                // is tracked on its own "Drug name" line just below, so this
+                // step-by-step feedback stays honest without hiding the drug.
+                { met: hasSub, label: 'What went wrong' },
                 ...(drugRequired ? [{ met: !!draft.drugName.trim(), label: 'Drug name' }] : []),
                 { met: hasCaught, label: 'Where caught' },
                 { met: hasFactor, label: 'Factor' },
