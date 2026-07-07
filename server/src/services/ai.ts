@@ -290,7 +290,10 @@ export async function generateRecommendation(incident: IncidentData): Promise<st
             where_caught: incident.where_caught,
             time_of_day: incident.time_of_day,
             factors: incident.factors,
-            notes: incident.notes,
+            // Free-text notes are deliberately NOT sent to the AI. It's the one
+            // box a staff member could accidentally type patient info into, and
+            // the structured fields above are what actually drive the advice.
+            // The manager still sees the note in review and on the report.
             prior_same_drug_count: drugCount,
             prior_same_factor_count: factorCounts,
             other_text: incident.other_entries?.map(e => e.text).join('; '),
