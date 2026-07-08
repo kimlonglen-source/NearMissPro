@@ -11,22 +11,27 @@ Drug examples (all real NZ brands/generics):
 
 ---
 
-**Subject:** What NearMissPro does for your pharmacy
+**Subject:** Near-miss reporting shouldn't be this much work
 
 Kia ora pharmacy team,
 
 I'm Kim, a NZ pharmacist. I've built something I'd love your honest take on.
 
-You'll know the ones — **Allergron** picked instead of **Allersoothe**, or a **fluoxetine** blister sheet instead of **tramadol**. Caught at the check, sorted, everyone moves on. But the logbook rarely helps us stop the next one — and that same look-alike quietly turns up again.
+You'll know the ones — **Allergron** picked instead of **Allersoothe**, or a **fluoxetine** blister sheet instead of **tramadol**. We catch these every day. The problem isn't catching them — it's everything after:
 
-NearMissPro makes the whole thing easy enough that your team will actually do it:
+- **Recording it** means stopping mid-queue to find the logbook and write it up. So half of them never get logged.
+- **Reviewing it** means someone making sense of a page of scribbles at month's end. Which drug? How many times?
+- **Reporting it** means turning all that into a write-up for the team meeting.
 
-- **Log one in a few taps** — no writing up, no names, no patient details.
-- **Anonymous, no blame** — so staff actually report.
-- **Spots the repeats** — the same mix-up three times gets flagged, not forgotten.
-- **Warns on risky drugs** — warfarin, insulin, methotrexate, opioids.
-- **Writes your monthly report for you** — a ready agenda for the team meeting, and it shows whether last month's fix actually cut the near misses.
-- **Inspection-ready** — everything logged, the CQI record Pharmacy Council looks for.
+Three chores, all landing on someone already flat out. No wonder it slips — and the same look-alike quietly turns up again.
+
+NearMissPro takes the work out of all three:
+
+- **Log one in a few taps** at the bench — no writing up.
+- **The review adds itself up** — repeats get flagged for you, not forgotten.
+- **The monthly report writes itself** — a ready agenda for the meeting, and it even shows whether last month's fix cut the near misses.
+
+Less friction means more get logged — and that's the whole point, because the one you don't record is the pattern you don't catch. (No blame, no names, no patient details, either.)
 
 It's still being built. Everyone gets the first 3 months free, and I'm after a few NZ pharmacies for an early look.
 
