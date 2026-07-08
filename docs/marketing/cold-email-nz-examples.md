@@ -7,7 +7,7 @@ Tally link, same no-blame framing, same easy opt-out.
 Drug examples used (all real NZ brands/generics):
 - Allergron (nortriptyline) vs Allersoothe (promethazine) — a genuine NZ
   sound-alike / look-alike brand pair, a shelf apart.
-- Fluoxetine vs tramadol — near-identical-looking capsules; an easy
+- Fluoxetine vs tramadol — near-identical-looking blister sheets; an easy
   look-alike pick when you're moving fast.
 
 ---
@@ -18,7 +18,7 @@ Kia ora pharmacy team,
 
 I'm Kim, a NZ pharmacist. I'm reaching out to a few community pharmacies because I've built something I think could genuinely help — and I'd really value your honest take.
 
-You'll know this one. A script comes in and someone reaches for **Allergron** (nortriptyline) when it should've been **Allersoothe** — two names a syllable apart, sitting a shelf apart. Or a **fluoxetine** capsule gets counted out instead of **tramadol** — two capsules that look almost the same in the tray. Caught at the check, sorted, everyone moves on.
+You'll know this one. A script comes in and someone reaches for **Allergron** (nortriptyline) when it should've been **Allersoothe** — two names a syllable apart, sitting a shelf apart. Or a blister sheet of **fluoxetine** gets picked instead of **tramadol** — two strips that look almost the same. Caught at the check, sorted, everyone moves on.
 
 We catch these every day. But the logbook rarely helps us stop the next one — by the time that same look-alike turns up again a few weeks later, no one's lined them up to notice it's the third time.
 
