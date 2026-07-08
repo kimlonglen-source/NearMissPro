@@ -17,33 +17,20 @@ Kia ora pharmacy team,
 
 I'm Kim, a NZ pharmacist. I've built something I'd love your honest take on.
 
-You'll know the ones — **Allergron** reached for instead of **Allersoothe**, or a **fluoxetine** blister sheet picked instead of **tramadol**. Caught at the check, sorted, everyone moves on. But the logbook rarely helps us stop the next one, and that same look-alike quietly turns up again a few weeks later.
+You'll know the ones — **Allergron** picked instead of **Allersoothe**, or a **fluoxetine** blister sheet instead of **tramadol**. Caught at the check, sorted, everyone moves on. But the logbook rarely helps us stop the next one — and that same look-alike quietly turns up again.
 
-NearMissPro takes the whole job — logging them, reviewing them, and writing them up — and makes it easy enough that your team will actually do it. Here's what it does for you:
+NearMissPro makes the whole thing easy enough that your team will actually do it:
 
-**1. Logging is quick.** A few taps at the bench — where it happened, what went wrong, where it was caught, what was going on at the time. No writing it up later. Drug names fill in as you type.
+- **Log one in a few taps** — no writing up, no names, no patient details.
+- **Anonymous, no blame** — so staff actually report.
+- **Spots the repeats** — the same mix-up three times gets flagged, not forgotten.
+- **Warns on risky drugs** — warfarin, insulin, methotrexate, opioids.
+- **Writes your monthly report for you** — a ready agenda for the team meeting, and it shows whether last month's fix actually cut the near misses.
+- **Inspection-ready** — everything logged, the CQI record Pharmacy Council looks for.
 
-**2. It's anonymous.** Your team sees *what* happened, not *who* logged it. People report a lot more when there's no blame — and you can't fix what you never hear about.
+It's still being built. Everyone gets the first 3 months free, and I'm after a few NZ pharmacies for an early look.
 
-**3. No patient details.** There's nowhere to put a name or NHI, and if someone types one in by accident, the app stops it.
-
-**4. It warns you about risky drugs.** Warfarin, insulin, methotrexate, opioids — the ones that matter most get a flag.
-
-**5. It spots the repeats.** If the same mix-up happens two or three times, it tells you. That repeat is where the next real error is hiding.
-
-**6. Reviewing is fast.** You go down the list and decide what to do about each one. It even suggests a fix for each — and you can switch that off if you'd rather.
-
-**7. The monthly report writes itself.** A plain summary, the near misses grouped together, and a ready list of changes to agree at your team meeting. You just talk it through and sign it off.
-
-**8. It shows if your fix worked.** It compares this month to last, so you can see if the change you made — moving a stock, adding a label — actually cut the near misses. That's exactly what Pharmacy Council wants to see.
-
-**9. It's ready for an inspection.** Everything's logged, and the monthly report is the record an inspector asks for.
-
-It's still being built. Everyone gets the first 3 months free, and I'm after a few NZ pharmacies to have an early look and tell me honestly what works and what doesn't.
-
-Want a look when it's ready? Join the waitlist: https://tally.so/r/D4YgQl — or just reply to this email and I'll be in touch.
-
-Not for you? No worries at all — reply "no thanks" and I won't email again.
+Want a look when it's ready? Join the waitlist: https://tally.so/r/D4YgQl — or just reply and I'll be in touch. Not for you? Reply "no thanks" and I won't email again.
 
 Ngā mihi,
 Kim
