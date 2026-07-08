@@ -19,29 +19,29 @@ I'm Kim, a NZ pharmacist. I've built something I'd love your honest take on.
 
 You'll know the ones — **Allergron** reached for instead of **Allersoothe**, or a **fluoxetine** blister sheet picked instead of **tramadol**. Caught at the check, sorted, everyone moves on. But the logbook rarely helps us stop the next one, and that same look-alike quietly turns up again a few weeks later.
 
-NearMissPro takes the whole near-miss process — capture, review, report, and proving your changes worked — and makes it something your team will actually use. Here's what it does for you:
+NearMissPro takes the whole job — logging them, reviewing them, and writing them up — and makes it easy enough that your team will actually do it. Here's what it does for you:
 
-**1. Logging is quick — a handful of taps, well under a minute.** At the bench you tap the step it happened, what went wrong, where it was caught, and what was going on at the time. No forms, nothing to write up later. Drug names auto-complete from a NZ medicine list and your own history, so spelling stays consistent.
+**1. Logging is quick.** A few taps at the bench — where it happened, what went wrong, where it was caught, what was going on at the time. No writing it up later. Drug names fill in as you type.
 
-**2. It's anonymous and no-blame.** Your team sees *what* happened, not *who* logged it. That one thing lifts how much staff actually report — and you can't fix what you never hear about.
+**2. It's anonymous.** Your team sees *what* happened, not *who* logged it. People report a lot more when there's no blame — and you can't fix what you never hear about.
 
-**3. No patient details, ever.** There are no name or NHI fields, and if someone accidentally types one into the notes, the app flags it and won't let it through.
+**3. No patient details.** There's nowhere to put a name or NHI, and if someone types one in by accident, the app stops it.
 
-**4. It flags high-risk drugs.** Warfarin, insulin, methotrexate, opioids and the like get a warning, so the ones that matter most stand out.
+**4. It warns you about risky drugs.** Warfarin, insulin, methotrexate, opioids — the ones that matter most get a flag.
 
-**5. It spots the patterns you'd otherwise miss.** When the same drug or look-alike turns up two or three times, it surfaces it — mid-month, not buried. That repeat is exactly where the next real error is hiding.
+**5. It spots the repeats.** If the same mix-up happens two or three times, it tells you. That repeat is where the next real error is hiding.
 
-**6. The manager review is quick.** At review time you go down the list and decide what to do about each one — and the app offers a practical, NZ-grounded suggestion for each (you can turn that off entirely if you'd rather not use it).
+**6. Reviewing is fast.** You go down the list and decide what to do about each one. It even suggests a fix for each — and you can switch that off if you'd rather.
 
-**7. The monthly report writes itself.** A plain-English summary, the near misses grouped, and a ready-made agenda of system changes to agree at the team meeting. You just close the loop and sign it off.
+**7. The monthly report writes itself.** A plain summary, the near misses grouped together, and a ready list of changes to agree at your team meeting. You just talk it through and sign it off.
 
-**8. It shows whether your fixes actually worked.** It compares this month to last, so you can see if moving that stock or adding that label really brought the near misses down. That's the continuous-improvement loop Pharmacy Council looks for — captured for you, not scrambled together the night before.
+**8. It shows if your fix worked.** It compares this month to last, so you can see if the change you made — moving a stock, adding a label — actually cut the near misses. That's exactly what Pharmacy Council wants to see.
 
-**9. It's inspection-ready.** Every action is logged, and the monthly report is the CQI record an inspector expects to see.
+**9. It's ready for an inspection.** Everything's logged, and the monthly report is the record an inspector asks for.
 
-It's still in development. Everyone gets the first 3 months free, and I'm after a few NZ pharmacies to have an early look and tell me honestly what works and what doesn't.
+It's still being built. Everyone gets the first 3 months free, and I'm after a few NZ pharmacies to have an early look and tell me honestly what works and what doesn't.
 
-Keen for a look when it's ready? Join the waitlist: https://tally.so/r/D4YgQl — or just reply to this email and I'll be in touch.
+Want a look when it's ready? Join the waitlist: https://tally.so/r/D4YgQl — or just reply to this email and I'll be in touch.
 
 Not for you? No worries at all — reply "no thanks" and I won't email again.
 
