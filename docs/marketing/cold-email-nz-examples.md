@@ -21,7 +21,7 @@ You'll know the ones — **Allergron** reached for instead of **Allersoothe**, o
 
 NearMissPro takes the whole near-miss process — capture, review, report, and proving your changes worked — and makes it something your team will actually use. Here's what it does for you:
 
-**1. Logging takes about ten seconds.** A few taps at the bench — the step it happened, what went wrong, where it was caught, what was going on at the time. No forms, nothing to write up later. Drug names auto-complete from a NZ medicine list and your own history, so spelling stays consistent.
+**1. Logging is quick — a handful of taps, well under a minute.** At the bench you tap the step it happened, what went wrong, where it was caught, and what was going on at the time. No forms, nothing to write up later. Drug names auto-complete from a NZ medicine list and your own history, so spelling stays consistent.
 
 **2. It's anonymous and no-blame.** Your team sees *what* happened, not *who* logged it. That one thing lifts how much staff actually report — and you can't fix what you never hear about.
 

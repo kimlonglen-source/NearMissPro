@@ -23,7 +23,7 @@ So the near miss vanishes. No record, no pattern, nothing to learn from. Not bec
 
 The problem was never that pharmacies don't care about near misses. It's that recording them properly costs time you don't have at the bench.
 
-What if logging one took ten seconds — a few taps, no paragraph, no name attached?
+What if logging one took under a minute — a few taps, no paragraph, no name attached?
 
 That's the first thing I set out to fix.
 

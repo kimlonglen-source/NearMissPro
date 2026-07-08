@@ -18,7 +18,7 @@ Three separate jobs, all fiddly, all landing on someone already flat out. No won
 
 But here's the thing — the whole point of that chore is to stop the next error reaching a patient. That's not admin. That's the job.
 
-So if there were a way to make recording take ten seconds, have the review add itself up for you, and turn the month into a ready-to-read report — wouldn't that be worth a look? Not to add another system. To make the one thing that actually protects patients something people will actually use.
+So if there were a way to make recording take a few taps, have the review add itself up for you, and turn the month into a ready-to-read report — wouldn't that be worth a look? Not to add another system. To make the one thing that actually protects patients something people will actually use.
 
 That's what I've been building. Early look here if it's useful: https://tally.so/r/D4YgQl
 
