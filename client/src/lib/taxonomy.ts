@@ -66,7 +66,7 @@ export const STAGES: Stage[] = [
         label: 'Wrong drug picked',
         common: true,
         refineTitle: 'What caused the mix-up?',
-        refinements: ['Wrong drug \u2014 look-alike packaging', 'Wrong drug \u2014 sound-alike name'],
+        refinements: ['Wrong drug \u2014 look-alike packaging', 'Wrong drug \u2014 look-alike tablet/capsule', 'Wrong drug \u2014 sound-alike name'],
       },
       { label: 'Wrong strength picked', common: true },
       { label: 'Wrong formulation picked', common: true },

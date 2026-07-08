@@ -76,6 +76,11 @@ function nzStubRecommendation(incident: IncidentData): string {
   const hasAny = (kw: string[]) => errors.some(e => kw.some(k => e.includes(k)));
   const drugLabel = drug || 'this medicine';
 
+  // Look-alike tablets/capsules — the pills themselves look alike (not the box)
+  if (hasAny(['look-alike tablet', 'look-alike capsule'])) {
+    return `${drugLabel} and the drug it was confused with look alike once out of the pack. Keep the two stock bottles well apart and clearly labelled, don't rely on appearance alone at the check, and use a second-pharmacist check for this pair. A shelf note flagging the look-alike helps (Medsafe LASA guidance).${factorNote}`;
+  }
+
   // Look-alike / sound-alike — Medsafe & NZ LASA guidance
   if (hasAny(['look-alike'])) {
     return `Move ${drugLabel} away from look-alike items on the shelf. Use TALLman lettering — write the unique letters BIG (e.g. amLODipine vs amIOdarone). Stick a bright warning label on each, and have a second pharmacist check picking (Medsafe LASA guidance).${factorNote}`;
