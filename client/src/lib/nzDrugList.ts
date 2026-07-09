@@ -238,6 +238,8 @@ export const NZ_DRUG_LIST: string[] = [
   // Respiratory
   'Ventolin', 'Bricanyl', 'Atrovent', 'Seretide', 'Symbicort', 'Flixotide',
   'Serevent', 'Pulmicort', 'Spiriva',
+  'Beclazone', 'Qvar', 'Breo', 'Anoro', 'Trelegy', 'Ultibro', 'Spiolto',
+  'Onbrez', 'Seebri', 'Incruse', 'Relvar', 'Oxis', 'Foradil', 'Vannair',
   // GI
   'Losec', 'Somac', 'Nexium', 'Zoton', 'Motilium', 'Maxolon', 'Buscopan',
   'Movicol', 'Coloxyl', 'Laxsol', 'Dulcolax',
