@@ -972,7 +972,7 @@ export function RecordPage() {
                         value={draft.drugName}
                         onChange={e => update({ drugName: e.target.value })}
                         list="drug-suggestions"
-                        placeholder="e.g. Atorvastatin"
+                        placeholder="Select from the list or type — e.g. Atorvastatin"
                         className="input-field text-sm py-2 w-full"
                         autoComplete="off"
                       />
@@ -1006,7 +1006,7 @@ export function RecordPage() {
                         value={draft.dispensedDrug}
                         onChange={e => update({ dispensedDrug: e.target.value })}
                         list="drug-suggestions"
-                        placeholder="e.g. Warfarin"
+                        placeholder="Select or type — e.g. Warfarin"
                         className="input-field text-sm py-2 w-full"
                         autoComplete="off"
                       />
