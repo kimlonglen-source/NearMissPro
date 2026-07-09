@@ -219,6 +219,7 @@ export const DRUG_SUGGESTIONS = [
 // can trigger for one sub-error.
 export function triggersFor(subLabel: string): {
   drug: boolean;
+  brand: boolean;
   strength: boolean;
   quantity: boolean;
   formulation: boolean;
@@ -228,12 +229,15 @@ export function triggersFor(subLabel: string): {
   return {
     // The two-box "prescribed drug → drug given in error" only makes sense
     // when a DIFFERENT drug was involved. Not for "wrong brand" (same drug,
-    // different brand) — that gets the single drug box below instead.
+    // different brand) — that gets its own brand → brand box instead.
     drug:
       l.includes('wrong drug') ||
       l.includes('look-alike') ||
       l.includes('sound-alike') ||
       l.includes('drug entered'),
+    // Wrong brand of the SAME drug — capture the intended brand → the brand
+    // given (a two-box, like the drug swap, but for brands).
+    brand: l.includes('brand'),
     // "Mixed strengths in same container" has no single wrong strength to
     // compare, so it skips the strength box and just names the drug.
     strength: l.includes('strength') && !l.includes('mixed'),

@@ -246,10 +246,11 @@ export function RecordPage() {
 
   // Layer 3 triggers — union across all selected sub-errors.
   const triggers = useMemo(() => {
-    const acc = { drug: false, strength: false, quantity: false, formulation: false, interaction: false };
+    const acc = { drug: false, brand: false, strength: false, quantity: false, formulation: false, interaction: false };
     for (const sub of draft.errorTypes) {
       const t = triggersFor(sub);
       acc.drug ||= t.drug;
+      acc.brand ||= t.brand;
       acc.strength ||= t.strength;
       acc.quantity ||= t.quantity;
       acc.formulation ||= t.formulation;
@@ -946,7 +947,7 @@ export function RecordPage() {
                   when a trigger fired, so cases like "Wrong directions"
                   and "Wrong pack size" never asked for the drug, which
                   meant headlines on the report dropped the medicine. */}
-              {(drugRequired || triggers.drug || triggers.strength || triggers.quantity || triggers.formulation || triggers.interaction) && (
+              {(drugRequired || triggers.drug || triggers.brand || triggers.strength || triggers.quantity || triggers.formulation || triggers.interaction) && (
                 <div className="space-y-3 pt-2 border-t border-gray-100">
                   {highRisk && (
                     <div className="rounded-xl border-2 border-[#C84B4B] bg-[#FCEBEB] p-3">
@@ -961,7 +962,7 @@ export function RecordPage() {
                       formulation of the right drug). The "wrong drug" path
                       below captures both prescribed + dispensed drugs in its
                       own intended→given box so it doesn't need this. */}
-                  {!triggers.drug && (
+                  {!triggers.drug && !triggers.brand && (
                     <div className="rounded-xl p-3 border-[1.5px] border-blue-200 bg-blue-50">
                       <p className="text-xs font-semibold text-blue-700 mb-2">
                         Drug <span className="text-red-600">*</span>
@@ -1036,6 +1037,22 @@ export function RecordPage() {
                       )}
                     </>
                   )}
+                  {/* Wrong brand of the SAME drug — capture intended brand →
+                      brand given. Reuses the drug-name fields (a brand swap is
+                      the medicine identity for the report). */}
+                  {triggers.brand && (
+                    <IntendedGiven
+                      label="Brand" colour="coral"
+                      labelRequired
+                      a={draft.drugName} onA={v => update({ drugName: v })}
+                      b={draft.dispensedDrug} onB={v => update({ dispensedDrug: v })}
+                      aHint="Prescribed brand (e.g. Arrow-Atorvastatin)"
+                      bHint="Brand given (e.g. Teva-Atorvastatin)"
+                      datalistId="drug-suggestions"
+                      aPhi={phi.drugName}
+                      bPhi={phi.dispensedDrug}
+                    />
+                  )}
                   {triggers.strength && (
                     <IntendedGiven
                       label="Strength" colour="amber"
@@ -1061,7 +1078,7 @@ export function RecordPage() {
                     />
                   )}
                   <p className="text-[11px] text-gray-400 italic">
-                    {triggers.drug || triggers.strength || triggers.quantity || triggers.formulation
+                    {triggers.drug || triggers.brand || triggers.strength || triggers.quantity || triggers.formulation
                       ? 'Drug name required — it helps the report spot patterns. The "what was meant → what was given" boxes are optional but recommended.'
                       : 'Drug name required — it helps the report group near misses by medicine so patterns show up.'}
                   </p>
