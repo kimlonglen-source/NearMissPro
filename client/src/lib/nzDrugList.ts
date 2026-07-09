@@ -215,6 +215,14 @@ export const NZ_DRUG_LIST: string[] = [
   'Influenza vaccine', 'Pneumococcal vaccine', 'Zoster vaccine',
   'Boostrix', 'Gardasil', 'MMR vaccine', 'COVID-19 vaccine',
 
+  // ── More common NZ generics (gap-fill) ─────────────────────────────
+  // Additional NSAIDs
+  'Tenoxicam', 'Meloxicam', 'Piroxicam', 'Celecoxib', 'Etoricoxib',
+  'Ketoprofen', 'Mefenamic acid', 'Indomethacin', 'Sulindac',
+  // Other commonly-dispensed items that were missing
+  'Betahistine', 'Orphenadrine', 'Dipyridamole', 'Hydroxyzine', 'Doxylamine',
+  'Chlorhexidine', 'Sodium bicarbonate', 'Glucose', 'Potassium citrate',
+
   // ── Common NZ brand names ──────────────────────────────────────────
   // Staff often type the brand rather than the generic. This is a starter
   // set of the most-dispensed / OTC brands — NOT exhaustive (Pharmac brands
@@ -225,6 +233,8 @@ export const NZ_DRUG_LIST: string[] = [
   'Panadol', 'Nurofen', 'Voltaren', 'Telfast', 'Claratyne', 'Zyrtec',
   'Gaviscon', 'Mylanta', 'Berocca', 'Codral', 'Lemsip', 'Canesten',
   'Lamisil', 'Daktarin', 'Betadine', 'Panadeine',
+  // NSAID brands
+  'Tilcotil', 'Mobic', 'Celebrex', 'Arcoxia', 'Ponstan',
   // Respiratory
   'Ventolin', 'Bricanyl', 'Atrovent', 'Seretide', 'Symbicort', 'Flixotide',
   'Serevent', 'Pulmicort', 'Spiriva',
