@@ -6,6 +6,7 @@ import { LiveHotspotBanner } from '../components/LiveHotspotBanner';
 import { summarizeIncident, narrateIncidentContext } from '../lib/incidentSummary';
 import { checkHighRisk } from '../lib/highRiskDrugs';
 import { usePatternMap, findPattern } from '../lib/usePatternMap';
+import { useRegressions, findRegression, RegressionNote } from '../lib/useRegressions';
 import { CheckCircle2, AlertTriangle, Clock, ChevronDown, ChevronUp, Edit3, MessageSquare, XCircle, Loader2, FileText, Calendar, Sparkles } from 'lucide-react';
 
 interface Rec { id: string; ai_text: string; manager_outcome: string | null; manager_text?: string; private_note?: string; }
@@ -44,6 +45,7 @@ export function DashboardPage() {
   // action AS the recommendation (one source of truth across the
   // banner, the incident, and the report).
   const { map: patternMap } = usePatternMap(dateFrom, dateTo);
+  const regressionMap = useRegressions(dateFrom, dateTo);
   const [periodSet, setPeriodSet] = useState(false);
 
   // Trend strip — independent of review period, always "last N weeks"
@@ -317,6 +319,7 @@ export function DashboardPage() {
                   {/* One-sentence summary — composes the story from all fields
                       so the manager can read a queue of 20 incidents quickly. */}
                   <SummarySentence inc={inc} />
+                  {(() => { const rg = findRegression(regressionMap, inc.drug_name, inc.error_types); return rg ? <RegressionNote info={rg} /> : null; })()}
                   {inc.notes && <p className="text-gray-500 text-xs italic">{inc.notes}</p>}
                   {/* Only worth a line when the entry was backdated — the
                       narrative sentence above already carries the date. */}
