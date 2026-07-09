@@ -270,6 +270,10 @@ class Api {
     const q = new URLSearchParams({ from, to }).toString();
     return this.req<PeriodComparisonData>(`/incidents/stats/period-comparison?${q}`);
   }
+  getRegressions(from: string, to: string) {
+    const q = new URLSearchParams({ from, to }).toString();
+    return this.req<{ lookbackMonths: number; regressions: { drug: string; errorType: string; count: number; lastActionAt: string; lastActionNote: string }[] }>(`/incidents/stats/regressions?${q}`);
+  }
   getFactorAnalysis(from: string, to: string) {
     const q = new URLSearchParams({ from, to }).toString();
     return this.req<FactorAnalysisData>(`/incidents/stats/factor-analysis?${q}`);

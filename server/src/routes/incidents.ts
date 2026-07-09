@@ -7,6 +7,7 @@ import { normalizeDrugName } from '../lib/normalize.js';
 import { FACTOR_SUGGESTIONS } from '../lib/factorSuggestions.js';
 import { lockedPeriodCoveringDate } from '../lib/lockedPeriod.js';
 import { comparisonBaseline } from '../lib/previousPeriod.js';
+import { detectRegressions, REGRESSION_LOOKBACK_MONTHS } from '../services/regressions.js';
 
 const router = Router();
 router.use(authenticate);
@@ -363,6 +364,27 @@ router.get('/stats/period-comparison', requireRole('manager', 'founder'), async 
     });
   } catch (err) {
     console.error('[incidents] period-comparison failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// ── Regressions — previously-fixed patterns that have come back ──────
+// A pattern that was actioned, went quiet, and has returned this period.
+// The month-to-month follow-up can't see these (once at 0 they drop off),
+// so this looks back REGRESSION_LOOKBACK_MONTHS. The AI alternative fix is
+// fetched separately by the client via /interventions/suggest (which
+// already avoids repeating what's been tried).
+router.get('/stats/regressions', requireRole('manager', 'founder'), async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const defaultTo = now.toISOString().slice(0, 10);
+    const fromStr = (typeof req.query.from === 'string' && req.query.from) || defaultFrom;
+    const toStr = (typeof req.query.to === 'string' && req.query.to) || defaultTo;
+    const regressions = await detectRegressions(req.auth!.pharmacyId, fromStr, toStr);
+    res.json({ lookbackMonths: REGRESSION_LOOKBACK_MONTHS, regressions });
+  } catch (err) {
+    console.error('[incidents] regressions failed:', err);
     res.status(500).json({ error: 'Failed' });
   }
 });

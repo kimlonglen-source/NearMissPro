@@ -353,6 +353,10 @@ export function ReportPage() {
             this section now owns the whole look-back story. */}
         <FollowUpFromLastReview from={report.period_start} to={report.period_end} />
 
+        {/* Returned problems — previously fixed, now back. The fix didn't
+            hold, so this flags it and asks the AI for a DIFFERENT fix. */}
+        <ReturnedProblems from={report.period_start} to={report.period_end} />
+
         {/* Near misses this period — every item shows two things in the
             same fixed shape: WHAT HAPPENED and WHAT WE'RE DOING. That's
             the whole point of the meeting: staff hear each event and
@@ -614,6 +618,72 @@ function FollowUpFromLastReview({ from, to }: { from: string; to: string }) {
         </div>
       )}
     </>
+  );
+}
+
+// ── Returned problems — a fix that didn't hold ───────────────────────
+// A pattern that was actioned, went quiet, and has come back this period.
+// For each, we show the earlier action + when, and ask the AI (via the
+// same "suggest" endpoint the Log-Action modal uses) for a DIFFERENT fix,
+// since the previous one clearly didn't work.
+function ReturnedProblems({ from, to }: { from: string; to: string }) {
+  const [regressions, setRegressions] = useState<{ drug: string; errorType: string; count: number; lastActionAt: string; lastActionNote: string }[]>([]);
+  const [alternatives, setAlternatives] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getRegressions(from, to)
+      .then(async r => {
+        if (cancelled) return;
+        setRegressions(r.regressions);
+        // Fetch a fresh (non-repeating) fix for each returned problem.
+        const alts: Record<string, string> = {};
+        await Promise.all(r.regressions.map(async reg => {
+          try {
+            const s = await api.suggestIntervention(reg.drug || reg.errorType, reg.errorType);
+            alts[`${reg.drug}|${reg.errorType}`] = s.suggestion;
+          } catch { /* leave blank */ }
+        }));
+        if (!cancelled) setAlternatives(alts);
+      })
+      .catch(() => { if (!cancelled) setRegressions([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [from, to]);
+
+  if (loading || regressions.length === 0) return null;
+  const fmt = (s: string) => new Date(s).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  return (
+    <div className="mb-6 rounded-xl border-2 border-[#C84B4B] bg-[#FCEBEB] p-4">
+      <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#791F1F] mb-1">⚠ Fixes that didn't hold</p>
+      <p className="text-xs text-[#791F1F] mb-3">
+        These were fixed before, went quiet, and have come back. The earlier change didn't stick — try something different.
+      </p>
+      <ul className="space-y-3">
+        {regressions.map(reg => {
+          const alt = alternatives[`${reg.drug}|${reg.errorType}`];
+          return (
+            <li key={`${reg.drug}|${reg.errorType}`} className="text-sm">
+              <p className="font-semibold text-gray-900">
+                {reg.drug || 'No drug recorded'} — {reg.errorType.toLowerCase()}
+                <span className="font-normal text-[#791F1F]"> · back {reg.count}× this period</span>
+              </p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Fixed {fmt(reg.lastActionAt)}: "{reg.lastActionNote}" — and it's returned.
+              </p>
+              {alt && (
+                <p className="text-xs text-[#0F6E56] mt-1">
+                  <span className="font-semibold">Try instead:</span> {alt}
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-[10px] text-gray-500 italic mt-3">Advisory only. The pharmacist-in-charge makes all decisions.</p>
+    </div>
   );
 }
 
