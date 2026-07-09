@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { detectPHI, phiHint, PhiKind } from '../lib/phi';
 import {
   STAGES, WHERE_CAUGHT, CAUGHT_DEFAULT_BY_STAGE, FACTORS,
-  FACTORS_DEFAULT_VISIBLE, FORMULATIONS, triggersFor, isNonDrugError,
+  FACTORS_DEFAULT_VISIBLE, FORMULATIONS, triggersFor, isNonDrugError, isDrugOptional,
 } from '../lib/taxonomy';
 import type { SubError } from '../lib/taxonomy';
 import { NZ_DRUG_LIST, isKnownNzDrug, readDrugHistory, recordDrugInHistory } from '../lib/nzDrugList';
@@ -270,11 +270,12 @@ export function RecordPage() {
 
   // True when the chosen error type implies a specific medicine — drug name
   // becomes required so reports and pattern matching can group properly.
-  // Default to required as soon as an error type is picked; only relaxed when
-  // EVERY selected error type is genuinely not about a medicine (wrong
-  // patient, NHI mismatch, register not signed, bag mix-up, etc).
+  // Default to required as soon as an error type is picked; relaxed when
+  // EVERY selected error type is either genuinely not about a medicine (wrong
+  // patient, NHI, bag mix-up, etc) or about a number/quantity where the drug
+  // is optional context (wrong quantity entered).
   const drugRequired = draft.errorTypes.length > 0
-    && !draft.errorTypes.every(e => isNonDrugError(e));
+    && !draft.errorTypes.every(e => isNonDrugError(e) || isDrugOptional(e));
 
   // Autocomplete suggestions: pharmacy's own drug history first (encourages
   // canonical spelling propagation), then the bundled NZ list as fallback.
@@ -974,7 +975,9 @@ export function RecordPage() {
                   {!triggers.drug && !triggers.brand && (
                     <div className="rounded-xl p-3 border-[1.5px] border-blue-200 bg-blue-50">
                       <p className="text-xs font-semibold text-blue-700 mb-2">
-                        Drug <span className="text-red-600">*</span>
+                        Drug {drugRequired
+                          ? <span className="text-red-600">*</span>
+                          : <span className="font-normal text-blue-400">(optional)</span>}
                       </p>
                       <input
                         type="text"
@@ -1087,7 +1090,9 @@ export function RecordPage() {
                     />
                   )}
                   <p className="text-[11px] text-gray-400 italic">
-                    {triggers.drug || triggers.brand || triggers.strength || triggers.quantity || triggers.formulation
+                    {!drugRequired
+                      ? 'This is about the quantity, not the drug — so the drug is optional. Add it only if it\'s worth noting (e.g. a controlled drug). The "what was meant → what was given" numbers are what matter here.'
+                      : triggers.drug || triggers.brand || triggers.strength || triggers.formulation
                       ? 'Drug name required — it helps the report spot patterns. The "what was meant → what was given" boxes are optional but recommended.'
                       : 'Drug name required — it helps the report group near misses by medicine so patterns show up.'}
                   </p>

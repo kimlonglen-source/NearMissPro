@@ -287,3 +287,12 @@ export function isNonDrugError(subLabel: string): boolean {
     l.includes('e-prescription')
   );
 }
+
+// A few errors are about the prescription and a NUMBER — the quantity or
+// days-supply — not the drug's identity. The fix ("read the quantity back
+// against the script") is the same whatever the drug is, so the drug is
+// useful context but NOT required. The drug field still shows, just optional.
+export function isDrugOptional(subLabel: string): boolean {
+  const l = subLabel.toLowerCase();
+  return l.includes('quantity') || l.includes('volume') || l.includes('days supply');
+}
