@@ -240,6 +240,7 @@ export const NZ_DRUG_LIST: string[] = [
   'Serevent', 'Pulmicort', 'Spiriva',
   'Beclazone', 'Qvar', 'Breo', 'Anoro', 'Trelegy', 'Ultibro', 'Spiolto',
   'Onbrez', 'Seebri', 'Incruse', 'Relvar', 'Oxis', 'Foradil', 'Vannair',
+  'Respigen', 'SalAir',
   // GI
   'Losec', 'Somac', 'Nexium', 'Zoton', 'Motilium', 'Maxolon', 'Buscopan',
   'Movicol', 'Coloxyl', 'Laxsol', 'Dulcolax',
