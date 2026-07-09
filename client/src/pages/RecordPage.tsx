@@ -983,7 +983,7 @@ export function RecordPage() {
                       )}
                       {!phi.drugName.hit && draft.drugName && drugNotRecognised && (
                         <p className="text-[11px] text-gray-500 mt-1.5">
-                          Not in the NZ drug list — please double-check spelling so the report can spot patterns.
+                          New one — we'll remember it. Just double-check the spelling so it groups on the report.
                         </p>
                       )}
                       {!phi.drugName.hit && draft.drugName && !drugNotRecognised && (
@@ -1032,7 +1032,7 @@ export function RecordPage() {
                       />
                       {!phi.drugName.hit && draft.drugName && drugNotRecognised && (
                         <p className="text-[11px] text-gray-500 -mt-1 ml-1">
-                          Prescribed drug not in the NZ list — double-check spelling.
+                          New one — we'll remember it. Just double-check the spelling.
                         </p>
                       )}
                     </>
