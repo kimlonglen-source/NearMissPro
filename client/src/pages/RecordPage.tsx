@@ -51,12 +51,21 @@ function isWrongAttributeType(label: string): boolean {
     l.includes('wrong route') || l.includes('wrong timing')
   );
 }
-// After adding `added` to `list`, drop any already-selected labels that
-// contradict it (a wrong-drug and a wrong-attribute can't co-exist).
+// The "given / second drug" box (dispensed drug, given brand, or the
+// interacting drug) is a single field — only one meaning can apply at once.
+function usesSecondDrugField(label: string): boolean {
+  const t = triggersFor(label);
+  return t.drug || t.brand || t.interaction;
+}
+// After adding `added` to `list`, drop already-selected labels that contradict
+// it: (a) two things claiming the second-drug box, and (b) a wrong-drug and a
+// wrong-attribute (a different drug vs the right drug with something off).
 function dropConflicts(list: string[], added: string): string[] {
-  if (isWrongDrugType(added)) return list.filter(l => l === added || !isWrongAttributeType(l));
-  if (isWrongAttributeType(added)) return list.filter(l => l === added || !isWrongDrugType(l));
-  return list;
+  let out = list;
+  if (usesSecondDrugField(added)) out = out.filter(l => l === added || !usesSecondDrugField(l));
+  if (isWrongDrugType(added)) out = out.filter(l => l === added || !isWrongAttributeType(l));
+  else if (isWrongAttributeType(added)) out = out.filter(l => l === added || !isWrongDrugType(l));
+  return out;
 }
 
 // Semantic colour for a sub-error chip based on its text. Matches the old style:
