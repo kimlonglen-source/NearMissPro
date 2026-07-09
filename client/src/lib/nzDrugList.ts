@@ -215,9 +215,43 @@ export const NZ_DRUG_LIST: string[] = [
   'Influenza vaccine', 'Pneumococcal vaccine', 'Zoster vaccine',
   'Boostrix', 'Gardasil', 'MMR vaccine', 'COVID-19 vaccine',
 
-  // Common NZ brand names staff often type by brand — including known
-  // sound-alike / look-alike pairs (e.g. Allergron/Allersoothe).
-  'Allergron', 'Allersoothe',
+  // ── Common NZ brand names ──────────────────────────────────────────
+  // Staff often type the brand rather than the generic. This is a starter
+  // set of the most-dispensed / OTC brands — NOT exhaustive (Pharmac brands
+  // change, and the app also remembers any brand your team types). Includes
+  // known sound-alike / look-alike pairs (e.g. Allergron/Allersoothe).
+  'Allergron', 'Allersoothe', 'Phenergan',
+  // OTC
+  'Panadol', 'Nurofen', 'Voltaren', 'Telfast', 'Claratyne', 'Zyrtec',
+  'Gaviscon', 'Mylanta', 'Berocca', 'Codral', 'Lemsip', 'Canesten',
+  'Lamisil', 'Daktarin', 'Betadine', 'Panadeine',
+  // Respiratory
+  'Ventolin', 'Bricanyl', 'Atrovent', 'Seretide', 'Symbicort', 'Flixotide',
+  'Serevent', 'Pulmicort', 'Spiriva',
+  // GI
+  'Losec', 'Somac', 'Nexium', 'Zoton', 'Motilium', 'Maxolon', 'Buscopan',
+  'Movicol', 'Coloxyl', 'Laxsol', 'Dulcolax',
+  // Cardiovascular
+  'Cardizem', 'Betaloc', 'Noten', 'Coversyl', 'Inhibace', 'Cozaar', 'Diovan',
+  'Lipex', 'Crestor', 'Lipitor', 'Marevan', 'Cartia', 'Plavix',
+  // Anticoagulant (newer)
+  'Pradaxa', 'Xarelto', 'Eliquis',
+  // Diabetes
+  'Diamicron', 'Glucophage', 'Jardiance', 'Trajenta', 'Januvia',
+  'Lantus', 'Levemir', 'NovoRapid', 'Humalog', 'Protaphane', 'Actrapid',
+  // CNS / psychiatric
+  'Prozac', 'Aropax', 'Cipramil', 'Lexapro', 'Efexor', 'Zoloft',
+  'Valium', 'Rivotril', 'Imovane', 'Seroquel', 'Zyprexa',
+  'Neurontin', 'Lyrica', 'Epilim', 'Tegretol', 'Lamictal',
+  // Pain / opioids
+  'Tramal', 'Sevredol', 'm-Eslon', 'OxyContin', 'OxyNorm',
+  // Antibiotics
+  'Amoxil', 'Augmentin', 'Klacid', 'Zithromax', 'Flagyl', 'Keflex',
+  // Thyroid / bone / gout / eye / migraine
+  'Eltroxin', 'Fosamax', 'Actonel', 'Prolia', 'Zyloprim', 'Xalatan', 'Imigran',
+  // Contraceptives / HRT
+  'Microgynon', 'Yasmin', 'Loette', 'Levlen', 'Marvelon', 'Mercilon',
+  'Jadelle', 'Mirena', 'Depo-Provera',
 ];
 
 // Lowercase set for fast lookup. Built once at module load.
