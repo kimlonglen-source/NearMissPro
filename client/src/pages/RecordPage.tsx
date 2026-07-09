@@ -33,6 +33,32 @@ function nowHM(d: Date = new Date()): string {
 // when no contributing factor applies, without pretending one did.
 const NO_FACTOR = 'No obvious reason';
 
+// Two mutually-exclusive families of "what went wrong". A WRONG DRUG (a
+// different drug entirely — the two-box "prescribed → given" types) can't be
+// true at the same time as a WRONG ATTRIBUTE of the intended drug (its
+// strength, brand, formulation, pack size, quantity, or directions). You
+// either got the wrong drug, or the right drug with something wrong about it.
+function isWrongDrugType(label: string): boolean {
+  return triggersFor(label).drug;
+}
+function isWrongAttributeType(label: string): boolean {
+  const t = triggersFor(label);
+  const l = label.toLowerCase();
+  return (
+    t.strength || t.quantity || t.formulation ||
+    l.includes('brand') || l.includes('pack size') || l.includes('directions') ||
+    l.includes('days supply') || l.includes('wrong dose') || l.includes('wrong frequency') ||
+    l.includes('wrong route') || l.includes('wrong timing')
+  );
+}
+// After adding `added` to `list`, drop any already-selected labels that
+// contradict it (a wrong-drug and a wrong-attribute can't co-exist).
+function dropConflicts(list: string[], added: string): string[] {
+  if (isWrongDrugType(added)) return list.filter(l => l === added || !isWrongAttributeType(l));
+  if (isWrongAttributeType(added)) return list.filter(l => l === added || !isWrongDrugType(l));
+  return list;
+}
+
 // Semantic colour for a sub-error chip based on its text. Matches the old style:
 // coral = drug swap, amber = strength/dose, purple = formulation, green = other.
 function subColor(label: string, selected: boolean): string {
@@ -357,7 +383,9 @@ export function RecordPage() {
   const toggleSub = (sub: string) => {
     tap();
     const has = draft.errorTypes.includes(sub);
-    const next = has ? draft.errorTypes.filter(e => e !== sub) : [...draft.errorTypes, sub];
+    const next = has
+      ? draft.errorTypes.filter(e => e !== sub)
+      : dropConflicts([...draft.errorTypes, sub], sub);
     update({ errorTypes: next });
     if (!has && draft.errorStep) pushRecent(draft.errorStep, sub);
   };
@@ -377,7 +405,7 @@ export function RecordPage() {
     if (draft.errorTypes.some(e => g.includes(e))) {
       update({ errorTypes: draft.errorTypes.filter(e => !g.includes(e)) });
     } else {
-      update({ errorTypes: [...draft.errorTypes, u.label] });
+      update({ errorTypes: dropConflicts([...draft.errorTypes, u.label], u.label) });
       if (draft.errorStep) pushRecent(draft.errorStep, u.label);
     }
   };
@@ -393,7 +421,7 @@ export function RecordPage() {
       const anySpecificLeft = (u.refinements || []).some(r => next.includes(r));
       if (!anySpecificLeft && !next.includes(u.label)) next.push(u.label);
     } else {
-      next = [...draft.errorTypes.filter(e => e !== u.label), part];
+      next = dropConflicts([...draft.errorTypes.filter(e => e !== u.label), part], part);
       if (draft.errorStep) pushRecent(draft.errorStep, part);
     }
     update({ errorTypes: next });
