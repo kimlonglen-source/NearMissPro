@@ -195,6 +195,13 @@ export function DashboardPage() {
         <button onClick={() => setPeriodSet(false)} className="text-sm text-gray-500 hover:text-[#0F6E56]">Change dates</button>
       </div>
 
+      {/* Plain-English guide — this page has a lot on it, so say what to do. */}
+      <div className="mb-4 rounded-xl bg-[#F0FAF5] border border-[#C8E6D8] p-3">
+        <p className="text-sm text-[#085041] leading-relaxed">
+          <span className="font-semibold">How this works:</span> open each near miss below, read what happened and the suggested action, then choose what you'll do about it. When they're all reviewed, generate the monthly report at the bottom for your team meeting.
+        </p>
+      </div>
+
       {/* Live mid-month repeat-pattern alert — only renders when there's
           a (drug, error_type) pair with 3+ incidents in the last 30 days.
           Sits above the stats grid so the manager sees it the moment they
