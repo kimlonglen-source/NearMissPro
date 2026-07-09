@@ -214,6 +214,10 @@ export const NZ_DRUG_LIST: string[] = [
   // Vaccines commonly given in NZ pharmacies
   'Influenza vaccine', 'Pneumococcal vaccine', 'Zoster vaccine',
   'Boostrix', 'Gardasil', 'MMR vaccine', 'COVID-19 vaccine',
+
+  // Common NZ brand names staff often type by brand — including known
+  // sound-alike / look-alike pairs (e.g. Allergron/Allersoothe).
+  'Allergron', 'Allersoothe',
 ];
 
 // Lowercase set for fast lookup. Built once at module load.
