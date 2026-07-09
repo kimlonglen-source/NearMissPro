@@ -23,7 +23,6 @@ export const STAGES: Stage[] = [
   {
     label: 'Script entered into dispensary software',
     subErrors: [
-      { label: 'Typo / mistyped', common: true },
       { label: 'Wrong patient', common: true },
       { label: 'Wrong drug entered', common: true },
       { label: 'Wrong strength entered', common: true },
@@ -33,6 +32,10 @@ export const STAGES: Stage[] = [
         refineTitle: 'Which part of the directions?',
         refinements: ['Wrong dose', 'Wrong frequency', 'Wrong route', 'Wrong timing or instruction'],
       },
+      // The residual "data-entry slip" chip — only for a genuine misspelling
+      // or a garbled entry that ISN'T one of the specific wrong-field errors
+      // above (which cover a mistyped drug / strength / directions / quantity).
+      { label: "Spelling or doesn't make sense", common: false },
       { label: 'Wrong quantity or days supply entered', common: false },
       { label: 'Repeat dispensed too early', common: false },
       { label: 'Patient overdue for repeat', common: false },
@@ -266,6 +269,7 @@ export function isNonDrugError(subLabel: string): boolean {
   const l = subLabel.toLowerCase();
   return (
     l.includes('typo') ||
+    l.includes('spelling') ||          // "Spelling or doesn't make sense" — a garbled entry may have no clear drug
     l.includes('wrong patient') ||
     l.includes('nhi') ||
     l.includes('hpi') ||
